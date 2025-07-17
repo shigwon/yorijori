@@ -1,4 +1,13 @@
-### 📋 기능적 요구 사항 (Functional Requirements)
+# 배달 라이더와 고객을 잇는 자율 주행 로봇 LiNK (Leave into Neighbor's Kill)
+## 팀원
+- 유준호 (PM)
+- 고지원 (FE)
+- 정석원 (FE)
+- 배준영 (BE)
+- 박희준 (BE)
+- 신규원 (BE)
+
+## 📋 기능적 요구 사항 (Functional Requirements)
 
 1. **QR 코드 인식 및 웹페이지 접속**
     - 라이더는 로봇에 부착된 QR 코드를 스캔하여 웹페이지에 접속할 수 있다.
@@ -32,7 +41,7 @@
 14. **반복 사용**
     - 위 과정을 다음 주문에 대해 반복할 수 있다.
 
-### 🛡️ 비 기능적 요구 사항 (Non-Functional Requirements)
+## 🛡️ 비 기능적 요구 사항 (Non-Functional Requirements)
 
 ### 1. **보안 (Security)**
 
