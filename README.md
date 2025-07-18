@@ -89,6 +89,16 @@
 - 음성 인식 실패 시, **"다시 말해 주세요"** 와 같은 예외 처리 응답이 제공되어야 한다.
 - 고객이 ‘복귀’ 버튼을 누르기 전에 음성으로 **“복귀 버튼을 눌러주세요”** 안내한다. **60초 이내**로 ‘복귀’ 버튼을 누르지 않을 시 보관함을 닫고 자동 복귀한다.
 
+##  Figma 디자인
+
+<img src="./Images/Figma.png" alt="Figma 썸네일">
+[Figma 바로가기]https://www.figma.com/design/mBMO5N6H27ZwIGvuxiepbT/Meal-Planner-App-UI-Kit--Community-?node-id=0-1&p=f
+
+- 프로젝트의 전체 UI 흐름 및 화면 구성은 Figma 디자인 시안을 통해 확인한다.
+- 라이더/고객/관리자 각각의 화면과 주요 기능들이 반영되어 있다.
+
+
+
 ## 📏 컨벤션 (Convention)
 
 ### 코드 (Code Convention)
