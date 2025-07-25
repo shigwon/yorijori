@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package auth;
+
+option java_multiple_files = true;
+option java_package = "com.linky.api.test.grpc";
+option java_outer_classname= "TestServiceProto";
+
+service TestService {
+  rpc TestValidation(TestValidationRequest) returns (TestValidationResponse);
+}
+
+message TestValidationRequest {
+  string accessToken = 1;
+}
+
+message TestValidationResponse {
+  bool isValid = 1;
+  int64 userId = 2;
+  string account = 3;
+  string errorCode = 4;
+  string message = 5;
+}

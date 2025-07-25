@@ -1,3 +1,10 @@
+server:
+  port: 8080
+
+grpc:
+  server:
+    port: 50051
+
 spring:
   application:
     name: linky
@@ -25,3 +32,4 @@ spring:
 
     pattern:
       console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
