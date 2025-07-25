@@ -2,6 +2,7 @@ package com.linky.api.order.mapper;
 
 import com.linky.api.order.entity.Order;
 import com.linky.order.grpc.OrderCreateRequest;
+import com.linky.order.grpc.UpdateDeliveryStateRequest;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,6 +15,13 @@ public class OrderMapper {
                 .robotId(request.getRobotId())
                 .customerLatitude(request.getCustomerLatitude())
                 .customerLongitude(request.getCustomerLongitude())
+                .build();
+    }
+
+    public Order toEntity(UpdateDeliveryStateRequest request) {
+        return Order.builder()
+                .id(request.getId())
+                .state(request.getState())
                 .build();
     }
 }
