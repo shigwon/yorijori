@@ -9,13 +9,13 @@ service OrderService {
 }
 
 message OrderCreateRequest {
-  string id = 1;
+  string code = 1;
   string tel = 2;
   int32 robotId = 3;
   double customerLatitude = 4;
   double customerLongitude = 5;
-}
+    }
 
 message OrderCreateResponse {
-  bool success = 1;
+  string orderId = 1;
 }
