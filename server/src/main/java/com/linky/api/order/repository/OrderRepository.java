@@ -1,9 +1,9 @@
 package com.linky.api.order.repository;
 
-import com.linky.order.grpc.OrderState;
 import org.apache.ibatis.annotations.Mapper;
+import org.springframework.data.repository.query.Param;
 
 @Mapper
 public interface OrderRepository {
-    int updateDeliveryState(int id, String state);
+    public int updateDeliveryState(int id, String state);
 }
