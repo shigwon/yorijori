@@ -30,7 +30,7 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
         try {
             int id = request.getId();
-            OrderState state = request.getState();
+            String state = request.getState().name();
             boolean updated = orderService.updateDeliveryState(id, state);
 
             if (updated) {

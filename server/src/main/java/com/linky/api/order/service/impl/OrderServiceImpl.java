@@ -18,16 +18,13 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderCreateResponse createOrder(OrderCreateRequest request) {
         Order order = orderMapper.toEntity(request);
-
         return null;
     }
 
     @Override
-    public boolean updateDeliveryState(int id, OrderState newState) {
-        //Order order = orderMapper
-
-        return false;
+    public boolean updateDeliveryState(int id, String state) {
+        int result = orderRepository.updateDeliveryState(id, state);
+        return result > 0;
     }
-
 
 }
