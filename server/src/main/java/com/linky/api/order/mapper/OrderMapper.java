@@ -17,11 +17,4 @@ public class OrderMapper {
                 .customerLongitude(request.getCustomerLongitude())
                 .build();
     }
-
-    public Order toEntity(UpdateDeliveryStateRequest request) {
-        return Order.builder()
-                .id(request.getId())
-                .state(request.getState())
-                .build();
-    }
 }

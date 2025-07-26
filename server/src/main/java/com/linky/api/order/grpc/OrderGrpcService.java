@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-@Slf4j
 @RequiredArgsConstructor
 @GrpcService
 public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
@@ -33,7 +32,6 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         try {
             int id = request.getId();
             String state = request.getState().name();
-            log.info("id : " + id + ", state : " + state);
             boolean updated = orderService.updateDeliveryState(id, state);
 
             if (updated) {
@@ -51,9 +49,6 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
             responseObserver.onCompleted();
 
         } catch(Exception e) {
-
-            log.error(e.getMessage());
-
             responseObserver.onError(
                     Status.INTERNAL
                             .withDescription(e.getMessage())
