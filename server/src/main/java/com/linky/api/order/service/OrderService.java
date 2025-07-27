@@ -1,9 +1,9 @@
 package com.linky.api.order.service;
 
-import com.linky.order.grpc.OrderCreateRequest;
-import com.linky.order.grpc.OrderCreateResponse;
+import com.linky.order.grpc.*;
 
 public interface OrderService {
 
     OrderCreateResponse createOrder(OrderCreateRequest request);
+    boolean updateDeliveryState(int id, String state);
 }
