@@ -19,7 +19,6 @@ enum OrderState {
 
 message RunOcrAiRequest {
   bytes image = 1;
-  string file_name = 2;
 }
 
 message RunOcrAiResponse {

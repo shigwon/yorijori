@@ -1,5 +1,6 @@
 package com.linky.api.order.grpc;
 
+import com.google.protobuf.ByteString;
 import com.linky.api.message.service.MessageService;
 import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;
@@ -27,10 +28,10 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         RunOcrAiResponse response;
 
         try {
-            byte[] imageBytes = request.getImage().toByteArray();
-            String fileName = request.getFileName();
+            ByteString imageBytes = request.getImage();  // 원본 바이너리 그대로
+            byte[] rawImageData = imageBytes.toByteArray();
 
-            Map<String, String> result = ocrService.sendImageToOcr(imageBytes, fileName);
+            Map<String, String> result = ocrService.sendImageToOcr(rawImageData);
 
             response = RunOcrAiResponse.newBuilder()
                     .setCode(result.getOrDefault("code", ""))
@@ -39,6 +40,7 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+
         } catch (Exception e) {
             responseObserver.onError(
                     Status.INTERNAL
