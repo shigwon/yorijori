@@ -4,10 +4,27 @@
 
 <mapper namespace="com.linky.api.order.repository.OrderRepository">
 
+    <insert id="createOrder">
+        INSERT INTO orders(code, tel, robot_id, state, food_image_url, space_num)
+        VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{foodImageUrl}, #{spaceNum})
+    </insert>
+
+    <select id="searchOrderId">
+        SELECT id
+        FROM orders
+        WHERE code = #{code}
+    </select>
+
     <update id="updateDeliveryState">
         UPDATE orders
         SET state = #{state}
-        WHERE id = #{id}
+        WHERE id = #{orderId}
+    </update>
+
+    <update id="updateLocationAndFaceImageUrl">
+        UPDATE orders
+        SET customer_latitude = #{customerLatitude}, customer_longitude = #{customerLongitude}
+        WHERE id = #{orderId}
     </update>
 
 </mapper>

@@ -50,6 +50,7 @@ dependencies {
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation 'net.nurigo:sdk:4.2.7'
 }
 
 protobuf { // 프로토콜 버퍼 관련 설정
