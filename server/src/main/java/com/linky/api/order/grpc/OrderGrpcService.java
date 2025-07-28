@@ -1,5 +1,6 @@
 package com.linky.api.order.grpc;
 
+import com.linky.api.message.service.MessageService;
 import com.linky.api.order.entity.Order;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.service.OrderService;
@@ -16,6 +17,7 @@ import net.devh.boot.grpc.server.service.GrpcService;
 public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
     private final OrderService orderService;
+    private final MessageService messageService;
 
     @Override
     public void createOrder(OrderCreateRequest request, StreamObserver<OrderCreateResponse> responseObserver) {
@@ -27,6 +29,8 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
             if (created) {
                 int orderId = orderService.searchOrderId(request.getCode());
+                messageService.messageSend(request.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + request.getRobotId() + "&code=" + request.getCode());
+
                 response = OrderCreateResponse.newBuilder()
                         .setSuccess(true)
                         .setMessage("주문 생성에 성공하였습니다.")
