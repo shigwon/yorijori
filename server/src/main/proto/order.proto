@@ -7,7 +7,7 @@ option java_outer_classname = "OrderProto";
 service OrderService {
   rpc RunOcrAi (RunOcrAiRequest) returns (RunOcrAiResponse);
   rpc CreateOrder (OrderCreateRequest) returns (OrderCreateResponse);
-  rpc UpdateLocationAndFaceImageUrl (UpdateLocationAndFaceImageUrlRequest) returns (UpdateLocationAndFaceImageUrlResponse);
+  rpc UpdateLocation (UpdateLocationRequest) returns (UpdateLocationResponse);
   rpc UpdateDeliveryState (UpdateDeliveryStateRequest) returns (UpdateDeliveryStateResponse);
 }
 
@@ -40,14 +40,13 @@ message OrderCreateResponse {
   int32 orderId = 3;
 }
 
-message UpdateLocationAndFaceImageUrlRequest {
+message UpdateLocationRequest {
   int32 orderId = 1;
   double customerLatitude = 2;
   double customerLongitude = 3;
-  string faceImageUrl = 4;
 }
 
-message UpdateLocationAndFaceImageUrlResponse {
+message UpdateLocationResponse {
   bool success = 1;
   string message = 2;
 }

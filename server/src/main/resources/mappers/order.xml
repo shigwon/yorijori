@@ -23,7 +23,7 @@
 
     <update id="updateLocationAndFaceImageUrl">
         UPDATE orders
-        SET customer_latitude = #{customerLatitude}, customer_longitude = #{customerLongitude}, face_image_url = #{faceImageUrl}
+        SET customer_latitude = #{customerLatitude}, customer_longitude = #{customerLongitude}
         WHERE id = #{orderId}
     </update>
 

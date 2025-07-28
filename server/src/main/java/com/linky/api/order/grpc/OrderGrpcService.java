@@ -88,24 +88,23 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
     }
 
     @Override
-    public void updateLocationAndFaceImageUrl(UpdateLocationAndFaceImageUrlRequest request, StreamObserver<UpdateLocationAndFaceImageUrlResponse> responseObserver) {
+    public void updateLocation(UpdateLocationRequest request, StreamObserver<UpdateLocationResponse> responseObserver) {
 
-        UpdateLocationAndFaceImageUrlResponse response;
+        UpdateLocationResponse response;
 
         try {
             int orderId = request.getOrderId();
             double customerLatitude = request.getCustomerLatitude();
             double customerLongitude = request.getCustomerLongitude();
-            String faceImageUrl = request.getFaceImageUrl();
-            boolean updated = orderService.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude, faceImageUrl);
+            boolean updated = orderService.updateLocation(orderId, customerLatitude, customerLongitude);
 
             if (updated) {
-                response = UpdateLocationAndFaceImageUrlResponse.newBuilder()
+                response = UpdateLocationResponse.newBuilder()
                         .setSuccess(true)
                         .setMessage("고객 위치가 성공적으로 업데이트 되었습니다.")
                         .build();
             } else {
-                response = UpdateLocationAndFaceImageUrlResponse.newBuilder()
+                response = UpdateLocationResponse.newBuilder()
                         .setSuccess(false)
                         .setMessage("고객 위치 변경에 실패했습니다.")
                         .build();

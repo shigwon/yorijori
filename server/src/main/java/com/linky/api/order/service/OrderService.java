@@ -5,6 +5,6 @@ import com.linky.order.grpc.*;
 public interface OrderService {
     boolean createOrder(OrderCreateRequest request);
     boolean updateDeliveryState(int orderId, String state);
-    boolean updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude, String faceImageUrl);
+    boolean updateLocation(int orderId, double customerLatitude, double customerLongitude);
     int searchOrderId(String code);
 }

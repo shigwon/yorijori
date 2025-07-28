@@ -36,8 +36,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public boolean updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude, String faceImageUrl) {
-        int result = orderRepository.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude, faceImageUrl);
+    public boolean updateLocation(int orderId, double customerLatitude, double customerLongitude) {
+        int result = orderRepository.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude);
         return result > 0;
     }
 

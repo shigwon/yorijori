@@ -9,5 +9,5 @@ public interface OrderRepository {
     int createOrder(Order order);
     int searchOrderId(String code);
     int updateDeliveryState(int orderId, String state);
-    int updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude, String faceImageUrl);
+    int updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude);
 }
