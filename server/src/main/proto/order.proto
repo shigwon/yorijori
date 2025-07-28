@@ -5,6 +5,7 @@ option java_package = "com.linky.order.grpc";
 option java_outer_classname = "OrderProto";
 
 service OrderService {
+  rpc RunOcrAi (RunOcrAiRequest) returns (RunOcrAiResponse);
   rpc CreateOrder (OrderCreateRequest) returns (OrderCreateResponse);
   rpc UpdateLocationAndFaceImageUrl (UpdateLocationAndFaceImageUrlRequest) returns (UpdateLocationAndFaceImageUrlResponse);
   rpc UpdateDeliveryState (UpdateDeliveryStateRequest) returns (UpdateDeliveryStateResponse);
@@ -14,6 +15,16 @@ enum OrderState {
   READY_FOR_PICKUP = 0;
   DELIVERING = 1;
   DELIVERED = 2;
+}
+
+message RunOcrAiRequest {
+  bytes image = 1;
+  string file_name = 2;
+}
+
+message RunOcrAiResponse {
+  string code = 1;
+  string tel = 2;
 }
 
 message OrderCreateRequest {

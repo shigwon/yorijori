@@ -1,8 +1,7 @@
 package com.linky.api.order.grpc;
 
 import com.linky.api.message.service.MessageService;
-import com.linky.api.order.entity.Order;
-import com.linky.api.order.mapper.OrderMapper;
+import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;
 import com.linky.order.grpc.*;
 import io.grpc.Status;
@@ -11,13 +10,44 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.util.Map;
+
 @Slf4j
 @RequiredArgsConstructor
 @GrpcService
 public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
+    private final OcrService ocrService;
     private final OrderService orderService;
     private final MessageService messageService;
+
+    @Override
+    public void runOcrAi(RunOcrAiRequest request, StreamObserver<RunOcrAiResponse> responseObserver) {
+
+        RunOcrAiResponse response;
+
+        try {
+            byte[] imageBytes = request.getImage().toByteArray();
+            String fileName = request.getFileName();
+
+            Map<String, String> result = ocrService.sendImageToOcr(imageBytes, fileName);
+
+            response = RunOcrAiResponse.newBuilder()
+                    .setCode(result.getOrDefault("code", ""))
+                    .setTel(result.getOrDefault("tel", ""))
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription(e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
 
     @Override
     public void createOrder(OrderCreateRequest request, StreamObserver<OrderCreateResponse> responseObserver) {

@@ -64,8 +64,10 @@ def extract_info_from_result(rec_texts):
             order = extract_order_number(text)
     
     return {
-        "phone_number": phone,
-        "order_number": order
+        "result" : {
+            "code" : order,
+            "tel" : phone
+        }
     }
 
 
