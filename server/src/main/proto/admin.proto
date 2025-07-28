@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.linky.admin.grpc";
+option java_outer_classname = "AdminProto";
+
+service AdminService {
+  rpc GetDailyOrderCount (DailyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetWeeklyOrderCount (WeeklyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetMonthlyOrderCount (MonthlyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetOrderCountByPeriod (PeriodOrderCountRequest) returns (OrderCountResponse);
+}
+
+message DailyOrderCountRequest {
+  string date = 1; // yyyy-MM-dd 형식
+}
+
+message WeeklyOrderCountRequest {
+  string startDate = 1; // yyyy-MM-dd 형식 (해당 주의 시작일)
+}
+
+message MonthlyOrderCountRequest {
+  int32 year = 1;
+  int32 month = 2;
+}
+
+message PeriodOrderCountRequest {
+  string startDate = 1; // yyyy-MM-dd 형식
+  string endDate = 2;   // yyyy-MM-dd 형식
+}
+
+message OrderCountResponse {
+  int32 orderCount = 1;
+}
