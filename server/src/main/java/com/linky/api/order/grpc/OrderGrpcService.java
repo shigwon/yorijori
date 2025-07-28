@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+@Slf4j
 @RequiredArgsConstructor
 @GrpcService
 public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
@@ -18,10 +19,72 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
     @Override
     public void createOrder(OrderCreateRequest request, StreamObserver<OrderCreateResponse> responseObserver) {
-        OrderCreateResponse orderCreateResponse = orderService.createOrder(request);
 
-        responseObserver.onNext(orderCreateResponse);
-        responseObserver.onCompleted();
+        OrderCreateResponse response;
+
+        try {
+            boolean created = orderService.createOrder(request);
+
+            if (created) {
+                int orderId = orderService.searchOrderId(request.getCode());
+                response = OrderCreateResponse.newBuilder()
+                        .setSuccess(true)
+                        .setMessage("주문 생성에 성공하였습니다.")
+                        .setOrderId(orderId)
+                        .build();
+            } else {
+                response = OrderCreateResponse.newBuilder()
+                        .setSuccess(false)
+                        .setMessage("주문 생성에 실패하였습니다.")
+                        .build();
+            }
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription(e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
+
+    @Override
+    public void updateLocationAndFaceImageUrl(UpdateLocationAndFaceImageUrlRequest request, StreamObserver<UpdateLocationAndFaceImageUrlResponse> responseObserver) {
+
+        UpdateLocationAndFaceImageUrlResponse response;
+
+        try {
+            int orderId = request.getOrderId();
+            double customerLatitude = request.getCustomerLatitude();
+            double customerLongitude = request.getCustomerLongitude();
+            String faceImageUrl = request.getFaceImageUrl();
+            boolean updated = orderService.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude, faceImageUrl);
+
+            if (updated) {
+                response = UpdateLocationAndFaceImageUrlResponse.newBuilder()
+                        .setSuccess(true)
+                        .setMessage("고객 위치가 성공적으로 업데이트 되었습니다.")
+                        .build();
+            } else {
+                response = UpdateLocationAndFaceImageUrlResponse.newBuilder()
+                        .setSuccess(false)
+                        .setMessage("고객 위치 변경에 실패했습니다.")
+                        .build();
+            }
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch(Exception e) {
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription(e.getMessage())
+                            .withCause(e).
+                            asRuntimeException()
+            );
+        }
     }
 
     @Override
@@ -30,9 +93,9 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         UpdateDeliveryStateResponse response;
 
         try {
-            int id = request.getId();
+            int orderId = request.getOrderId();
             String state = request.getState().name();
-            boolean updated = orderService.updateDeliveryState(id, state);
+            boolean updated = orderService.updateDeliveryState(orderId, state);
 
             if (updated) {
                 response = UpdateDeliveryStateResponse.newBuilder()

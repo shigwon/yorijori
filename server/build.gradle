@@ -39,7 +39,6 @@ dependencies {
     implementation 'io.grpc:grpc-stub:1.58.0'
     implementation 'io.grpc:grpc-netty-shaded:1.58.0'
 
-
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -49,6 +48,7 @@ dependencies {
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation 'net.nurigo:sdk:4.2.7'
 }
 
 protobuf { // 프로토콜 버퍼 관련 설정

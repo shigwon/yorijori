@@ -13,8 +13,8 @@ public class OrderMapper {
                 .code(request.getCode())
                 .tel(request.getTel())
                 .robotId(request.getRobotId())
-                .customerLatitude(request.getCustomerLatitude())
-                .customerLongitude(request.getCustomerLongitude())
+                .foodImageUrl(request.getFoodImageUrl())
+                .spaceNum(request.getSpaceNum())
                 .build();
     }
 }

@@ -6,8 +6,10 @@ import com.linky.api.order.repository.OrderRepository;
 import com.linky.api.order.service.OrderService;
 import com.linky.order.grpc.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -16,15 +18,29 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
 
     @Override
-    public OrderCreateResponse createOrder(OrderCreateRequest request) {
+    public boolean createOrder(OrderCreateRequest request) {
         Order order = orderMapper.toEntity(request);
-        return null;
+        int result = orderRepository.createOrder(order);
+        return result > 0;
     }
 
     @Override
-    public boolean updateDeliveryState(int id, String state) {
-        int result = orderRepository.updateDeliveryState(id, state);
+    public int searchOrderId(String code) {
+        return orderRepository.searchOrderId(code);
+    }
+
+    @Override
+    public boolean updateDeliveryState(int orderId, String state) {
+        int result = orderRepository.updateDeliveryState(orderId, state);
         return result > 0;
     }
+
+    @Override
+    public boolean updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude, String faceImageUrl) {
+        int result = orderRepository.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude, faceImageUrl);
+        return result > 0;
+    }
+
+
 
 }
