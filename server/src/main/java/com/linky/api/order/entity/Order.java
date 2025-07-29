@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class Order {
 
-    int id;
+    int orderId;
     int robotId;
     String code;
     String tel;
