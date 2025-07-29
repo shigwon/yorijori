@@ -11,8 +11,8 @@
     </select>
 
     <insert id="createOrder">
-        INSERT INTO orders(code, tel, robot_id, state, food_image_url, space_num)
-        VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{foodImageUrl}, #{spaceNum})
+        INSERT INTO orders(code, tel, robot_id, state, space_num)
+        VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{spaceNum})
     </insert>
 
     <select id="searchOrderId">
