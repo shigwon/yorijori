@@ -1,5 +1,6 @@
 package com.linky.api.admin.service.impl;
 
+import com.linky.api.admin.entity.Admin;
 import com.linky.api.admin.repository.AdminRepository;
 import com.linky.api.admin.service.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,12 @@ import java.time.temporal.TemporalAdjusters;
 public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
+
+    @Override
+    public String login(String email, String password) {
+        Admin admin = adminRepository.findByEmailAndPassword(email, password);
+        return admin != null ? admin.getName() : null;
+    }
 
     @Override
     public int getDailyOrderCount(LocalDate date) {

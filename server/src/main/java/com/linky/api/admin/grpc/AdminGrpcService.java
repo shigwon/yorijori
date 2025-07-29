@@ -1,7 +1,7 @@
 package com.linky.api.admin.grpc;
 
-import com.linky.api.admin.service.AdminService;
 import com.linky.admin.grpc.*;
+import com.linky.api.admin.service.AdminService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,44 @@ public class AdminGrpcService extends AdminServiceGrpc.AdminServiceImplBase {
 
     private final AdminService adminService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    @Override
+    public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
+        try {
+            String email = request.getEmail();
+            String password = request.getPassword();
+
+            String adminName = adminService.login(email, password);
+
+            LoginResponse response;
+            if (adminName != null) {
+                response = LoginResponse.newBuilder()
+                        .setSuccess(true)
+                        .setName(adminName)
+                        .setMessage("로그인에 성공했습니다.")
+                        .build();
+                log.info("관리자 로그인 성공: {}", email);
+            } else {
+                response = LoginResponse.newBuilder()
+                        .setSuccess(false)
+                        .setMessage("이메일 또는 비밀번호가 올바르지 않습니다.")
+                        .build();
+                log.warn("관리자 로그인 실패: {}", email);
+            }
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("로그인 처리 중 오류 발생", e);
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("로그인 처리 중 오류가 발생했습니다: " + e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
 
     @Override
     public void getDailyOrderCount(DailyOrderCountRequest request,
