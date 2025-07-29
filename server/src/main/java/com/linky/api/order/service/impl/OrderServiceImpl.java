@@ -20,6 +20,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public boolean createOrder(OrderCreateRequest request) {
         Order order = orderMapper.toEntity(request);
+        int spaceNum = orderRepository.searchCapacity(order.getRobotId()) + 1;
+
+        if(spaceNum > 3) {
+
+        }
+
+
+        order.setSpaceNum(spaceNum);
         int result = orderRepository.createOrder(order);
         return result > 0;
     }
