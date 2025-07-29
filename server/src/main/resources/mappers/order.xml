@@ -29,6 +29,12 @@
         WHERE code = #{code}
     </select>
 
+    <select id="findById" parameterType="int" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE id =#{id}
+    </select>
+
     <update id="updateDeliveryState">
         UPDATE orders
         SET state = #{state}
