@@ -22,10 +22,8 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderMapper.toEntity(request);
         int spaceNum = orderRepository.searchCapacity(order.getRobotId()) + 1;
 
-        if(spaceNum > 3) {
-
-        }
-
+        if(spaceNum > 3)
+            return false;
 
         order.setSpaceNum(spaceNum);
         int result = orderRepository.createOrder(order);
