@@ -10,4 +10,5 @@ public interface OrderRepository {
     int searchOrderId(String code);
     int updateDeliveryState(int orderId, String state);
     int updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude);
+    int searchCapacity(int robotId);
 }
