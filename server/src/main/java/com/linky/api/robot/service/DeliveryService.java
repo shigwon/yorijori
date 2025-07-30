@@ -35,10 +35,16 @@ public class DeliveryService {
         this.delayedQueue = redissonClient.getDelayedQueue(queue);
     }
 
-    public void resetTimer(String robotId) {
+    public void resetTimer(int robotId) {
         String msg = "robot:" + robotId;
         delayedQueue.remove(msg);
         delayedQueue.offer(msg, 1, TimeUnit.MINUTES);
+    }
+
+    public void interruptTimer(int robotId) {
+        String msg = "robot:" + robotId;
+        delayedQueue.remove(msg);
+        sendOrderList(robotId);
     }
 
     @Async
@@ -48,7 +54,7 @@ public class DeliveryService {
             try {
                 String msg = queue.take();
                 String robotId = msg.replace("robot:", "");
-                log.info("로봇 " + robotId + " 의 3분 타이머 만료 신호 받음!");
+                log.info("로봇 {} 의 3분 타이머 만료 신호 받음!", robotId);
                 sendOrderList(Integer.parseInt(robotId));
             } catch (InterruptedException e) {
                 log.warn("타이머 리스너 인터럽트.");
@@ -62,6 +68,7 @@ public class DeliveryService {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
 
         for (OrderSummary order : orderList) {
+            //Todo: 이미지 다운로드 (byes) 구현 완료 된다면 수정 해야 함
             // byte[] downloadFileToS3ByUrl(String url)
             log.info(order.toString());
         }
