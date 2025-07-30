@@ -4,15 +4,41 @@
 
 <mapper namespace="com.linky.api.order.repository.OrderRepository">
 
+    <select id="searchCapacity">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE robot_id = #{robotId} AND state = "READY_FOR_PICKUP"
+    </select>
+
+    <select id="searchOrderList" resultType="com.linky.api.order.entity.OrderSummary">
+        SELECT id AS orderId, code, tel,
+               customer_latitude AS customerLatitude, customer_longitude AS customerLongitude,
+               face_image_url AS faceImageUrl,  space_num AS spaceNum
+        FROM orders
+        WHERE robot_id = #{robotId} AND state = "READY_FOR_PICKUP"
+    </select>
+
+    <select id="searchOrderUpdateCount">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE robot_id = #{robotId} AND state = "READY_FOR_PICKUP" AND customer_latitude IS NOT NULL
+    </select>
+
     <insert id="createOrder">
-        INSERT INTO orders(code, tel, robot_id, state, food_image_url, space_num)
-        VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{foodImageUrl}, #{spaceNum})
+        INSERT INTO orders(code, tel, robot_id, state, space_num)
+        VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{spaceNum})
     </insert>
 
     <select id="searchOrderId">
         SELECT id
         FROM orders
         WHERE code = #{code}
+    </select>
+
+    <select id="findById" parameterType="int" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE id =#{id}
     </select>
 
     <update id="updateDeliveryState">
@@ -25,6 +51,23 @@
         UPDATE orders
         SET customer_latitude = #{customerLatitude}, customer_longitude = #{customerLongitude}
         WHERE id = #{orderId}
+    </update>
+
+    <update id="updateImageUrlByCode">
+        update
+            orders
+        <set>
+            <choose>
+                <when test="fileCategory == 'FACE'">
+                    face_image_url = #{url}
+                </when>
+                <when test="fileCategory == 'FOOD'">
+                    food_image_url = #{url}
+                </when>
+            </choose>
+        </set>
+        where
+            code = #{code}
     </update>
 
 </mapper>

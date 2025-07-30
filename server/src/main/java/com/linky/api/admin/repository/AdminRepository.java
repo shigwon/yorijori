@@ -10,7 +10,6 @@ import java.util.Map;
 
 @Mapper
 public interface AdminRepository {
-
     Admin findByEmailAndPassword(@Param("email") String email, @Param("password") String password);
     int getOrderCountByPeriod(@Param("startDateTime") LocalDateTime startDateTime,
                               @Param("endDateTime") LocalDateTime endDateTime);

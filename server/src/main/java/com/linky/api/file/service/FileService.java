@@ -1,12 +1,11 @@
 package com.linky.api.file.service;
 
-import com.linky.file.grpc.FileDownloadRequest;
-import com.linky.file.grpc.FileDownloadResponse;
-import com.linky.file.grpc.FileUploadRequest;
-import com.linky.file.grpc.FileUploadResponse;
+import com.linky.api.file.dto.request.FileDownloadRequestDto;
+import com.linky.api.file.dto.request.FileUploadRequestDto;
 
 public interface FileService {
 
-    FileUploadResponse uploadFileToS3(FileUploadRequest request);
-    FileDownloadResponse downloadFileToS3(FileDownloadRequest request);
+    String uploadFileToS3(FileUploadRequestDto request);
+    byte[] downloadFileToS3(FileDownloadRequestDto request);
+    byte[] downloadFileToS3ByUrl(String url);
 }

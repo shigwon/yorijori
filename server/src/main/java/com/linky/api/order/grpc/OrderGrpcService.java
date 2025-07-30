@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.linky.api.message.service.MessageService;
 import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;
+import com.linky.api.robot.service.impl.DeliveryServiceImpl;
 import com.linky.order.grpc.*;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -20,6 +21,7 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
     private final OcrService ocrService;
     private final OrderService orderService;
+    private final DeliveryServiceImpl deliveryService;
     private final MessageService messageService;
 
     @Override
@@ -61,7 +63,7 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
             if (created) {
                 int orderId = orderService.searchOrderId(request.getCode());
-                messageService.messageSend(request.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + request.getRobotId() + "&code=" + request.getCode());
+                //messageService.messageSend(request.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + request.getRobotId() + "&code=" + request.getCode());
 
                 response = OrderCreateResponse.newBuilder()
                         .setSuccess(true)
@@ -99,6 +101,14 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
             boolean updated = orderService.updateLocation(orderId, customerLatitude, customerLongitude);
 
             if (updated) {
+                int searchOrderUpdateCount = orderService.searchOrderUpdateCount(request.getRobotId());
+
+                if(searchOrderUpdateCount >= 3) {
+                    deliveryService.interruptTimer(request.getRobotId());
+                } else {
+                    deliveryService.resetTimer(request.getRobotId());
+                }
+
                 response = UpdateLocationResponse.newBuilder()
                         .setSuccess(true)
                         .setMessage("고객 위치가 성공적으로 업데이트 되었습니다.")

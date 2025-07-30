@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "com.linky.review.grpc";
+option java_outer_classname = "ReviewProto";
+
+service ReviewService {
+  rpc CreateReview (ReviewCreateRequest) returns (ReviewCreateResponse);
+  rpc GetReview (ReviewRequest) returns (ReviewResponse);
+  rpc GetPaginatedReviews(PaginatedReviewsRequest) returns (PaginatedReviewsResponse);
+  rpc GetReviewStatistics(google.protobuf.Empty) returns (ReviewStatisticsResponse);
+}
+
+message ReviewCreateRequest {
+  string orderCode = 1;
+  int32 rating = 2;
+  string content = 3;
+}
+
+message ReviewCreateResponse {
+  int32 id = 1;
+}
+
+message ReviewRequest {
+  int32 id = 1;
+}
+
+message ReviewResponse {
+  int32 id = 1;
+  string orderCode = 2;
+  int32 rating = 3;
+  string content = 4;
+  google.protobuf.Timestamp createdAt = 5;
+}
+
+message PaginatedReviewsRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+  int32 minRating = 3;
+  SortOption sortOption = 4;
+}
+
+enum SortOption {
+  DESC = 0;
+  ASC = 1;
+}
+
+message PaginatedReviewsResponse {
+  repeated ReviewResponse data = 1;
+  int64 totalCount = 2;
+  int32 currentPage = 3;
+  int32 totalPages = 4;
+}
+
+message ReviewStatisticsResponse {
+  double averageRating = 1;
+  map<string, int64> ratingRangeCounts = 2;
+}

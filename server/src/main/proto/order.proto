@@ -30,8 +30,6 @@ message OrderCreateRequest {
   string code = 1;
   string tel = 2;
   int32 robotId = 3;
-  string foodImageUrl = 4;
-  int32 spaceNum = 5;
 }
 
 message OrderCreateResponse {
@@ -42,8 +40,9 @@ message OrderCreateResponse {
 
 message UpdateLocationRequest {
   int32 orderId = 1;
-  double customerLatitude = 2;
-  double customerLongitude = 3;
+  int32 robotId = 2;
+  double customerLatitude = 3;
+  double customerLongitude = 4;
 }
 
 message UpdateLocationResponse {
