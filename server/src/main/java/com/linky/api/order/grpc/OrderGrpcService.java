@@ -2,7 +2,6 @@ package com.linky.api.order.grpc;
 
 import com.google.protobuf.ByteString;
 import com.linky.api.message.service.MessageService;
-import com.linky.api.order.repository.OrderRepository;
 import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.service.DeliveryService;
@@ -24,7 +23,6 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
     private final OrderService orderService;
     private final DeliveryService deliveryService;
     private final MessageService messageService;
-    private final OrderRepository orderRepository;
 
     @Override
     public void runOcrAi(RunOcrAiRequest request, StreamObserver<RunOcrAiResponse> responseObserver) {
@@ -103,13 +101,13 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
             boolean updated = orderService.updateLocation(orderId, customerLatitude, customerLongitude);
 
             if (updated) {
-                int searchCapacity = orderRepository.searchCapacity(request.getRobotId());
-                if(searchCapacity >= 3) {
+                int searchOrderUpdateCount = orderService.searchOrderUpdateCount(request.getRobotId());
+
+                if(searchOrderUpdateCount >= 3) {
                     deliveryService.interruptTimer(request.getRobotId());
                 } else {
                     deliveryService.resetTimer(request.getRobotId());
                 }
-
 
                 response = UpdateLocationResponse.newBuilder()
                         .setSuccess(true)

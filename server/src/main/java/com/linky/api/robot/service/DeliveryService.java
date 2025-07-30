@@ -44,6 +44,7 @@ public class DeliveryService {
     public void interruptTimer(int robotId) {
         String msg = "robot:" + robotId;
         delayedQueue.remove(msg);
+        log.info("robot {} 의 음식 칸 다 참 [ 인터럽트 ]", robotId);
         sendOrderList(robotId);
     }
 
