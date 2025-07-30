@@ -13,9 +13,10 @@ message FileUploadRequest {
   string orderCode = 1;
   string fileName = 2;
   string fileType = 3;
-  string fileCategory = 4;
+  FileCategory fileCategory = 4;
   bytes fileData = 5;
 }
+
 
 message FileUploadResponse {
   string fileUrl = 1;
@@ -25,9 +26,14 @@ message FileDownloadRequest {
   string orderCode = 1;
   string fileName = 2;
   string fileType = 3;
-  string fileCategory = 4;
+  FileCategory fileCategory = 4;
 }
 
 message FileDownloadResponse {
   bytes fileData = 1;
+}
+
+enum FileCategory {
+  FACE = 0;
+  FOOD = 1;
 }
