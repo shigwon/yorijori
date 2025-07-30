@@ -34,7 +34,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     private final RedissonClient redissonClient;
     private RBlockingQueue<String> queue;
     private RDelayedQueue<String> delayedQueue;
-    private FileService fileService;
+    private final FileService fileService;
 
 
     @PostConstruct
