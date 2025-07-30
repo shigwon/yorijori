@@ -1,9 +1,13 @@
 package com.linky.api.robot.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linky.api.file.service.FileService;
 import com.linky.api.mqtt.service.MqttPublishService;
+import com.linky.api.order.dto.UpdateDeliveryStateDto;
 import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.repository.OrderRepository;
+import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.service.DeliveryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +38,8 @@ public class DeliveryServiceImpl implements DeliveryService {
     private RBlockingQueue<String> queue;
     private RDelayedQueue<String> delayedQueue;
     private final FileService fileService;
+    private final OrderService orderService;
+    private final ObjectMapper objectMapper;
 
 
     @PostConstruct
@@ -102,7 +108,16 @@ public class DeliveryServiceImpl implements DeliveryService {
 
         log.info("📥 Received from robot {}: Command = {}, Extra = {}, Payload = {}", robotId, command, extra, payload);
 
-        // TODO: 커맨드 별 처리
+        try {
+            switch (command) {
+                case "updateDeliveryState":
+                    UpdateDeliveryStateDto updateDeliveryStateDto = objectMapper.readValue(payload, UpdateDeliveryStateDto.class);
+                    orderService.updateDeliveryState(updateDeliveryStateDto.getOrderId(), updateDeliveryStateDto.getState());
+                    break;
+            }
+        } catch (JsonProcessingException e) {
+            log.warn("객체 매핑 에러, 커멘드 : {}, 에러 : {}", command, e.getMessage());
+        }
     }
 
     public void sendOrderList(int robotId) {

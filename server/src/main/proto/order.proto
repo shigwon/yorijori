@@ -8,7 +8,6 @@ service OrderService {
   rpc RunOcrAi (RunOcrAiRequest) returns (RunOcrAiResponse);
   rpc CreateOrder (OrderCreateRequest) returns (OrderCreateResponse);
   rpc UpdateLocation (UpdateLocationRequest) returns (UpdateLocationResponse);
-  rpc UpdateDeliveryState (UpdateDeliveryStateRequest) returns (UpdateDeliveryStateResponse);
 }
 
 enum OrderState {
@@ -50,12 +49,3 @@ message UpdateLocationResponse {
   string message = 2;
 }
 
-message UpdateDeliveryStateRequest {
-  int32 orderId = 1;
-  OrderState state = 2;
-}
-
-message UpdateDeliveryStateResponse {
-  bool success = 1;
-  string message = 2;
-}
