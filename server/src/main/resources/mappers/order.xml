@@ -18,6 +18,12 @@
         WHERE robot_id = #{robotId} AND state = "READY_FOR_PICKUP"
     </select>
 
+    <select id="searchOrderUpdateCount">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE robot_id = #{robotId} AND state = "READY_FOR_PICKUP" AND customer_latitude IS NOT NULL
+    </select>
+
     <insert id="createOrder">
         INSERT INTO orders(code, tel, robot_id, state, space_num)
         VALUES (#{code}, #{tel}, #{robotId}, "READY_FOR_PICKUP", #{spaceNum})

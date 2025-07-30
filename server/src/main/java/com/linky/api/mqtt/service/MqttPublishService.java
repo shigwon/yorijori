@@ -36,4 +36,5 @@ public class MqttPublishService {
             log.error(e.getMessage());
         }
     }
+
 }

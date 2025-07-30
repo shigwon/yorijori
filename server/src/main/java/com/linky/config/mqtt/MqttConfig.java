@@ -41,6 +41,7 @@ public class MqttConfig {
         MqttPahoMessageHandler handler =
                 new MqttPahoMessageHandler(clientId + "_pub", mqttClientFactory());
         handler.setAsync(true);
+        handler.setDefaultQos(2);
         handler.setDefaultTopic(topic);
         return handler;
     }
@@ -51,10 +52,16 @@ public class MqttConfig {
     }
 
     @Bean
-    public MessageProducer mqttInboundChannelAdapter() {
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(clientId + "_sub", mqttClientFactory(), topic);
-        adapter.setOutputChannel(mqttOutboundChannel());
-        return adapter;
+    public MessageProducer mqttInboundChannelHandler() {
+        MqttPahoMessageDrivenChannelAdapter handler =
+                new MqttPahoMessageDrivenChannelAdapter(clientId + "_sub", mqttClientFactory(), topic+"/#");
+        handler.setOutputChannel(mqttOutboundChannel());
+        handler.setQos(2);
+        return handler;
+    }
+
+    @Bean
+    public MessageChannel mqttInboundChannel() {
+        return new DirectChannel();
     }
 }

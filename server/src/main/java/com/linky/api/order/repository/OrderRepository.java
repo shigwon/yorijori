@@ -18,4 +18,5 @@ public interface OrderRepository {
     int searchCapacity(int robotId);
 
     List<OrderSummary> searchOrderList(int robotId);
+    int searchOrderUpdateCount(int robotId);
 }
