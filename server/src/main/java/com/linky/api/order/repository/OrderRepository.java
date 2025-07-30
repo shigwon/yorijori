@@ -3,6 +3,7 @@ package com.linky.api.order.repository;
 import com.linky.api.order.entity.Order;
 import com.linky.api.order.entity.OrderSummary;
 import org.apache.ibatis.annotations.Mapper;
+
 import java.util.List;
 
 
@@ -16,4 +17,5 @@ public interface OrderRepository {
     int searchCapacity(int robotId);
 
     List<OrderSummary> searchOrderList(int robotId);
+    int searchOrderUpdateCount(int robotId);
 }

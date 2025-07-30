@@ -4,7 +4,7 @@ import com.linky.api.order.entity.Order;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.repository.OrderRepository;
 import com.linky.api.order.service.OrderService;
-import com.linky.order.grpc.*;
+import com.linky.order.grpc.OrderCreateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +47,10 @@ public class OrderServiceImpl implements OrderService {
         return result > 0;
     }
 
+    @Override
+    public int searchOrderUpdateCount(int robotId) {
+        return orderRepository.searchOrderUpdateCount(robotId);
+    }
 
 
 }
