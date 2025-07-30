@@ -132,37 +132,4 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         }
     }
 
-    @Override
-    public void updateDeliveryState(UpdateDeliveryStateRequest request, StreamObserver<UpdateDeliveryStateResponse> responseObserver) {
-
-        UpdateDeliveryStateResponse response;
-
-        try {
-            int orderId = request.getOrderId();
-            String state = request.getState().name();
-            boolean updated = orderService.updateDeliveryState(orderId, state);
-
-            if (updated) {
-                response = UpdateDeliveryStateResponse.newBuilder()
-                        .setSuccess(true)
-                        .setMessage("배달 상태가 성공적으로 변경되었습니다.")
-                        .build();
-            } else {
-                response = UpdateDeliveryStateResponse.newBuilder()
-                        .setSuccess(false)
-                        .setMessage("배달 상태 변경에 실패했습니다.")
-                        .build();
-            }
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-        } catch(Exception e) {
-            responseObserver.onError(
-                    Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asRuntimeException()
-            );
-        }
-    }
 }
