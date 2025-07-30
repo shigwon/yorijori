@@ -14,6 +14,7 @@ public interface OrderRepository {
     Order findById(int id);
     int updateDeliveryState(int orderId, String state);
     int updateLocationAndFaceImageUrl(int orderId, double customerLatitude, double customerLongitude);
+    void updateImageUrlByCode(String code, String url, String fileCategory);
     int searchCapacity(int robotId);
 
     List<OrderSummary> searchOrderList(int robotId);
