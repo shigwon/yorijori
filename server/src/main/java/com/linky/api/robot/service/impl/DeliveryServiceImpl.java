@@ -1,5 +1,6 @@
 package com.linky.api.robot.service.impl;
 
+import com.linky.api.file.service.FileService;
 import com.linky.api.mqtt.service.MqttPublishService;
 import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.repository.OrderRepository;
@@ -33,6 +34,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     private final RedissonClient redissonClient;
     private RBlockingQueue<String> queue;
     private RDelayedQueue<String> delayedQueue;
+    private FileService fileService;
 
 
     @PostConstruct
@@ -102,8 +104,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
 
         for (OrderSummary order : orderList) {
-            //Todo: 이미지 다운로드 (byes) 구현 완료 된다면 수정 해야 함
-            // byte[] downloadFileToS3ByUrl(String url)
+            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
             log.info(order.toString());
         }
 
