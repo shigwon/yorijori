@@ -10,6 +10,9 @@ service AdminService {
   rpc GetWeeklyOrderCount (WeeklyOrderCountRequest) returns (OrderCountResponse);
   rpc GetMonthlyOrderCount (MonthlyOrderCountRequest) returns (OrderCountResponse);
   rpc GetOrderCountByPeriod (PeriodOrderCountRequest) returns (OrderCountResponse);
+
+  rpc GetHourlyOrderCountInDay (DailyOrderCountRequest) returns (HourlyOrderCountResponse);
+  rpc GetDailyOrderCountInWeek (WeeklyOrderCountRequest) returns (WeeklyOrderCountResponse);
 }
 
 message LoginRequest {
@@ -43,4 +46,23 @@ message PeriodOrderCountRequest {
 
 message OrderCountResponse {
   int32 orderCount = 1;
+}
+
+message HourlyOrderCountResponse {
+  repeated HourlyCount hourlyData = 1;
+}
+
+message WeeklyOrderCountResponse {
+  repeated DailyCount dailyData = 1;
+}
+
+message HourlyCount {
+  int32 hour = 1;
+  int32 count = 2;
+}
+
+message DailyCount {
+  int32 dayOfWeek = 1;
+  string dayName = 2;
+  int32 count = 3;
 }

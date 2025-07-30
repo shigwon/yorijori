@@ -18,4 +18,27 @@
           AND start_time &lt;= #{endDateTime}
     </select>
 
+    <select id="getHourlyOrderCount" resultType="map">
+        SELECT
+            HOUR(start_time) as hour,
+            COUNT(*) as count
+        FROM orders
+        WHERE start_time >= #{startDateTime}
+          AND start_time &lt;= #{endDateTime}
+        GROUP BY HOUR(start_time)
+        ORDER BY hour
+
+    </select>
+
+    <select id="getDailyOrderCountInWeek" resultType="map">
+        SELECT
+            DAYOFWEEK(start_time) as dayOfWeek,
+            COUNT(*) as count
+        FROM orders
+        WHERE start_time >= #{startDateTime}
+          AND start_time &lt;= #{endDateTime}
+        GROUP BY DAYOFWEEK(start_time)
+        ORDER BY dayOfWeek
+    </select>
+
 </mapper>
