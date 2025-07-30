@@ -74,7 +74,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
 
         for (OrderSummary order : orderList) {
-            //order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
+            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
             log.info(order.toString());
         }
 
