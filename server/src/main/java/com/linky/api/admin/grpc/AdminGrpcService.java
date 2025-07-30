@@ -10,6 +10,7 @@ import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -155,6 +156,56 @@ public class AdminGrpcService extends AdminServiceGrpc.AdminServiceImplBase {
             responseObserver.onError(
                     Status.INTERNAL
                             .withDescription("기간별 주문 건수 조회 중 오류가 발생했습니다: " + e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
+
+    @Override
+    public void getHourlyOrderCountInDay(DailyOrderCountRequest request,
+                                    StreamObserver<HourlyOrderCountResponse> responseObserver) {
+        try {
+            LocalDate date = LocalDate.parse(request.getDate(), DATE_FORMATTER);
+            List<HourlyCount> hourlyData = adminService.getHourlyOrderCountInDay(date);
+
+            HourlyOrderCountResponse response = HourlyOrderCountResponse.newBuilder()
+                    .addAllHourlyData(hourlyData)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("시간대별 주문 통계 조회 중 오류 발생", e);
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("시간대별 주문 통계 조회 중 오류가 발생했습니다: " + e.getMessage())
+                            .withCause(e)
+                            .asRuntimeException()
+            );
+        }
+    }
+
+    @Override
+    public void getDailyOrderCountInWeek(WeeklyOrderCountRequest request,
+                                         StreamObserver<WeeklyOrderCountResponse> responseObserver) {
+        try {
+            LocalDate startDate = LocalDate.parse(request.getStartDate(), DATE_FORMATTER);
+            List<DailyCount> dailyData = adminService.getDailyOrderCountInWeek(startDate);
+
+            WeeklyOrderCountResponse response = WeeklyOrderCountResponse.newBuilder()
+                    .addAllDailyData(dailyData)
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            log.error("주간 요일별 주문 통계 조회 중 오류 발생", e);
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("주간 요일별 주문 통계 조회 중 오류가 발생했습니다: " + e.getMessage())
                             .withCause(e)
                             .asRuntimeException()
             );
