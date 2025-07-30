@@ -13,7 +13,6 @@ import org.redisson.api.RedissonClient;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -46,7 +45,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     public void resetTimer(int robotId) {
         String msg = "robot:" + robotId;
         delayedQueue.remove(msg);
-        delayedQueue.offer(msg, 1, TimeUnit.MINUTES);
+        delayedQueue.offer(msg, 3, TimeUnit.MINUTES);
     }
 
     public void interruptTimer(int robotId) {
@@ -76,35 +75,41 @@ public class DeliveryServiceImpl implements DeliveryService {
     @ServiceActivator(inputChannel = "mqttInboundChannel")
     public void listenRobotMessage(Message<String> message) {
 
-        String topic = (String) message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC);
+        String topic = (String) message.getHeaders().get("mqtt_receivedTopic");
 
         if (topic == null) {
+            log.warn("토픽이 없는 메세지. 무시.");
             return;
         }
 
         String payload = message.getPayload();
-
-        log.info("payload :  {}", payload);
-
         String[] tokens = Objects.requireNonNull(topic).split("/");
 
-        if (tokens.length < 4)
+        if (tokens.length < 4) {
+            log.warn("유효하지 않은 토픽 구조. 무시.");
             return;
+        }
 
         String robotId = tokens[2];
         String command = tokens[3];
-        List <String> extra = Arrays.asList(tokens).subList(4, tokens.length);
+        List<String> extra = Arrays.asList(tokens).subList(4, tokens.length);
+
+        // 로봇 번호가 0이 아닐 경우 무시
+        if (!"0".equals(robotId)) {
+            log.debug("로봇 번호가 0이 아님. 처리 안 함. robotId={}", robotId);
+            return;
+        }
 
         log.info("📥 Received from robot {}: Command = {}, Extra = {}, Payload = {}", robotId, command, extra, payload);
 
-        //Todo: 커맨드 별로 처리
+        // TODO: 커맨드 별 처리
     }
 
     public void sendOrderList(int robotId) {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
 
         for (OrderSummary order : orderList) {
-            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
+            //order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
             log.info(order.toString());
         }
 

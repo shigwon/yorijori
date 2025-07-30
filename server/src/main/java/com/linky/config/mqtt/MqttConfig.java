@@ -55,7 +55,7 @@ public class MqttConfig {
     public MessageProducer mqttInboundChannelHandler() {
         MqttPahoMessageDrivenChannelAdapter handler =
                 new MqttPahoMessageDrivenChannelAdapter(clientId + "_sub", mqttClientFactory(), topic+"/#");
-        handler.setOutputChannel(mqttOutboundChannel());
+        handler.setOutputChannel(mqttInboundChannel());
         handler.setQos(2);
         return handler;
     }
