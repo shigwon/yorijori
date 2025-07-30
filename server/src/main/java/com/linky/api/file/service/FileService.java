@@ -7,4 +7,5 @@ public interface FileService {
 
     String uploadFileToS3(FileUploadRequestDto request);
     byte[] downloadFileToS3(FileDownloadRequestDto request);
+    byte[] downloadFileToS3ByUrl(String url);
 }

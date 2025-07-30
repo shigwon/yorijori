@@ -47,4 +47,21 @@
         WHERE id = #{orderId}
     </update>
 
+    <update id="updateImageUrlByCode">
+        update
+            orders
+        <set>
+            <choose>
+                <when test="fileCategory == 'FACE'">
+                    face_image_url = #{url}
+                </when>
+                <when test="fileCategory == 'FOOD'">
+                    food_image_url = #{url}
+                </when>
+            </choose>
+        </set>
+        where
+            code = #{code}
+    </update>
+
 </mapper>

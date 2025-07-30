@@ -2,7 +2,7 @@ package com.linky.api.admin.repository;
 
 import com.linky.api.admin.entity.Admin;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param
+import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
 

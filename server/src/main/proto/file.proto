@@ -17,7 +17,6 @@ message FileUploadRequest {
   bytes fileData = 5;
 }
 
-
 message FileUploadResponse {
   string fileUrl = 1;
 }

@@ -15,7 +15,7 @@ public class FileMapper {
                 fileUploadRequest.getOrderCode(),
                 fileUploadRequest.getFileName(),
                 fileUploadRequest.getFileType(),
-                FileCategory.valueOf(fileUploadRequest.getFileCategory()),
+                FileCategory.valueOf(fileUploadRequest.getFileCategory().name()),
                 fileUploadRequest.getFileData().toByteArray()
         );
     }
@@ -25,7 +25,7 @@ public class FileMapper {
                 fileDownloadRequest.getOrderCode(),
                 fileDownloadRequest.getFileName(),
                 fileDownloadRequest.getFileType(),
-                FileCategory.valueOf(fileDownloadRequest.getFileCategory())
+                FileCategory.valueOf(fileDownloadRequest.getFileCategory().name())
         );
     }
 }
