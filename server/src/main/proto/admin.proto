@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.linky.admin.grpc";
+option java_outer_classname = "AdminProto";
+
+service AdminService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc GetDailyOrderCount (DailyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetWeeklyOrderCount (WeeklyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetMonthlyOrderCount (MonthlyOrderCountRequest) returns (OrderCountResponse);
+  rpc GetOrderCountByPeriod (PeriodOrderCountRequest) returns (OrderCountResponse);
+
+  rpc GetHourlyOrderCountInDay (DailyOrderCountRequest) returns (HourlyOrderCountResponse);
+  rpc GetDailyOrderCountInWeek (WeeklyOrderCountRequest) returns (WeeklyOrderCountResponse);
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string name = 2;
+  string message = 3;
+}
+
+message DailyOrderCountRequest {
+  string date = 1;
+}
+
+message WeeklyOrderCountRequest {
+  string startDate = 1;
+}
+
+message MonthlyOrderCountRequest {
+  int32 year = 1;
+  int32 month = 2;
+}
+
+message PeriodOrderCountRequest {
+  string startDate = 1;
+  string endDate = 2;
+}
+
+message OrderCountResponse {
+  int32 orderCount = 1;
+}
+
+message HourlyOrderCountResponse {
+  repeated HourlyCount hourlyData = 1;
+}
+
+message WeeklyOrderCountResponse {
+  repeated DailyCount dailyData = 1;
+}
+
+message HourlyCount {
+  int32 hour = 1;
+  int32 count = 2;
+}
+
+message DailyCount {
+  int32 dayOfWeek = 1;
+  string dayName = 2;
+  int32 count = 3;
+}

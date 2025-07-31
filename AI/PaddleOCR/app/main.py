@@ -1,9 +1,9 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Request
 from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import shutil, os, re
+import shutil, os, re, uuid, base64
 from paddleocr import PaddleOCR
 
 app =FastAPI()
@@ -41,17 +41,34 @@ async def read_root():
 
 
 @app.post("/ocr")
-async def ocr_image(file: UploadFile = File(...)):
-    
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    result = run_ocr(file_path)
+async def ocr_image(request: Request):
+    try:
+        body = await request.json()
+        base64_image = body.get("image")
 
-    rec_texts = result[0].get("rec_texts", [])
-    info = extract_info_from_result(rec_texts)
-    return JSONResponse(content={"result": info})
+        if not base64_image:
+            return JSONResponse(content={"error": "No image field provided"}, status_code=400)
+
+        try:
+            image_data = base64.b64decode(base64_image)
+        except Exception:
+            return JSONResponse(content={"error": "Invalid base64 data"}, status_code=400)
+
+        file_name = f"{uuid.uuid4().hex}.jpg"
+        file_path = os.path.join(UPLOAD_DIR, file_name)
+        with open(file_path, "wb") as f:
+            f.write(image_data)
+
+        result = run_ocr(file_path)
+
+        rec_texts = result[0].get("rec_texts", [])
+        info = extract_info_from_result(rec_texts)
+
+        return JSONResponse(content=info)
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+    
 
 def extract_info_from_result(rec_texts):
     phone = None
@@ -64,8 +81,10 @@ def extract_info_from_result(rec_texts):
             order = extract_order_number(text)
     
     return {
-        "phone_number": phone,
-        "order_number": order
+        "result" : {
+            "code" : order,
+            "tel" : phone
+        }
     }
 
 
