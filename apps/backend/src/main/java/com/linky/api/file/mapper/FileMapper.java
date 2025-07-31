@@ -13,10 +13,7 @@ public class FileMapper {
     public FileUploadRequestDto toDto(FileUploadRequest fileUploadRequest) {
         return new FileUploadRequestDto(
                 fileUploadRequest.getOrderCode(),
-                fileUploadRequest.getFileName(),
-                fileUploadRequest.getFileType(),
-                FileCategory.valueOf(fileUploadRequest.getFileCategory().name()),
-                fileUploadRequest.getFileData().toByteArray()
+                FileCategory.valueOf(fileUploadRequest.getFileCategory().name())
         );
     }
 
@@ -24,7 +21,6 @@ public class FileMapper {
         return new FileDownloadRequestDto(
                 fileDownloadRequest.getOrderCode(),
                 fileDownloadRequest.getFileName(),
-                fileDownloadRequest.getFileType(),
                 FileCategory.valueOf(fileDownloadRequest.getFileCategory().name())
         );
     }

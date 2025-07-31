@@ -1,19 +1,22 @@
 package com.linky.api.file.service.impl;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.util.IOUtils;
 import com.linky.api.file.dto.request.FileDownloadRequestDto;
 import com.linky.api.file.dto.request.FileUploadRequestDto;
+import com.linky.api.file.exception.FileException;
+import com.linky.api.file.exception.enums.FileExceptionResult;
 import com.linky.api.file.service.FileService;
 import com.linky.api.order.repository.OrderRepository;
-import com.linky.api.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 
@@ -26,34 +29,29 @@ public class FileServiceImpl implements FileService {
     private String bucket;
 
     private final AmazonS3 amazonS3;
-    private final OrderService orderService;
     private final OrderRepository orderRepository;
 
     @Transactional
     @Override
-    public String uploadFileToS3(FileUploadRequestDto request) {
+    public String uploadFileToS3(FileUploadRequestDto request, MultipartFile file) {
         String orderCode = request.orderCode();
-        String fileName = request.fileName();
-        String fileType = request.fileType();
+        String fileName = file.getOriginalFilename();
         String fileCategory = request.fileCategory().name();
-        byte[] fileData = request.fileData();
 
-        if(fileData.length == 0){
-            throw new IllegalArgumentException("file data is empty");
-        }
-
-        String s3Key = getS3Key(orderCode, fileName, fileType, fileCategory);
+        String s3Key = getS3Key(orderCode, fileName, fileCategory);
 
         try {
-            amazonS3.putObject(bucket, s3Key, new java.io.ByteArrayInputStream(fileData), null);
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(file.getSize());
+            metadata.setContentType(file.getContentType());
+            amazonS3.putObject(bucket, s3Key, file.getInputStream(), metadata);
 
             String url = amazonS3.getUrl(bucket, s3Key).toString();
             orderRepository.updateImageUrlByCode(orderCode, url, fileCategory);
 
             return url;
         } catch (Exception e) {
-            log.error("uploadFileToS3 error : {}", e.getMessage());
-            return null;
+            throw new FileException(FileExceptionResult.FAIL_UPLOAD);
         }
     }
 
@@ -61,25 +59,23 @@ public class FileServiceImpl implements FileService {
     public byte[] downloadFileToS3(FileDownloadRequestDto request) {
         String orderCode = request.orderCode();
         String fileName = request.fileName();
-        String fileType = request.fileType();
         String fileCategory = request.fileCategory().name();
 
-        String s3Key = getS3Key(orderCode, fileName, fileType, fileCategory);
+        String s3Key = getS3Key(orderCode, fileName, fileCategory);
 
         try(S3Object s3Object = amazonS3.getObject(bucket, s3Key)) {
             S3ObjectInputStream inputStream = s3Object.getObjectContent();
 
             return IOUtils.toByteArray(inputStream);
         } catch (Exception e) {
-            log.error("downloadFileToS3 error : {}", e.getMessage());
-            return null;
+            throw new FileException(FileExceptionResult.FAIL_UPLOAD);
         }
     }
 
     @Override
     public byte[] downloadFileToS3ByUrl(String url) {
         if(url == null || url.isEmpty()){
-            throw new IllegalArgumentException("url is empty");
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
         try {
@@ -94,27 +90,25 @@ public class FileServiceImpl implements FileService {
                 return IOUtils.toByteArray(inputStream);
             }
         } catch (Exception e) {
-            log.error("downloadFileToS3ByUrl error : {}", e.getMessage());
+            throw new FileException(FileExceptionResult.FAIL_DOWNLOAD);
         }
-
-        return new byte[0];
     }
 
     private String extractBucketFromHost(String host) {
         int firstDotIndex = host.indexOf('.');
 
         if(firstDotIndex == -1 || !host.contains(".s3.")){
-            throw new IllegalArgumentException("host is not in bucket");
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
         return host.substring(0, firstDotIndex);
     }
 
-    private static String getS3Key(String orderCode, String fileName, String fileType, String fileCategory) {
-        if (orderCode.trim().isEmpty() || fileName.trim().isEmpty() || fileType.trim().isEmpty() || fileCategory.trim().isEmpty()) {
-            throw new IllegalArgumentException("Request fields cannot be empty.");
+    private static String getS3Key(String orderCode, String fileName, String fileCategory) {
+        if (orderCode.trim().isEmpty() || fileName.trim().isEmpty() || fileCategory.trim().isEmpty()) {
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
-        return "orders/" + orderCode + "/" + fileCategory + "/" + fileName + "." + fileType;
+        return "orders/" + orderCode + "/" + fileCategory + "/" + fileName;
     }
 }
