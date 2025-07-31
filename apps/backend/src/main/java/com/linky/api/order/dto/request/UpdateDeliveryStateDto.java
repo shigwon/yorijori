@@ -1,4 +1,4 @@
-package com.linky.api.order.dto;
+package com.linky.api.order.dto.request;
 
 import lombok.Data;
 

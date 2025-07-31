@@ -1,5 +1,7 @@
 package com.linky.api.order.service.impl;
 
+import com.linky.api.order.dto.request.CreateOrderRequestDto;
+import com.linky.api.order.dto.request.UpdateLocationRequestDto;
 import com.linky.api.order.entity.Order;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.repository.OrderRepository;
@@ -18,8 +20,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
 
     @Override
-    public boolean createOrder(OrderCreateRequest request) {
-        Order order = orderMapper.toEntity(request);
+    public boolean createOrder(CreateOrderRequestDto createOrderRequest) {
+        Order order = orderMapper.toEntity(createOrderRequest);
         int spaceNum = orderRepository.searchCapacity(order.getRobotId()) + 1;
 
         if(spaceNum > 3)
@@ -31,8 +33,19 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public int searchOrderId(String code) {
-        return orderRepository.searchOrderId(code);
+    public int searchOrderId(CreateOrderRequestDto createOrderRequest) {
+        Order order = orderMapper.toEntity(createOrderRequest);
+        return orderRepository.searchOrderId(order.getCode());
+    }
+
+    @Override
+    public boolean updateLocation(int orderId, UpdateLocationRequestDto updateLocationRequest) {
+        Order order = orderMapper.toEntity(updateLocationRequest);
+        order.setOrderId(orderId);
+        int result = orderRepository.updateLocationAndFaceImageUrl(
+                order.getOrderId(), order.getCustomerLatitude(), order.getCustomerLongitude()
+        );
+        return result > 0;
     }
 
     @Override
@@ -42,15 +55,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public boolean updateLocation(int orderId, double customerLatitude, double customerLongitude) {
-        int result = orderRepository.updateLocationAndFaceImageUrl(orderId, customerLatitude, customerLongitude);
-        return result > 0;
-    }
-
-    @Override
     public int searchOrderUpdateCount(int robotId) {
         return orderRepository.searchOrderUpdateCount(robotId);
     }
+
+
+
+
 
 
 }
