@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-admin
+  labels:
+    app: frontend-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend-admin
+  template:
+    metadata:
+      labels:
+        app: frontend-admin
+    spec:
+      containers:
+        - name: frontend-admin
+          image: parkheejun/linky-frontend-admin:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-user
+  labels:
+    app: frontend-user
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend-user
+  template:
+    metadata:
+      labels:
+        app: frontend-user
+    spec:
+      containers:
+        - name: frontend-user
+          image: parkheejun/linky-forontend-user:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
