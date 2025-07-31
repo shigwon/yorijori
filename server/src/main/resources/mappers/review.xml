@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.linky.api.review.repository.ReviewRepository">
+    <insert id="insertReview" parameterType="Review" useGeneratedKeys="true" keyProperty="id">
+        insert into reviews (order_id, rating, content, created_at) values (#{orderId}, #{rating}, #{content}, #{createdAt})
+    </insert>
+
+    <select id="findById" parameterType="int" resultMap="reviewResultMap">
+        select * from reviews where id = #{id}
+    </select>
+
+    <select id="countByCriteria" parameterType="map" resultType="long">
+        select count(*)
+        from reviews
+        <where>
+            <if test="minRating > 0">
+                rating >= #{minRating}
+            </if>
+        </where>
+    </select>
+
+    <select id="findWithPagination" parameterType="map" resultMap="reviewResultMap">
+        select
+            id, order_id, rating, content, created_at
+        from
+            reviews
+        <where>
+            <if test="minRating > 0">
+                rating >= #{minRating}
+            </if>
+        </where>
+        order by
+            <choose>
+                <when test="sortOption == 'ASC'">
+                    created_at ASC
+                </when>
+                <otherwise>
+                    created_at DESC
+                </otherwise>
+            </choose>
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="findReviewStatistics" resultType="ReviewStatsRawData">
+        select
+            coalesce(AVG(rating), 0.0) as averageRating,
+            count(case when rating = 1 then 1 end) as rating1Count,
+            count(case when rating = 2 then 1 end) as rating2Count,
+            count(case when rating = 3 then 1 end) as rating3Count,
+            count(case when rating = 4 then 1 end) as rating4Count,
+            count(case when rating = 5 then 1 end) as rating5Count
+        from
+            reviews
+    </select>
+
+    <resultMap id="reviewResultMap" type="Review">
+        <id property="id" column="id" />
+        <result property="orderId" column="order_id" />
+        <result property="rating" column="rating" />
+        <result property="content" column="content" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+</mapper>

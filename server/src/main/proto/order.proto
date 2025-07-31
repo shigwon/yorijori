@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.linky.order.grpc";
+option java_outer_classname = "OrderProto";
+
+service OrderService {
+  rpc RunOcrAi (RunOcrAiRequest) returns (RunOcrAiResponse);
+  rpc CreateOrder (OrderCreateRequest) returns (OrderCreateResponse);
+  rpc UpdateLocation (UpdateLocationRequest) returns (UpdateLocationResponse);
+}
+
+enum OrderState {
+  READY_FOR_PICKUP = 0;
+  DELIVERING = 1;
+  DELIVERED = 2;
+}
+
+message RunOcrAiRequest {
+  bytes image = 1;
+}
+
+message RunOcrAiResponse {
+  string code = 1;
+  string tel = 2;
+}
+
+message OrderCreateRequest {
+  string code = 1;
+  string tel = 2;
+  int32 robotId = 3;
+}
+
+message OrderCreateResponse {
+  bool success = 1;
+  string message = 2;
+  int32 orderId = 3;
+}
+
+message UpdateLocationRequest {
+  int32 orderId = 1;
+  int32 robotId = 2;
+  double customerLatitude = 3;
+  double customerLongitude = 4;
+}
+
+message UpdateLocationResponse {
+  bool success = 1;
+  string message = 2;
+}
+
