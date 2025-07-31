@@ -8,7 +8,7 @@ import com.linky.api.review.dto.response.ReviewStatisticsResponseDto;
 
 public interface ReviewService {
 
-    int createReview(ReviewCreateRequestDto request);
+    void createReview(ReviewCreateRequestDto request);
 
     ReviewResponseDto getReview(int reviewId);
 

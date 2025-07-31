@@ -9,6 +9,8 @@ import com.linky.api.review.dto.response.ReviewResponseDto;
 import com.linky.api.review.dto.response.ReviewStatisticsResponseDto;
 import com.linky.api.review.entity.Review;
 import com.linky.api.review.entity.ReviewStatsRawData;
+import com.linky.api.review.exception.ReviewException;
+import com.linky.api.review.exception.enums.ReviewExceptionResult;
 import com.linky.api.review.mapper.ReviewMapper;
 import com.linky.api.review.repository.ReviewRepository;
 import com.linky.api.review.service.ReviewService;
@@ -33,23 +35,21 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Transactional
     @Override
-    public int createReview(ReviewCreateRequestDto request) {
+    public void createReview(ReviewCreateRequestDto request) {
         int orderId = orderRepository.searchOrderId(request.orderCode());
 
         if(orderId <= 0) {
-            log.error("[ReviewServiceImpl] 주문 번호가 존재하지 않습니다.");
+            throw new ReviewException(ReviewExceptionResult.BAD_REQUEST);
         }
 
         Review newReview = reviewMapper.toEntity(request);
         newReview.setOrderId(orderId);
-
-        return reviewRepository.insertReview(newReview);
     }
 
     @Override
     public ReviewResponseDto getReview(int reviewId) {
         if(reviewId <= 0) {
-            log.error("[ReviewServiceImpl] 리뷰 번호가 존재하지 않습니다.");
+            throw new ReviewException(ReviewExceptionResult.NOT_EXISTS);
         }
 
         Review review = reviewRepository.findById(reviewId);
