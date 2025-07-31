@@ -1,0 +1,383 @@
+stage('Build and Test') {
+            parallel {
+                stage('Frontend Admin') {
+                    when {
+                        environment name: 'BUILD_FRONTEND_ADMIN', value: 'true'
+                    }
+                    steps {
+                        script {
+                            // Docker Hub 로그인
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            }
+                        }
+                        dir('apps/frontend-admin') {
+                            sh 'npm install'
+                            sh 'npm run test'
+                            sh 'npm run build'
+                        }
+                        script {
+                            buildAndPushImage('linky-frontend-admin', 'apps/frontend-admin', pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'docker.io'  // Docker Hub 사용
+        DOCKER_HUB_USERNAME = 'parkheejun'
+        KUBERNETES_NAMESPACE = 'default'
+        ARGOCD_SERVER = 'argocd.your-domain.com'
+        GIT_COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        // GitLab 환경 변수들 (Plugin이 있을 때만 사용)
+        CHANGE_ID = "${env.gitlabMergeRequestIid ?: env.CHANGE_ID ?: ''}"
+        CHANGE_TARGET = "${env.gitlabTargetBranch ?: env.CHANGE_TARGET ?: 'main'}"
+        CHANGE_BRANCH = "${env.gitlabSourceBranch ?: env.GIT_BRANCH ?: ''}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.BUILD_NUMBER_FULL = "${BUILD_NUMBER}-${GIT_COMMIT_HASH}"
+                }
+            }
+        }
+
+        stage('Detect Changes') {
+            steps {
+                script {
+                    def changes = []
+                    def commonFiles = []
+
+                    // Force build all if parameter is set
+                    if (params.FORCE_BUILD_ALL == true) {
+                        echo "🔧 FORCE_BUILD_ALL is enabled - building all services"
+                        env.BUILD_FRONTEND_ADMIN = 'true'
+                        env.BUILD_FRONTEND_USER = 'true'
+                        env.BUILD_BACKEND = 'true'
+                        env.BUILD_AI_OCR = 'true'
+                        return
+                    }
+
+                    // Get changed files
+                    try {
+                        if (env.CHANGE_ID) {
+                            // Merge Request - compare with target branch
+                            changes = sh(
+                                script: "git diff --name-only origin/${env.CHANGE_TARGET}...HEAD",
+                                returnStdout: true
+                            ).trim().split('\n')
+                        } else {
+                            // Push event - compare with previous commit
+                            changes = sh(
+                                script: "git diff --name-only HEAD~1 HEAD",
+                                returnStdout: true
+                            ).trim().split('\n')
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️  Could not detect changes, building all services: ${e.message}"
+                        env.BUILD_FRONTEND_ADMIN = 'true'
+                        env.BUILD_FRONTEND_USER = 'true'
+                        env.BUILD_BACKEND = 'true'
+                        env.BUILD_AI_OCR = 'true'
+                        return
+                    }
+
+                    // Filter out empty changes
+                    changes = changes.findAll { it && it.trim() }
+
+                    echo "📁 Changed files:"
+                    changes.each { echo "  - ${it}" }
+
+                    // Check for common files that affect all services
+                    commonFiles = changes.findAll { file ->
+                        file.startsWith('docker/') ||
+                        file.startsWith('k8s/') ||
+                        file.startsWith('jenkins/') ||
+                        file.startsWith('.gitlab-ci.yml') ||
+                        file == 'package.json' ||
+                        file == 'requirements.txt' ||
+                        file.startsWith('shared/')
+                    }
+
+                    if (commonFiles) {
+                        echo "🔄 Common infrastructure files changed - building all services"
+                        echo "Common files: ${commonFiles.join(', ')}"
+                        env.BUILD_FRONTEND_ADMIN = 'true'
+                        env.BUILD_FRONTEND_USER = 'true'
+                        env.BUILD_BACKEND_API = 'true'
+                        env.BUILD_AI_SERVICE = 'true'
+                        return
+                    }
+
+                    // Check specific service changes
+                    env.BUILD_FRONTEND_ADMIN = changes.any {
+                        it.startsWith('apps/frontend-admin/')
+                    } ? 'true' : 'false'
+
+                    env.BUILD_FRONTEND_USER = changes.any {
+                        it.startsWith('apps/frontend-user/')
+                    } ? 'true' : 'false'
+
+                    env.BUILD_BACKEND_API = changes.any {
+                        it.startsWith('apps/backend-api/')
+                    } ? 'true' : 'false'
+
+                    env.BUILD_AI_SERVICE = changes.any {
+                        it.startsWith('apps/ai-service/')
+                    } ? 'true' : 'false'
+
+                    // If no services need to be built, exit early
+                    if (env.BUILD_FRONTEND_ADMIN == 'false' &&
+                        env.BUILD_FRONTEND_USER == 'false' &&
+                        env.BUILD_BACKEND_API == 'false' &&
+                        env.BUILD_AI_SERVICE == 'false') {
+                        echo "✅ No service changes detected - skipping build"
+                        currentBuild.result = 'SUCCESS'
+                        currentBuild.description = "No changes detected in service directories"
+                        return
+                    }
+
+                    echo "🚀 Build flags:"
+                    echo "  - Frontend Admin: ${env.BUILD_FRONTEND_ADMIN}"
+                    echo "  - Frontend User: ${env.BUILD_FRONTEND_USER}"
+                    echo "  - Backend API: ${env.BUILD_BACKEND_API}"
+                    echo "  - AI Service: ${env.BUILD_AI_SERVICE}"
+                }
+            }
+        }
+
+        stage('Build and Test') {
+            parallel {
+                stage('Frontend Admin') {
+                    when {
+                        environment name: 'BUILD_FRONTEND_ADMIN', value: 'true'
+                    }
+                    steps {
+                        script {
+                            // Docker Hub 로그인
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            }
+                        }
+                        dir('apps/frontend-admin') {
+                            sh 'npm install'
+                            sh 'npm run test'
+                            sh 'npm run build'
+                        }
+                        script {
+                            buildAndPushImage('linky-frontend-admin', 'apps/frontend-admin', 'docker/frontend.Dockerfile')
+                        }
+                    }
+                }
+
+                stage('Frontend User') {
+                    when {
+                        environment name: 'BUILD_FRONTEND_USER', value: 'true'
+                    }
+                    steps {
+                        script {
+                            // Docker Hub 로그인
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            }
+                        }
+                        dir('apps/frontend-user') {
+                            sh 'npm install'
+                            sh 'npm run test'
+                            sh 'npm run build'
+                        }
+                        script {
+                            buildAndPushImage('linky-forontend-user', 'apps/frontend-user', 'docker/frontend.Dockerfile')
+                        }
+                    }
+                }
+
+                stage('Backend') {
+                    when {
+                        environment name: 'BUILD_BACKEND', value: 'true'
+                    }
+                    steps {
+                        script {
+                            // Docker Hub 로그인
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            }
+                        }
+                        dir('apps/backend') {
+                            sh './gradlew build -x test --no-daemon'
+                        }
+                        script {
+                            buildAndPushImage('linky-backend', 'apps/backend', 'docker/backend.Dockerfile')
+                        }
+                    }
+                }
+
+                stage('AI OCR') {
+                    when {
+                        environment name: 'BUILD_AI_OCR', value: 'true'
+                    }
+                    steps {
+                        script {
+                            // Docker Hub 로그인
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                           usernameVariable: 'DOCKER_USER',
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            }
+                        }
+                        dir('apps/ai-ocr') {
+                            sh 'python -m pip install -r requirements.txt'
+                            sh 'python -m pytest tests/'
+                        }
+                        script {
+                            buildAndPushImage('linky-ai-ocr', 'apps/ai-ocr', 'docker/ai.Dockerfile')
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Update Manifests') {
+            steps {
+                script {
+                    updateKubernetesManifests()
+                }
+            }
+        }
+
+        stage('Trigger ArgoCD Sync') {
+            steps {
+                script {
+                    triggerArgoSync()
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
+
+def shouldSkipBuild() {
+    return env.BUILD_FRONTEND_ADMIN == 'false' &&
+           env.BUILD_FRONTEND_USER == 'false' &&
+           env.BUILD_BACKEND_API == 'false' &&
+           env.BUILD_AI_SERVICE == 'false'
+}
+
+def getChangedServices() {
+    def services = []
+    if (env.BUILD_FRONTEND_ADMIN == 'true') services.add('frontend-admin')
+    if (env.BUILD_FRONTEND_USER == 'true') services.add('frontend-user')
+    if (env.BUILD_BACKEND_API == 'true') services.add('backend-api')
+    if (env.BUILD_AI_SERVICE == 'true') services.add('ai-service')
+    return services
+}
+
+def buildAndPushImage(serviceName, contextPath, dockerfilePath) {
+    def imageTag = "${DOCKER_HUB_USERNAME}/${serviceName}:${BUILD_NUMBER_FULL}"
+
+    sh """
+        echo "🔨 Building ${serviceName}..."
+        docker build -f ${dockerfilePath} -t ${imageTag} ${contextPath}
+        echo "📤 Pushing ${imageTag}..."
+        docker push ${imageTag}
+        echo "✅ Successfully built and pushed ${serviceName}"
+    """
+
+    // Store image tag for manifest update (환경 변수명을 실제 서비스명에 맞춰 조정)
+    if (serviceName == 'linky-frontend-admin') {
+        env.IMAGE_TAG_FRONTEND_ADMIN = imageTag
+    } else if (serviceName == 'linky-forontend-user') {
+        env.IMAGE_TAG_FRONTEND_USER = imageTag
+    } else if (serviceName == 'linky-backend') {
+        env.IMAGE_TAG_BACKEND = imageTag
+    } else if (serviceName == 'linky-ai-ocr') {
+        env.IMAGE_TAG_AI_OCR = imageTag
+    }
+}
+
+def updateKubernetesManifests() {
+    // Update image tags in Kubernetes manifests (k8s 디렉토리의 파일들)
+    sh """
+        # Update frontend-admin if built
+        if [ "${BUILD_FRONTEND_ADMIN}" = "true" ]; then
+            sed -i 's|image: .*/linky-frontend-admin:.*|image: ${env.IMAGE_TAG_FRONTEND_ADMIN}|' k8s/frontend-admin-deployment.yaml
+        fi
+
+        # Update frontend-user if built
+        if [ "${BUILD_FRONTEND_USER}" = "true" ]; then
+            sed -i 's|image: .*/linky-forontend-user:.*|image: ${env.IMAGE_TAG_FRONTEND_USER}|' k8s/frontend-user-deployment.yaml
+        fi
+
+        # Update backend if built
+        if [ "${BUILD_BACKEND}" = "true" ]; then
+            sed -i 's|image: .*/linky-backend:.*|image: ${env.IMAGE_TAG_BACKEND}|' k8s/backend-deployment.yaml
+        fi
+
+        # Update ai-ocr if built
+        if [ "${BUILD_AI_OCR}" = "true" ]; then
+            sed -i 's|image: .*/linky-ai-ocr:.*|image: ${env.IMAGE_TAG_AI_OCR}|' k8s/ai-ocr-deployment.yaml
+        fi
+
+        # Show what changed
+        echo "📝 Updated Kubernetes manifests:"
+        git diff --name-only k8s/ || echo "No changes detected"
+
+        # Commit and push changes
+        git config user.name "Jenkins"
+        git config user.email "jenkins@your-domain.com"
+        git add k8s/
+        git commit -m "Update image tags - Build ${BUILD_NUMBER_FULL}
+
+Changed services:
+- Frontend Admin: ${BUILD_FRONTEND_ADMIN}
+- Frontend User: ${BUILD_FRONTEND_USER}
+- Backend: ${BUILD_BACKEND}
+- AI OCR: ${BUILD_AI_OCR}" || echo "No changes to commit"
+
+        git push origin HEAD:main
+    """
+}
+
+def triggerArgoSync() {
+    sh """
+        # Install ArgoCD CLI if not present
+        if ! command -v argocd &> /dev/null; then
+            curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+            chmod +x /usr/local/bin/argocd
+        fi
+
+        # Login to ArgoCD
+        argocd login ${ARGOCD_SERVER} --username admin --password \${ARGOCD_PASSWORD} --insecure
+
+        # 통합 애플리케이션 동기화 (변경사항이 있을 때만)
+        if [ "${BUILD_FRONTEND_ADMIN}" = "true" ] || [ "${BUILD_FRONTEND_USER}" = "true" ] || [ "${BUILD_BACKEND}" = "true" ] || [ "${BUILD_AI_OCR}" = "true" ]; then
+            echo "🔄 Syncing linky-app application..."
+            argocd app sync linky-app
+
+            # 동기화 상태 확인
+            argocd app wait linky-app --timeout 300
+            echo "✅ Application sync completed"
+        else
+            echo "ℹ️  No changes detected, skipping ArgoCD sync"
+        fi
+    """
+}
