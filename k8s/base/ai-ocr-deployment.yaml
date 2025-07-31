@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-ocr
+  labels:
+    app: ai-ocr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-ocr
+  template:
+    metadata:
+      labels:
+        app: ai-ocr
+    spec:
+      containers:
+        - name: ai-ocr
+          image: parkheejun/linky-ai-ocr:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
