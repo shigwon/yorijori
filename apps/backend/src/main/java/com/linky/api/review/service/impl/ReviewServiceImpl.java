@@ -33,7 +33,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Transactional
     @Override
-    public int createReview(ReviewCreateRequestDto request) {
+    public void createReview(ReviewCreateRequestDto request) {
         int orderId = orderRepository.searchOrderId(request.orderCode());
 
         if(orderId <= 0) {
@@ -42,8 +42,6 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review newReview = reviewMapper.toEntity(request);
         newReview.setOrderId(orderId);
-
-        return reviewRepository.insertReview(newReview);
     }
 
     @Override
