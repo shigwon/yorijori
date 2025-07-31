@@ -2,7 +2,7 @@ package com.linky.api.mqtt.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.linky.api.order.dto.UpdateDeliveryStateDto;
+import com.linky.api.order.dto.request.UpdateDeliveryStateDto;
 import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.dto.RobotLocationDto;

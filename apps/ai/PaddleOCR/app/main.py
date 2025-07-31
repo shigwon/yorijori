@@ -90,20 +90,20 @@ def extract_info_from_result(rec_texts):
 
 def extract_phone_number(text):
     patterns = [
-        r'0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4,5}',  
+        r'0\d{1,2}[-\s]?\d{3,5}[-\s]?\d{4,5}'  
     ]
     for pattern in patterns:
         match = re.search(pattern, text)
         if match:
             return match.group()
-    return None
+    return ""
 
 def extract_order_number(text):
     pattern = r'주\s*문\s*번\s*호[:\s\-]*([A-Z0-9\-]+)'
     match = re.search(pattern, text, re.IGNORECASE)
     if match:
         return match.group(1) 
-    return None
+    return ""
 
 
 def run_ocr(image_path: str):

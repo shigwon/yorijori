@@ -24,112 +24,112 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
     private final DeliveryServiceImpl deliveryService;
     private final MessageService messageService;
 
-    @Override
-    public void runOcrAi(RunOcrAiRequest request, StreamObserver<RunOcrAiResponse> responseObserver) {
+//    @Override
+//    public void runOcrAi(RunOcrAiRequest request, StreamObserver<RunOcrAiResponse> responseObserver) {
+//
+//        RunOcrAiResponse response;
+//
+//        try {
+//            ByteString imageBytes = request.getImage();  // 원본 바이너리 그대로
+//            byte[] rawImageData = imageBytes.toByteArray();
+//
+//            //Map<String, String> result = ocrService.sendImageToOcr(rawImageData);
+//
+//            response = RunOcrAiResponse.newBuilder()
+//                    .setCode(result.getOrDefault("code", ""))
+//                    .setTel(result.getOrDefault("tel", ""))
+//                    .build();
+//
+//            responseObserver.onNext(response);
+//            responseObserver.onCompleted();
+//
+//        } catch (Exception e) {
+//            responseObserver.onError(
+//                    Status.INTERNAL
+//                            .withDescription(e.getMessage())
+//                            .withCause(e)
+//                            .asRuntimeException()
+//            );
+//        }
+//    }
 
-        RunOcrAiResponse response;
+//    @Override
+//    public void createOrder(OrderCreateRequest request, StreamObserver<OrderCreateResponse> responseObserver) {
+//
+//        OrderCreateResponse response;
+//
+//        try {
+//            boolean created = orderService.createOrder(request);
+//
+//            if (created) {
+//                int orderId = orderService.searchOrderId(request.getCode());
+//                //messageService.messageSend(request.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + request.getRobotId() + "&code=" + request.getCode());
+//
+//                response = OrderCreateResponse.newBuilder()
+//                        .setSuccess(true)
+//                        .setMessage("주문 생성에 성공하였습니다.")
+//                        .setOrderId(orderId)
+//                        .build();
+//            } else {
+//                response = OrderCreateResponse.newBuilder()
+//                        .setSuccess(false)
+//                        .setMessage("주문 생성에 실패하였습니다.")
+//                        .build();
+//            }
+//            responseObserver.onNext(response);
+//            responseObserver.onCompleted();
+//
+//        } catch (Exception e) {
+//            responseObserver.onError(
+//                    Status.INTERNAL
+//                            .withDescription(e.getMessage())
+//                            .withCause(e)
+//                            .asRuntimeException()
+//            );
+//        }
+//    }
 
-        try {
-            ByteString imageBytes = request.getImage();  // 원본 바이너리 그대로
-            byte[] rawImageData = imageBytes.toByteArray();
-
-            Map<String, String> result = ocrService.sendImageToOcr(rawImageData);
-
-            response = RunOcrAiResponse.newBuilder()
-                    .setCode(result.getOrDefault("code", ""))
-                    .setTel(result.getOrDefault("tel", ""))
-                    .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            responseObserver.onError(
-                    Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asRuntimeException()
-            );
-        }
-    }
-
-    @Override
-    public void createOrder(OrderCreateRequest request, StreamObserver<OrderCreateResponse> responseObserver) {
-
-        OrderCreateResponse response;
-
-        try {
-            boolean created = orderService.createOrder(request);
-
-            if (created) {
-                int orderId = orderService.searchOrderId(request.getCode());
-                //messageService.messageSend(request.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + request.getRobotId() + "&code=" + request.getCode());
-
-                response = OrderCreateResponse.newBuilder()
-                        .setSuccess(true)
-                        .setMessage("주문 생성에 성공하였습니다.")
-                        .setOrderId(orderId)
-                        .build();
-            } else {
-                response = OrderCreateResponse.newBuilder()
-                        .setSuccess(false)
-                        .setMessage("주문 생성에 실패하였습니다.")
-                        .build();
-            }
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            responseObserver.onError(
-                    Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asRuntimeException()
-            );
-        }
-    }
-
-    @Override
-    public void updateLocation(UpdateLocationRequest request, StreamObserver<UpdateLocationResponse> responseObserver) {
-
-        UpdateLocationResponse response;
-
-        try {
-            int orderId = request.getOrderId();
-            double customerLatitude = request.getCustomerLatitude();
-            double customerLongitude = request.getCustomerLongitude();
-            boolean updated = orderService.updateLocation(orderId, customerLatitude, customerLongitude);
-
-            if (updated) {
-                int searchOrderUpdateCount = orderService.searchOrderUpdateCount(request.getRobotId());
-
-                if(searchOrderUpdateCount >= 3) {
-                    deliveryService.interruptTimer(request.getRobotId());
-                } else {
-                    deliveryService.resetTimer(request.getRobotId());
-                }
-
-                response = UpdateLocationResponse.newBuilder()
-                        .setSuccess(true)
-                        .setMessage("고객 위치가 성공적으로 업데이트 되었습니다.")
-                        .build();
-            } else {
-                response = UpdateLocationResponse.newBuilder()
-                        .setSuccess(false)
-                        .setMessage("고객 위치 변경에 실패했습니다.")
-                        .build();
-            }
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-        } catch(Exception e) {
-            responseObserver.onError(
-                    Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e).
-                            asRuntimeException()
-            );
-        }
-    }
+//    @Override
+//    public void updateLocation(UpdateLocationRequest request, StreamObserver<UpdateLocationResponse> responseObserver) {
+//
+//        UpdateLocationResponse response;
+//
+//        try {
+//            int orderId = request.getOrderId();
+//            double customerLatitude = request.getCustomerLatitude();
+//            double customerLongitude = request.getCustomerLongitude();
+//            boolean updated = orderService.updateLocation(orderId, customerLatitude, customerLongitude);
+//
+//            if (updated) {
+//                int searchOrderUpdateCount = orderService.searchOrderUpdateCount(request.getRobotId());
+//
+//                if(searchOrderUpdateCount >= 3) {
+//                    deliveryService.interruptTimer(request.getRobotId());
+//                } else {
+//                    deliveryService.resetTimer(request.getRobotId());
+//                }
+//
+//                response = UpdateLocationResponse.newBuilder()
+//                        .setSuccess(true)
+//                        .setMessage("고객 위치가 성공적으로 업데이트 되었습니다.")
+//                        .build();
+//            } else {
+//                response = UpdateLocationResponse.newBuilder()
+//                        .setSuccess(false)
+//                        .setMessage("고객 위치 변경에 실패했습니다.")
+//                        .build();
+//            }
+//            responseObserver.onNext(response);
+//            responseObserver.onCompleted();
+//
+//        } catch(Exception e) {
+//            responseObserver.onError(
+//                    Status.INTERNAL
+//                            .withDescription(e.getMessage())
+//                            .withCause(e).
+//                            asRuntimeException()
+//            );
+//        }
+//    }
 
 }

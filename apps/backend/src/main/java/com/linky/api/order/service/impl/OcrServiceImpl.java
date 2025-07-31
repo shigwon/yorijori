@@ -23,15 +23,12 @@ public class OcrServiceImpl implements OcrService {
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용
 
     @Override
-    public Map<String, String> sendImageToOcr(byte[] base64EncodedBytes) {
+    public Map<String, String> sendImageToOcr(String image) {
         try {
-            // bytes → 문자열로 변환 (base64 문자열)
-            String base64Image = new String(base64EncodedBytes, StandardCharsets.UTF_8);
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            Map<String, String> jsonBody = Map.of("image", base64Image);
+            Map<String, String> jsonBody = Map.of("image", image);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(jsonBody, headers);
 
             String ocrUrl = "http://localhost:8000/ocr";
