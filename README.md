@@ -91,7 +91,7 @@
 
 ##  Figma 디자인
 
-<img src="./Images/Figma.png" alt="Figma 썸네일">
+<img src="./docs/Images/Figma.png" alt="Figma 썸네일">
 [Figma 바로가기]https://www.figma.com/design/mBMO5N6H27ZwIGvuxiepbT/Meal-Planner-App-UI-Kit--Community-?node-id=0-1&p=f
 
 - 프로젝트의 전체 UI 흐름 및 화면 구성은 Figma 디자인 시안을 통해 확인한다.
