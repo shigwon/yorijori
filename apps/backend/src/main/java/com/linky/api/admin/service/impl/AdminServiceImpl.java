@@ -1,8 +1,8 @@
 package com.linky.api.admin.service.impl;
 
-import com.linky.admin.grpc.DailyCount;
-import com.linky.admin.grpc.HourlyCount;
 import com.linky.api.admin.entity.Admin;
+import com.linky.api.admin.model.DailyCountModel;
+import com.linky.api.admin.model.HourlyCountModel;
 import com.linky.api.admin.repository.AdminRepository;
 import com.linky.api.admin.service.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -74,18 +74,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<HourlyCount> getHourlyOrderCountInDay(LocalDate date) {
+    public List<HourlyCountModel> getHourlyOrderCountInDay(LocalDate date) {
         LocalDateTime startDateTime = date.atStartOfDay();
         LocalDateTime endDateTime = date.atTime(LocalTime.MAX);
 
         List<Map<String, Object>> rawData = adminRepository.getHourlyOrderCountInDay(startDateTime, endDateTime);
-        List<HourlyCount> result = new ArrayList<>();
+        List<HourlyCountModel> result = new ArrayList<>();
 
         // 0시부터 23시까지 모든 시간대 초기화 (0건으로)
         for (int hour = 0; hour < 24; hour++) {
-            result.add(HourlyCount.newBuilder()
-                    .setHour(hour)
-                    .setCount(0)
+            result.add(HourlyCountModel.builder()
+                    .hour(hour)
+                    .count(0)
                     .build());
         }
 
@@ -94,9 +94,9 @@ public class AdminServiceImpl implements AdminService {
             int hour = ((Number) row.get("hour")).intValue();
             int count = ((Number) row.get("count")).intValue();
 
-            result.set(hour, HourlyCount.newBuilder()
-                    .setHour(hour)
-                    .setCount(count)
+            result.set(hour, HourlyCountModel.builder()
+                    .hour(hour)
+                    .count(count)
                     .build());
         }
 
@@ -104,28 +104,28 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<DailyCount> getDailyOrderCountInWeek(LocalDate startDate) {
+    public List<DailyCountModel> getDailyOrderCountInWeek(LocalDate startDate) {
         LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
         LocalDate weekEnd = weekStart.plusDays(6);
         LocalDateTime startDateTime = weekStart.atStartOfDay();
         LocalDateTime endDateTime = weekEnd.atTime(LocalTime.MAX);
 
         List<Map<String, Object>> rawData = adminRepository.getDailyOrderCountInWeek(startDateTime, endDateTime);
-        List<DailyCount> result = new ArrayList<>();
+        List<DailyCountModel> result = new ArrayList<>();
 
         // 월요일(2)부터 일요일(1)까지 모든 요일 초기화 (0건으로)
         // MySQL DAYOFWEEK: 일요일=1, 월요일=2, ..., 토요일=7
         for (int dayOfWeek = 2; dayOfWeek <= 7; dayOfWeek++) { // 월~토
-            result.add(DailyCount.newBuilder()
-                    .setDayOfWeek(dayOfWeek)
-                    .setDayName(DAY_NAMES[dayOfWeek])
-                    .setCount(0)
+            result.add(DailyCountModel.builder()
+                    .dayOfWeek(dayOfWeek)
+                    .dayName(DAY_NAMES[dayOfWeek])
+                    .count(0)
                     .build());
         }
-        result.add(DailyCount.newBuilder() // 일요일
-                .setDayOfWeek(1)
-                .setDayName(DAY_NAMES[1])
-                .setCount(0)
+        result.add(DailyCountModel.builder() // 일요일
+                .dayOfWeek(1)
+                .dayName(DAY_NAMES[1])
+                .count(0)
                 .build());
 
         // 실제 데이터로 업데이트
@@ -141,10 +141,10 @@ public class AdminServiceImpl implements AdminService {
                 index = mysqlDayOfWeek - 2; // 0 ~ 5
             }
 
-            result.set(index, DailyCount.newBuilder()
-                    .setDayOfWeek(mysqlDayOfWeek)
-                    .setDayName(DAY_NAMES[mysqlDayOfWeek])
-                    .setCount(count)
+            result.set(index, DailyCountModel.builder()
+                    .dayOfWeek(mysqlDayOfWeek)
+                    .dayName(DAY_NAMES[mysqlDayOfWeek])
+                    .count(count)
                     .build());
         }
 

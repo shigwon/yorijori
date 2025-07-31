@@ -1,7 +1,7 @@
 package com.linky.api.admin.service;
 
-import com.linky.admin.grpc.DailyCount;
-import com.linky.admin.grpc.HourlyCount;
+import com.linky.api.admin.model.DailyCountModel;
+import com.linky.api.admin.model.HourlyCountModel;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,6 +14,6 @@ public interface AdminService {
     int getMonthlyOrderCount(int year, int month);
     int getOrderCountByPeriod(LocalDate startDate, LocalDate endDate);
 
-    List<HourlyCount> getHourlyOrderCountInDay(LocalDate date);
-    List<DailyCount> getDailyOrderCountInWeek(LocalDate startDate);
+    List<HourlyCountModel> getHourlyOrderCountInDay(LocalDate date);
+    List<DailyCountModel> getDailyOrderCountInWeek(LocalDate startDate);
 }
