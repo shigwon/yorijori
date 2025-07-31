@@ -7,6 +7,8 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.util.IOUtils;
 import com.linky.api.file.dto.request.FileDownloadRequestDto;
 import com.linky.api.file.dto.request.FileUploadRequestDto;
+import com.linky.api.file.exception.FileException;
+import com.linky.api.file.exception.enums.FileExceptionResult;
 import com.linky.api.file.service.FileService;
 import com.linky.api.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +51,7 @@ public class FileServiceImpl implements FileService {
 
             return url;
         } catch (Exception e) {
-            throw new RuntimeException("File Upload Failed");
+            throw new FileException(FileExceptionResult.FAIL_UPLOAD);
         }
     }
 
@@ -66,14 +68,14 @@ public class FileServiceImpl implements FileService {
 
             return IOUtils.toByteArray(inputStream);
         } catch (Exception e) {
-            throw new RuntimeException("File Download Failed");
+            throw new FileException(FileExceptionResult.FAIL_UPLOAD);
         }
     }
 
     @Override
     public byte[] downloadFileToS3ByUrl(String url) {
         if(url == null || url.isEmpty()){
-            throw new IllegalArgumentException("url is empty");
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
         try {
@@ -88,17 +90,15 @@ public class FileServiceImpl implements FileService {
                 return IOUtils.toByteArray(inputStream);
             }
         } catch (Exception e) {
-            log.error("downloadFileToS3ByUrl error : {}", e.getMessage());
+            throw new FileException(FileExceptionResult.FAIL_DOWNLOAD);
         }
-
-        return new byte[0];
     }
 
     private String extractBucketFromHost(String host) {
         int firstDotIndex = host.indexOf('.');
 
         if(firstDotIndex == -1 || !host.contains(".s3.")){
-            throw new IllegalArgumentException("host is not in bucket");
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
         return host.substring(0, firstDotIndex);
@@ -106,7 +106,7 @@ public class FileServiceImpl implements FileService {
 
     private static String getS3Key(String orderCode, String fileName, String fileCategory) {
         if (orderCode.trim().isEmpty() || fileName.trim().isEmpty() || fileCategory.trim().isEmpty()) {
-            throw new IllegalArgumentException("Request fields cannot be empty.");
+            throw new FileException(FileExceptionResult.BAD_REQUEST);
         }
 
         return "orders/" + orderCode + "/" + fileCategory + "/" + fileName;
