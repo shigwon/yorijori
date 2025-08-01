@@ -66,3 +66,7 @@ mybatis:
 sms:
   api-key: ${SMS_API_KEY}
   secret-key: ${SMS_SECRET_KEY}
+
+openvidu:
+  url: http://i13c102.p.ssafy.io:4443
+  secret: 1234
