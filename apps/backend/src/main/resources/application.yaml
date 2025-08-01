@@ -1,6 +1,11 @@
 grpc:
   server:
+    address: 0.0.0.0
     port: 50051
+
+server:
+  address: 0.0.0.0
+  port: 8080
 
 spring:
   application:
@@ -71,3 +76,7 @@ mybatis:
 sms:
   api-key: ${SMS_API_KEY}
   secret-key: ${SMS_SECRET_KEY}
+
+openvidu:
+  url: http://i13c102.p.ssafy.io:4443
+  secret: 1234

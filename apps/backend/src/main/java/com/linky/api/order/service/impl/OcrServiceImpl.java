@@ -36,8 +36,7 @@ public class OcrServiceImpl implements OcrService {
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> raw = objectMapper.readValue(response.getBody(), new TypeReference<>() {});
-                Map<String, String> result = (Map<String, String>) raw.get("result");
-                return result;
+                return (Map<String, String>) raw.get("result");
             } else {
                 return Map.of();
             }

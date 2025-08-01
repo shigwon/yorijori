@@ -59,6 +59,8 @@ public class MqttService {
     @ServiceActivator(inputChannel = "mqttInboundChannel")
     public void listenRobotMessage(Message<String> message) {
 
+        log.debug("testsetest  : {}", message.getPayload());
+
         String topic = (String) message.getHeaders().get("mqtt_receivedTopic");
 
         if (topic == null) {
@@ -97,7 +99,6 @@ public class MqttService {
                     RobotLocationDto robotLocationDto = objectMapper.readValue(payload, RobotLocationDto.class);
                     robotService.saveLocationToRedis(robotLocationDto);
                     break;
-
             }
         } catch (JsonProcessingException e) {
             log.warn("객체 매핑 에러, 커멘드 : {}, 에러 : {}", command, e.getMessage());
