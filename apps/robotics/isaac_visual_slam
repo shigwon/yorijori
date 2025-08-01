@@ -1,0 +1,15 @@
+cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
+./scripts/run_dev.sh
+
+
+sudo nvidia-ctk cdi generate --mode=csv --output=/etc/cdi/nvidia.yaml
+
+# setuptools_scm error solution
+pip install setuptools_scm==5.0.0
+
+
+sudo apt-get install -y ros-humble-isaac-ros-visual-slam
+
+
+
+########## SLAM 
