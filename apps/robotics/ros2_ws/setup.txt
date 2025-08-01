@@ -1,0 +1,4 @@
+sudo pip3 uninstall Jetson.GPIO
+pip3 install --upgrade Jetson.GPIO
+
+pip3 install --upgrade adafruit-blinka

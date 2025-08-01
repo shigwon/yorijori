@@ -25,8 +25,9 @@ spring:
 
   logging:
     level:
-      org.springframework.web: INFO
-      com.example: DEBUG
+      org.springframework.ai: DEBUG
+      org.springframework.web.client: DEBUG
+      com.linky.api.aichat: DEBUG
 
     pattern:
       console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
@@ -58,6 +59,15 @@ spring:
     client-id: linky-server
     topic: linky/robot
 
+  ai:
+    openai:
+      chat:
+        options:
+          model: gpt-4.1-nano
+          temperature: 0.7
+          max-tokens: 4096
+      api-key: ${GMS_API_KEY}
+      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
 
 mybatis:
   mapper-locations: classpath:/mappers/**/*.xml
