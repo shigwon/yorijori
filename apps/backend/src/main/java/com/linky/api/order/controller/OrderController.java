@@ -45,7 +45,7 @@ public class OrderController {
         if(success) {
             int orderId = orderService.searchOrderId(createOrderRequest);
             Order order = orderMapper.toEntity(createOrderRequest);
-            messageService.messageSend(order.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + order.getRobotId() + "&code=" + order.getCode());
+            //messageService.messageSend(order.getTel(), "https://naver.com?order_id=" + orderId +"&robot_id=" + order.getRobotId() + "&code=" + order.getCode());
             return ApiResponseEntity.successResponseEntity("주문 생성에 성공했습니다.");
         } else {
             return ApiResponseEntity.failResponseEntity("주문 생성에 실패했습니다.");

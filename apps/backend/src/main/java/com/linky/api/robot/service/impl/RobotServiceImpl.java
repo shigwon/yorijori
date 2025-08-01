@@ -6,8 +6,10 @@ import com.linky.api.robot.mapper.RobotLocationMapper;
 import com.linky.api.robot.repository.RobotRedisRepository;
 import com.linky.api.robot.service.RobotService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService {
