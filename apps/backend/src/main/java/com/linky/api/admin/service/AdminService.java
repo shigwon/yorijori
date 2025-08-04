@@ -2,14 +2,16 @@ package com.linky.api.admin.service;
 
 import com.linky.api.admin.model.DailyCountModel;
 import com.linky.api.admin.model.HourlyCountModel;
+import jakarta.servlet.http.HttpSession;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface AdminService {
 
-    String login(String email, String password);
-    int getDailyOrderCount(LocalDate date);
+    String loginWithSession(String email, String password, HttpSession session);
+    boolean logoutWithSession(HttpSession session);
+    boolean isValidSession(HttpSession session);   int getDailyOrderCount(LocalDate date);
     int getWeeklyOrderCount(LocalDate startDate);
     int getMonthlyOrderCount(int year, int month);
     int getOrderCountByPeriod(LocalDate startDate, LocalDate endDate);

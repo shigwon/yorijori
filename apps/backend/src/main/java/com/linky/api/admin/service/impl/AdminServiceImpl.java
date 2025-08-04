@@ -5,6 +5,7 @@ import com.linky.api.admin.model.DailyCountModel;
 import com.linky.api.admin.model.HourlyCountModel;
 import com.linky.api.admin.repository.AdminRepository;
 import com.linky.api.admin.service.AdminService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,15 +24,74 @@ import java.util.Map;
 public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
-
+    private static final String ADMIN_SESSION_KEY = "ADMIN_INFO";
     private static final String[] DAY_NAMES = {
             "", "일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"
     };
 
     @Override
-    public String login(String email, String password) {
-        Admin admin = adminRepository.findByEmailAndPassword(email, password);
-        return admin != null ? admin.getName() : null;
+    public String loginWithSession(String email, String password, HttpSession session) {
+        try {
+            Admin admin = adminRepository.findByEmailAndPassword(email, password);
+
+            if (admin != null) {
+                // 세션에 관리자 정보 저장
+                session.setAttribute(ADMIN_SESSION_KEY, admin);
+                session.setAttribute("ADMIN_EMAIL", admin.getEmail());
+                session.setAttribute("ADMIN_NAME", admin.getName());
+                session.setAttribute("LOGIN_TIME", System.currentTimeMillis());
+
+                // 세션 타임아웃 설정 (30분)
+                session.setMaxInactiveInterval(30 * 60);
+
+                log.info("관리자 세션 로그인 성공: {} (Session ID: {})",
+                        admin.getEmail(), session.getId());
+
+                return admin.getName();
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.error("세션 로그인 처리 중 오류 발생", e);
+            return null;
+        }
+    }
+
+    @Override
+    public boolean logoutWithSession(HttpSession session) {
+        try {
+            if (session != null) {
+                String adminEmail = (String) session.getAttribute("ADMIN_EMAIL");
+                String sessionId = session.getId();
+
+                // 세션 무효화
+                session.invalidate();
+
+                log.info("관리자 세션 로그아웃 성공: {} (Session ID: {})",
+                        adminEmail, sessionId);
+
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("세션 로그아웃 처리 중 오류 발생", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isValidSession(HttpSession session) {
+        if (session == null) {
+            return false;
+        }
+
+        try {
+            Admin adminInfo = (Admin) session.getAttribute(ADMIN_SESSION_KEY);
+            return adminInfo != null;
+        } catch (Exception e) {
+            log.warn("세션 유효성 검사 중 오류 발생", e);
+            return false;
+        }
     }
 
     @Override

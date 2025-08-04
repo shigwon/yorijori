@@ -6,7 +6,7 @@
 
     <select id="findByEmailAndPassword" resultType="com.linky.api.admin.entity.Admin">
         SELECT id, email, password, name
-        FROM admin
+        FROM Admins
         WHERE email = #{email}
           AND password = #{password}
     </select>
