@@ -6,7 +6,6 @@ import com.linky.api.order.entity.Order;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.repository.OrderRepository;
 import com.linky.api.order.service.OrderService;
-import com.linky.order.grpc.OrderCreateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +28,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setSpaceNum(spaceNum);
         int result = orderRepository.createOrder(order);
+
         return result > 0;
     }
 
@@ -52,6 +52,11 @@ public class OrderServiceImpl implements OrderService {
     public boolean updateDeliveryState(int orderId, String state) {
         int result = orderRepository.updateDeliveryState(orderId, state);
         return result > 0;
+    }
+
+    @Override
+    public int searchOrderCreateActivate(int robotId) {
+        return orderRepository.searchOrderCreateActivate(robotId);
     }
 
     @Override

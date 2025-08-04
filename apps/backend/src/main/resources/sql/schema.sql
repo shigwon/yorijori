@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `Robots` (
 CREATE TABLE IF NOT EXISTS `orders` (
     `id`                  INT             NOT NULL AUTO_INCREMENT COMMENT '주문식별번호',
     `robot_id`            INT             NOT NULL COMMENT '로봇식별번호',
-    `code`                VARCHAR(20)     NULL COMMENT '주문번호',
+    `code`                VARCHAR(20)     NULL COMMENT '주문번호' UNIQUE,
     `tel`                 VARCHAR(20)     NOT NULL COMMENT '전화번호',
     `customer_latitude`   DECIMAL(10,6)   NULL COMMENT '고객위치위도',
     `customer_longitude`  DECIMAL(10,6)   NULL COMMENT '고객위치경도',

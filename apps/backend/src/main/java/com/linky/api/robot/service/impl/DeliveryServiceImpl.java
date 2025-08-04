@@ -73,10 +73,10 @@ public class DeliveryServiceImpl implements DeliveryService {
     public void sendOrderList(int robotId) {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
 
-        for (OrderSummary order : orderList) {
-            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
-            log.info(order.toString());
-        }
+//        for (OrderSummary order : orderList) {
+//            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
+//            log.info(order.toString());
+//        }
 
         mqttPublishService.sendOrderList(robotId, orderList);
     }
