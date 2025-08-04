@@ -7,6 +7,7 @@ import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.dto.RobotLocationDto;
 import com.linky.api.robot.dto.RobotRequestResultDto;
+import com.linky.api.robot.entity.Section;
 import com.linky.api.robot.service.RobotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,10 +57,14 @@ public class MqttService {
         sendPayload(robotId, "orderList", orderList);
     }
 
+    public void sendCloseSection(int robotId, Section section) {
+        sendPayload(robotId, "closeSection", section);
+    }
+
+
     @ServiceActivator(inputChannel = "mqttInboundChannel")
     public void listenRobotMessage(Message<String> message) {
 
-        log.debug("testsetest  : {}", message.getPayload());
 
         String topic = (String) message.getHeaders().get("mqtt_receivedTopic");
 
