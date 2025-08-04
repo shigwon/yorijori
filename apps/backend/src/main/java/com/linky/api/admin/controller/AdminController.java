@@ -28,10 +28,6 @@ public class AdminController {
     private final AdminService adminService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    /**
-     * 관리자 세션 로그인
-     * POST /api/admin/login
-     */
     @PostMapping("/login")
     public ResponseEntity<ApiResponseEntity<LoginResponseDto>> login(
             @Valid @RequestBody LoginRequestDto request,
@@ -77,10 +73,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 관리자 세션 로그아웃
-     * POST /api/admin/logout
-     */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponseEntity<LogoutResponseDto>> logout(
             HttpServletRequest httpRequest) {
@@ -115,10 +107,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 일별 주문 건수 조회
-     * GET /api/admin/orders/count/daily?date=2024-01-01
-     */
     @GetMapping("/orders/count/daily")
     public ResponseEntity<ApiResponseEntity<OrderCountResponseDto>> getDailyOrderCount(
             @Valid DailyOrderCountRequestDto request) {
@@ -143,10 +131,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 주별 주문 건수 조회 (월요일 시작 기준)
-     * GET /api/admin/orders/count/weekly?startDate=2024-01-01
-     */
     @GetMapping("/orders/count/weekly")
     public ResponseEntity<ApiResponseEntity<OrderCountResponseDto>> getWeeklyOrderCount(
             @Valid WeeklyOrderCountRequestDto request) {
@@ -171,10 +155,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 월별 주문 건수 조회
-     * GET /api/admin/orders/count/monthly?year=2024&month=1
-     */
     @GetMapping("/orders/count/monthly")
     public ResponseEntity<ApiResponseEntity<OrderCountResponseDto>> getMonthlyOrderCount(
             @Valid MonthlyOrderCountRequestDto request) {
@@ -194,10 +174,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 기간별 주문 건수 조회
-     * GET /api/admin/orders/count/period?startDate=2024-01-01&endDate=2024-01-31
-     */
     @GetMapping("/orders/count/period")
     public ResponseEntity<ApiResponseEntity<OrderCountResponseDto>> getOrderCountByPeriod(
             @Valid PeriodOrderCountRequestDto request) {
@@ -229,10 +205,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 특정 날짜의 시간대별 주문 통계
-     * GET /api/admin/orders/statistics/hourly?date=2024-01-01
-     */
     @GetMapping("/orders/statistics/hourly")
     public ResponseEntity<ApiResponseEntity<HourlyOrderCountResponseDto>> getHourlyOrderCountInDay(
             @Valid DailyOrderCountRequestDto request) {
@@ -267,10 +239,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * 특정 주의 요일별 주문 통계
-     * GET /api/admin/orders/statistics/weekly?startDate=2024-01-01
-     */
     @GetMapping("/orders/statistics/weekly")
     public ResponseEntity<ApiResponseEntity<WeeklyOrderCountResponseDto>> getDailyOrderCountInWeek(
             @Valid WeeklyOrderCountRequestDto request) {

@@ -64,7 +64,6 @@ public class AdminServiceImpl implements AdminService {
                 String adminEmail = (String) session.getAttribute("ADMIN_EMAIL");
                 String sessionId = session.getId();
 
-                // 세션 무효화
                 session.invalidate();
 
                 log.info("관리자 세션 로그아웃 성공: {} (Session ID: {})",
@@ -104,7 +103,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public int getWeeklyOrderCount(LocalDate startDate) {
-        // 월요일 시작 기준으로 주간 계산
         LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
         LocalDate weekEnd = weekStart.plusDays(6);
 
@@ -141,7 +139,6 @@ public class AdminServiceImpl implements AdminService {
         List<Map<String, Object>> rawData = adminRepository.getHourlyOrderCountInDay(startDateTime, endDateTime);
         List<HourlyCountModel> result = new ArrayList<>();
 
-        // 0시부터 23시까지 모든 시간대 초기화 (0건으로)
         for (int hour = 0; hour < 24; hour++) {
             result.add(HourlyCountModel.builder()
                     .hour(hour)
@@ -149,7 +146,6 @@ public class AdminServiceImpl implements AdminService {
                     .build());
         }
 
-        // 실제 데이터로 업데이트
         for (Map<String, Object> row : rawData) {
             int hour = ((Number) row.get("hour")).intValue();
             int count = ((Number) row.get("count")).intValue();
@@ -173,16 +169,14 @@ public class AdminServiceImpl implements AdminService {
         List<Map<String, Object>> rawData = adminRepository.getDailyOrderCountInWeek(startDateTime, endDateTime);
         List<DailyCountModel> result = new ArrayList<>();
 
-        // 월요일(2)부터 일요일(1)까지 모든 요일 초기화 (0건으로)
-        // MySQL DAYOFWEEK: 일요일=1, 월요일=2, ..., 토요일=7
-        for (int dayOfWeek = 2; dayOfWeek <= 7; dayOfWeek++) { // 월~토
+        for (int dayOfWeek = 2; dayOfWeek <= 7; dayOfWeek++) {
             result.add(DailyCountModel.builder()
                     .dayOfWeek(dayOfWeek)
                     .dayName(DAY_NAMES[dayOfWeek])
                     .count(0)
                     .build());
         }
-        result.add(DailyCountModel.builder() // 일요일
+        result.add(DailyCountModel.builder()
                 .dayOfWeek(1)
                 .dayName(DAY_NAMES[1])
                 .count(0)
@@ -193,12 +187,11 @@ public class AdminServiceImpl implements AdminService {
             int mysqlDayOfWeek = ((Number) row.get("dayOfWeek")).intValue();
             int count = ((Number) row.get("count")).intValue();
 
-            // MySQL 요일을 리스트 인덱스로 변환
             int index;
-            if (mysqlDayOfWeek == 1) { // 일요일
-                index = 6; // 리스트의 마지막
-            } else { // 월요일(2) ~ 토요일(7)
-                index = mysqlDayOfWeek - 2; // 0 ~ 5
+            if (mysqlDayOfWeek == 1) {
+                index = 6;
+            } else {
+                index = mysqlDayOfWeek - 2;
             }
 
             result.set(index, DailyCountModel.builder()
