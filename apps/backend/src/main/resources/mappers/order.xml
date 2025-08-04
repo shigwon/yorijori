@@ -50,7 +50,19 @@
     <update id="updateDeliveryState">
         UPDATE orders
         SET state = #{state}
+        <if test="state == 'DELIVERED'">
+            , end_time = now()
+        </if>
         WHERE id = #{orderId}
+    </update>
+
+    <update id="updateOrderStatusByorderId">
+        UPDATE orders
+        SET state = 'DELIVERING', start_time = now()
+        WHERE id IN
+        <foreach collection="orderList" item="order" open="(" separator="," close=")">
+            #{order.orderId}
+        </foreach>
     </update>
 
     <update id="updateLocationAndFaceImageUrl">

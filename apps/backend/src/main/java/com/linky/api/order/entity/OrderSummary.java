@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderSummary {
-    int id;
+    int orderId;
     String code;
     String tel;
     double customerLatitude;

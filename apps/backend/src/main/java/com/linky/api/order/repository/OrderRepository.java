@@ -19,4 +19,5 @@ public interface OrderRepository {
     List<OrderSummary> searchOrderList(int robotId);
     int searchOrderUpdateCount(int robotId);
     int searchOrderCreateActivate(int robotId);
+    void updateOrderStatusByorderId(List<OrderSummary> orderList);
 }
