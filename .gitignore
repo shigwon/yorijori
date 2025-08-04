@@ -350,4 +350,4 @@ $RECYCLE.BIN/
 apps/robotics/ros2_ws/build
 apps/robotics/ros2_ws/install
 apps/robotics/ros2_ws/log
-
+.venv
