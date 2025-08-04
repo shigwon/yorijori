@@ -6,7 +6,7 @@
 
     <select id="findByEmailAndPassword" resultType="com.linky.api.admin.entity.Admin">
         SELECT id, email, password, name
-        FROM admin
+        FROM Admins
         WHERE email = #{email}
           AND password = #{password}
     </select>
@@ -18,7 +18,7 @@
           AND start_time &lt;= #{endDateTime}
     </select>
 
-    <select id="getHourlyOrderCount" resultType="map">
+    <select id="getHourlyOrderCountInDay" resultType="map">
         SELECT
             HOUR(start_time) as hour,
             COUNT(*) as count
@@ -27,7 +27,6 @@
           AND start_time &lt;= #{endDateTime}
         GROUP BY HOUR(start_time)
         ORDER BY hour
-
     </select>
 
     <select id="getDailyOrderCountInWeek" resultType="map">
