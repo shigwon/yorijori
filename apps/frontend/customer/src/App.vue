@@ -2,15 +2,16 @@
 // 고객 앱 상태 관리
 import { ref, computed } from 'vue'
 import WelcomeScreen from './components/01_WelcomeScreen.vue'
-import HowToUseScreen from './components/03_HowToUseScreen.vue'
-import TermsAgreementScreen from './components/04_TermsAgreementScreen.vue'
-import PhotoSelectionScreen from './components/07_PhotoSelectionScreen.vue'
+import HowToUseScreen from './components/02_HowToUseScreen.vue'
+import TermsAgreementScreen from './components/03_TermsAgreementScreen.vue'
+import PhotoSelectionScreen from './components/04_PhotoSelectionScreen.vue'
 import CameraCapture from './components/05_CameraCapture.vue'
 import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
-import LocationSettingScreen from './components/08_LocationSettingScreen.vue'
-import DeliveryTrackingScreen from './components/10_DeliveryTrackingScreen.vue'
-import FoodCompartmentScreen from './components/09_FoodCompartmentScreen.vue'
-import SurveyScreen from './components/12_SurveyScreen.vue'
+import LocationSettingScreen from './components/07_LocationSettingScreen.vue'
+import DeliveryTrackingScreen from './components/08_DeliveryTrackingScreen.vue'
+import DeliveryCompleteModal from './components/09_DeliveryCompleteModal.vue'
+import FoodCompartmentScreen from './components/10_FoodCompartmentScreen.vue'
+import SurveyScreen from './components/11_SurveyScreen.vue'
 
 const currentScreen = ref('welcome')
 const showFaceRecognitionModal = ref(false)

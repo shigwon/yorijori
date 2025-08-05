@@ -67,7 +67,7 @@
 
 <script setup>
 import { onMounted, defineEmits, ref, defineProps } from 'vue'
-import DeliveryCompleteModal from './11_DeliveryCompleteModal.vue'
+import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
 const emit = defineEmits(['delivery-completed', 'show-compartment'])
 const showDeliveryCompleteModal = ref(false)
