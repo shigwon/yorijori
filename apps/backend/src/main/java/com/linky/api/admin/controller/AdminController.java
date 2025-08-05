@@ -4,10 +4,14 @@ import com.linky.api.admin.dto.request.*;
 import com.linky.api.admin.dto.response.*;
 import com.linky.api.admin.service.AdminService;
 import com.linky.api.common.response.entity.ApiResponseEntity;
+import com.linky.api.robot.dto.RobotListResponseDto;
+import com.linky.api.robot.dto.RobotWithLocationDto;
+import com.linky.api.robot.service.RobotService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +30,13 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final RobotService robotService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private boolean isAuthenticated(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        return adminService.isValidSession(session);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponseEntity<LoginResponseDto>> login(
@@ -273,4 +283,87 @@ public class AdminController {
             return ApiResponseEntity.failResponseEntity("주간 요일별 주문 통계 조회 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
+    @GetMapping("/robots")
+    public ResponseEntity<ApiResponseEntity<RobotListResponseDto>> getRobots(
+            @RequestParam(value = "status", required = false) String status,
+            HttpServletRequest httpRequest) {
+
+        if (!isAuthenticated(httpRequest)) {
+            return ApiResponseEntity.unauthorizedResponseEntity("인증이 필요합니다. 다시 로그인해주세요.");
+        }
+
+        try {
+            RobotListResponseDto robotList;
+
+            if (status != null && !status.trim().isEmpty()) {
+                // 상태별 조회
+                robotList = robotService.getRobotsByStatus(status.trim().toUpperCase());
+                log.info("로봇 상태별 조회 완료: status={}, count={}", status, robotList.getTotalCount());
+            } else {
+                // 전체 조회
+                robotList = robotService.getAllRobots();
+                log.info("전체 로봇 목록 조회 완료: count={}", robotList.getTotalCount());
+            }
+
+            return ApiResponseEntity.successResponseEntity(robotList);
+
+        } catch (Exception e) {
+            log.error("로봇 조회 중 오류 발생: status={}", status, e);
+            return ApiResponseEntity.failResponseEntity("로봇 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/robots/{robotId}")
+    public ResponseEntity<ApiResponseEntity<RobotWithLocationDto>> getRobotDetail(
+            @PathVariable("robotId") int robotId,
+            HttpServletRequest httpRequest) {
+
+        if (!isAuthenticated(httpRequest)) {
+            return ApiResponseEntity.unauthorizedResponseEntity("인증이 필요합니다. 다시 로그인해주세요.");
+        }
+
+        try {
+            // 기본 정보 + 위치 정보 통합 조회
+            RobotWithLocationDto robotDetail = robotService.getRobotWithLocation(robotId);
+
+            log.info("로봇 상세 정보 조회 완료: robotId={}, location={}",
+                    robotId, robotDetail.isLocationAvailable() ? "있음" : "없음");
+
+            return ApiResponseEntity.successResponseEntity(robotDetail);
+
+        } catch (RuntimeException e) {
+            log.warn("로봇 상세 정보 조회 실패: robotId={}, message={}", robotId, e.getMessage());
+            return ApiResponseEntity.failResponseEntity(e.getMessage());
+
+        } catch (Exception e) {
+            log.error("로봇 상세 정보 조회 중 오류 발생: robotId={}", robotId, e);
+            return ApiResponseEntity.failResponseEntity("로봇 상세 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 모든 로봇의 통합 정보 조회 (기본 정보 + 위치 정보)
+     * GET /api/admin/robots/with-location
+     */
+    @GetMapping("/robots/with-location")
+    public ResponseEntity<ApiResponseEntity<List<RobotWithLocationDto>>> getAllRobotsWithLocation(
+            HttpServletRequest httpRequest) {
+
+        if (!isAuthenticated(httpRequest)) {
+            return ApiResponseEntity.unauthorizedResponseEntity("인증이 필요합니다. 다시 로그인해주세요.");
+        }
+
+        try {
+            List<RobotWithLocationDto> robotsWithLocation = robotService.getAllRobotsWithLocation();
+
+            log.info("전체 로봇 통합 정보 조회 완료: count={}", robotsWithLocation.size());
+
+            return ApiResponseEntity.successResponseEntity(robotsWithLocation);
+
+        } catch (Exception e) {
+            log.error("전체 로봇 통합 정보 조회 중 오류 발생", e);
+            return ApiResponseEntity.failResponseEntity("전체 로봇 통합 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
 }

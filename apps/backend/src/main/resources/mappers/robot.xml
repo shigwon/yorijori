@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.linky.api.robot.repository.RobotRepository">
+
+    <!-- Robot ResultMap -->
+    <resultMap id="robotResultMap" type="com.linky.api.robot.entity.Robot">
+        <id property="id" column="id" />
+        <result property="code" column="code" />
+        <result property="status" column="status" />
+        <result property="lastChargeTime" column="last_charge_time" />
+    </resultMap>
+
+    <!-- 모든 로봇 목록 조회 -->
+    <select id="findAllRobots" resultMap="robotResultMap">
+        SELECT
+            id,
+            code,
+            status,
+            last_charge_time
+        FROM Robots
+        ORDER BY id ASC
+    </select>
+
+    <!-- 로봇 ID로 상세 정보 조회 -->
+    <select id="findRobotById" parameterType="int" resultMap="robotResultMap">
+        SELECT
+            id,
+            code,
+            status,
+            last_charge_time
+        FROM Robots
+        WHERE id = #{id}
+    </select>
+
+    <!-- 로봇 상태별 조회 -->
+    <select id="findRobotsByStatus" parameterType="string" resultMap="robotResultMap">
+        SELECT
+            id,
+            code,
+            status,
+            last_charge_time
+        FROM Robots
+        WHERE status = #{status}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 로봇 총 개수 조회 -->
+    <select id="countAllRobots" resultType="int">
+        SELECT COUNT(*) FROM Robots
+    </select>
+
+</mapper>
