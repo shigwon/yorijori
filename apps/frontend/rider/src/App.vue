@@ -8,6 +8,8 @@ import ManualConfirmScreen from './components/05_ManualConfirmScreen.vue'
 import LocationRequestScreen from './components/06_LocationRequestScreen.vue'
 import PhotoCaptureScreen from './components/07_PhotoCaptureScreen.vue'
 import CompleteScreen from './components/08_CompleteScreen.vue'
+import LoadingModal from './components/09_LoadingModal.vue'
+import ScanConfirmModal from './components/10_ScanConfirmModal.vue'
 
 const { currentScreen, progressPercent } = useAppState()
 </script>
@@ -29,6 +31,8 @@ const { currentScreen, progressPercent } = useAppState()
     <LocationRequestScreen v-else-if="currentScreen === 'location-request'" />
     <PhotoCaptureScreen v-else-if="currentScreen === 'photo-capture'" />
     <CompleteScreen v-else-if="currentScreen === 'complete'" />
+    <LoadingModal v-else-if="currentScreen === 'loading-modal'" />
+    <ScanConfirmModal v-else-if="currentScreen === 'scan-confirm-modal'" />
   </div>
 </template>
 
