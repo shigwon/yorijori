@@ -1,29 +1,31 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from geometry_msgs.msg import Point
 
 import paho.mqtt.client as mqtt
 import threading
 import time
+import json
+
+MQTT_HOST = '192.168.100.83'
+MQTT_PORT = 1883
 
 class MQTTBridgeNode(Node):
     def __init__(self):
         super().__init__('mqtt_bridge_node')
 
-        self.mqtt_to_ros_pub = self.create_publisher(String, 'mqtt_incoming', 10)
+        self.position_sub = self.create_subscription(
+            Point,
+            '/slam/position',
+            self.slam_position_callback,
+            10
+        )
 
-        self.ros_to_mqtt_sub = self.create_subscription(
-            String,
-            'mqtt_outgoing',
-            self.ros_to_mqtt_callback,
-            10)
-
-        self.mqtt_host = '192.168.100.83'
-        self.mqtt_port = 1883
+        self.mqtt_host = MQTT_HOST
+        self.mqtt_port = MQTT_PORT
 
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self.on_connect
-        self.mqtt_client.on_message = self.on_message
         self.mqtt_client.on_disconnect = self.on_disconnect
 
         self._connected = False
@@ -50,7 +52,6 @@ class MQTTBridgeNode(Node):
         if rc == 0:
             self.get_logger().info("Connected to MQTT broker successfully.")
             self._connected = True
-            client.subscribe('linky/robot/1/test')
         else:
             self.get_logger().warn(f"MQTT connection failed with code {rc}")
             self._connected = False
@@ -59,19 +60,23 @@ class MQTTBridgeNode(Node):
         self._connected = False
         self.get_logger().warn(f"Disconnected from MQTT broker (rc={rc})")
 
-    def on_message(self, client, userdata, msg):
-        message = msg.payload.decode('utf-8')
-        self.get_logger().info(f"MQTT Received: Topic={msg.topic} Message={message}")
-        ros_msg = String()
-        ros_msg.data = message
-        self.mqtt_to_ros_pub.publish(ros_msg)
+    def slam_position_callback(self, msg: Point):
+        if not self._connected:
+            self.get_logger().warn("MQTT not connected. Skipping slam position publish.")
+            return
 
-    def ros_to_mqtt_callback(self, msg):
-        if self._connected:
-            self.get_logger().info(f"Publishing to MQTT: {msg.data}")
-            self.mqtt_client.publish('linky/robot/1/test', msg.data)
-        else:
-            self.get_logger().warn("MQTT not connected. Skipping publish.")
+        payload = {
+            "robotId": "0",
+            "command": "updateLocation",
+            "x": round(msg.x, 2),
+            "y": round(msg.y, 2),
+            "z": round(msg.z, 2)
+        }
+
+        topic = "linky/robot/0/updateLocation"
+
+        self.get_logger().info(f"Publishing SLAM Position to MQTT: Topic={topic} Payload={payload}")
+        self.mqtt_client.publish(topic, json.dumps(payload))
 
     def destroy_node(self):
         self._stop_event.set()
@@ -79,7 +84,6 @@ class MQTTBridgeNode(Node):
             self.mqtt_client.disconnect()
             self.mqtt_client.loop_stop()
         super().destroy_node()
-
 
 def main(args=None):
     rclpy.init(args=args)

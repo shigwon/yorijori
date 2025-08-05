@@ -16,8 +16,8 @@ class FaceRecognitionClient(Node):
 
         self.bridge = CvBridge()
 
-        self.db_image_path = '/home/c102/S13P11C102/apps/robotics/ros2_ws/src/face_recognition_pkg/images/face1.jpg'
-        self.query_image_path = '/home/c102/S13P11C102/apps/robotics/ros2_ws/src/face_recognition_pkg/images/face5.jpg'
+        self.db_image_path = '/home/c102/S13P11C102/apps/robotics/media/face1.jpg'
+        self.query_image_path = '/home/c102/S13P11C102/apps/robotics/media/face5.jpg'
 
         self.db_image = cv2.imread(self.db_image_path)
         self.query_image = cv2.imread(self.query_image_path)
