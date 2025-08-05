@@ -10,6 +10,7 @@ import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
 import LocationSettingScreen from './components/08_LocationSettingScreen.vue'
 import DeliveryTrackingScreen from './components/10_DeliveryTrackingScreen.vue'
 import FoodCompartmentScreen from './components/09_FoodCompartmentScreen.vue'
+import SurveyScreen from './components/12_SurveyScreen.vue'
 
 const currentScreen = ref('welcome')
 const showFaceRecognitionModal = ref(false)
@@ -17,6 +18,7 @@ const capturedImage = ref('')
 const deliveryLocation = ref(null)
 const deliveryAddress = ref('')
 const showFoodCompartment = ref(false)
+const showSurveyScreen = ref(false)
 
 const progressPercent = computed(() => {
   switch (currentScreen.value) {
@@ -66,11 +68,17 @@ const handleCompartmentConfirm = () => {
   // 페이지 나가기
   window.close()
 }
+
+const handleSurvey = () => {
+  console.log('고객만족도 평가 클릭')
+  showFoodCompartment.value = false
+  showSurveyScreen.value = true
+}
 </script>
 
 <template>
   <!-- Progress Bar (separated from modal) -->
-  <div class="progress-bar-wrapper" v-if="!showFoodCompartment">
+  <div class="progress-bar-wrapper" v-if="!showFoodCompartment && !showSurveyScreen">
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
     </div>
@@ -110,6 +118,12 @@ const handleCompartmentConfirm = () => {
     <FoodCompartmentScreen 
       v-if="showFoodCompartment" 
       @confirm="handleCompartmentConfirm"
+      @survey="handleSurvey"
+    />
+    
+    <!-- 설문조사 화면 -->
+    <SurveyScreen 
+      v-if="showSurveyScreen" 
     />
   </div>
 </template>
