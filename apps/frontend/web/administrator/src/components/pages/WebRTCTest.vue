@@ -67,6 +67,30 @@
           </button>
         </div>
         
+        <!-- 비디오 영역 -->
+        <div class="video-container">
+          <div class="video-section">
+            <h4>로컬 비디오 (PUBLISHER)</h4>
+            <video 
+              ref="localVideo" 
+              autoplay 
+              muted 
+              playsinline
+              class="video-element"
+            ></video>
+          </div>
+          
+          <div class="video-section">
+            <h4>원격 비디오 (SUBSCRIBER)</h4>
+            <video 
+              ref="remoteVideo" 
+              autoplay 
+              playsinline
+              class="video-element"
+            ></video>
+          </div>
+        </div>
+        
         <div v-if="messages.length > 0" class="messages-section">
           <h4>연결 로그:</h4>
           <div class="messages-container">
@@ -95,8 +119,14 @@
   </template>
   
   <script setup>
-  import { ref, onUnmounted } from 'vue'
+  import { ref, onUnmounted, onMounted } from 'vue'
   import axios from 'axios'
+  
+  // OpenVidu 객체들
+  let OV = null
+  let session = null
+  let publisher = null
+  let subscriber = null
   
   // Reactive data
   const robotId = ref('1')
@@ -107,6 +137,8 @@
   const isConnected = ref(false)
   const messages = ref([])
   const isAutoTesting = ref(false)
+  const localVideo = ref(null)
+  const remoteVideo = ref(null)
   
   // Methods
   // 토큰 발급 메서드
@@ -148,8 +180,26 @@
     }
   }
   
+  // OpenVidu 초기화
+  const initializeOpenVidu = () => {
+    try {
+      // OpenVidu 객체 생성 (CDN에서 로드된 경우)
+      if (typeof window.OpenVidu !== 'undefined') {
+        OV = new window.OpenVidu();
+        addMessage('success', 'OpenVidu 초기화 성공');
+      } else {
+        addMessage('error', 'OpenVidu SDK가 로드되지 않았습니다. CDN을 확인해주세요.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      addMessage('error', `OpenVidu 초기화 실패: ${error.message}`);
+      return false;
+    }
+  }
+  
   // WebRTC 연결 메서드
-  const connectWebRTC = () => {
+  const connectWebRTC = async () => {
     if (!token.value) {
       addMessage('error', '토큰이 없습니다. 먼저 토큰을 발급해주세요.');
       return;
@@ -158,24 +208,91 @@
     try {
       addMessage('info', 'WebRTC 연결 시도 중...');
       
-      // OpenVidu WebRTC 연결 시뮬레이션
-      // 실제 구현에서는 OpenVidu JavaScript SDK를 사용
-      setTimeout(() => {
-        isConnected.value = true;
-        addMessage('success', 'WebRTC 연결 성공!');
-        addMessage('info', `robot ID: ${robotId.value}`);
-        addMessage('info', `Role: ${role.value}`);
-      }, 2000);
+      // OpenVidu 초기화
+      if (!initializeOpenVidu()) {
+        return;
+      }
+      
+      // 세션 생성
+      session = OV.initSession();
+      
+      // 세션 이벤트 리스너 등록
+      session.on('streamCreated', (event) => {
+        addMessage('info', '원격 스트림 감지됨');
+        subscriber = session.subscribe(event.stream, undefined);
+        if (remoteVideo.value) {
+          subscriber.addVideoElement(remoteVideo.value);
+        }
+      });
+      
+      session.on('streamDestroyed', (event) => {
+        addMessage('info', '원격 스트림 종료됨');
+      });
+      
+      session.on('exception', (exception) => {
+        addMessage('error', `세션 예외 발생: ${exception.message}`);
+      });
+      
+      // 세션 연결
+      await session.connect(token.value, { clientData: `robot-${robotId.value}` });
+      addMessage('success', '세션 연결 성공!');
+      
+      // PUBLISHER 역할인 경우 로컬 미디어 스트림 생성
+      if (role.value === 'PUBLISHER') {
+        try {
+          publisher = await OV.initPublisherAsync(undefined, {
+            audioSource: undefined,
+            videoSource: undefined,
+            publishAudio: true,
+            publishVideo: true,
+            resolution: '640x480',
+            frameRate: 30,
+            insertMode: 'APPEND',
+            mirror: false
+          });
+          
+          if (localVideo.value) {
+            publisher.addVideoElement(localVideo.value);
+          }
+          
+          await session.publish(publisher);
+          addMessage('success', '로컬 스트림 발행 성공');
+        } catch (error) {
+          addMessage('error', `로컬 스트림 발행 실패: ${error.message}`);
+        }
+      }
+      
+      isConnected.value = true;
+      addMessage('info', `robot ID: ${robotId.value}`);
+      addMessage('info', `Role: ${role.value}`);
       
     } catch (error) {
       addMessage('error', `WebRTC 연결 실패: ${error.message}`);
+      console.error('WebRTC 연결 오류:', error);
     }
   }
   
   // WebRTC 연결 해제
   const disconnectWebRTC = () => {
-    isConnected.value = false;
-    addMessage('info', 'WebRTC 연결 해제됨');
+    try {
+      if (session) {
+        session.disconnect();
+        session = null;
+      }
+      
+      if (publisher) {
+        publisher = null;
+      }
+      
+      if (subscriber) {
+        subscriber = null;
+      }
+      
+      isConnected.value = false;
+      addMessage('info', 'WebRTC 연결 해제됨');
+    } catch (error) {
+      addMessage('error', `연결 해제 중 오류: ${error.message}`);
+    }
   }
   
   // 토큰 복사
@@ -228,6 +345,39 @@
       isAutoTesting.value = false;
     }
   }
+  
+  // OpenVidu SDK 로드
+  const loadOpenViduSDK = () => {
+    return new Promise((resolve, reject) => {
+      // 이미 로드된 경우
+      if (typeof window.OpenVidu !== 'undefined') {
+        resolve();
+        return;
+      }
+      
+      // CDN에서 OpenVidu SDK 로드
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/openvidu-browser@2.28.0/static/js/openvidu-browser-2.28.0.min.js';
+      script.onload = () => {
+        addMessage('success', 'OpenVidu SDK 로드 완료');
+        resolve();
+      };
+      script.onerror = () => {
+        addMessage('error', 'OpenVidu SDK 로드 실패');
+        reject(new Error('OpenVidu SDK 로드 실패'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  
+  // 컴포넌트 마운트 시 SDK 로드
+  onMounted(async () => {
+    try {
+      await loadOpenViduSDK();
+    } catch (error) {
+      console.error('OpenVidu SDK 로드 오류:', error);
+    }
+  })
   
   // 컴포넌트 언마운트 시 연결 해제
   onUnmounted(() => {
@@ -435,5 +585,51 @@
   
   .clear-btn:hover {
     background: #545b62;
+  }
+  
+  /* 비디오 컨테이너 */
+  .video-container {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  
+  .video-section {
+    flex: 1;
+    min-width: 300px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+  }
+  
+  .video-section h4 {
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 14px;
+  }
+  
+  .video-element {
+    width: 100%;
+    height: 200px;
+    background: #000;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  
+  /* 반응형 비디오 */
+  @media (max-width: 768px) {
+    .video-container {
+      flex-direction: column;
+    }
+    
+    .video-section {
+      min-width: auto;
+    }
+    
+    .video-element {
+      height: 150px;
+    }
   }
   </style> 
