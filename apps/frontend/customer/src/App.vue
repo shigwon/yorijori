@@ -1,14 +1,23 @@
 <template>
   <div id="app">
-    <WelcomeScreen @start="handleStart" />
+    <WelcomeScreen v-if="currentScreen === 'welcome'" @start="handleStart" />
+    <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="handleNext" />
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import WelcomeScreen from './components/01_WelcomeScreen.vue'
+import HowToUseScreen from './components/02_HowToUseScreen.vue'
+
+const currentScreen = ref('welcome')
 
 const handleStart = () => {
-  console.log('시작하기 버튼 클릭됨')
+  currentScreen.value = 'how-to-use'
+}
+
+const handleNext = () => {
+  console.log('다음 화면으로 이동')
 }
 </script>
 
