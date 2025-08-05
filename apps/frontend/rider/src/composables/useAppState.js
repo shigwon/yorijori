@@ -46,6 +46,11 @@ const goToComplete = () => {
   console.log('화면 전환:', currentScreen.value)
 }
 
+const goToOnboarding = () => {
+  currentScreen.value = 'onboarding'
+  console.log('화면 전환:', currentScreen.value)
+}
+
 const goToLoadingModal = () => {
   currentScreen.value = 'loading-modal'
   console.log('화면 전환:', currentScreen.value)
@@ -74,6 +79,7 @@ export const useAppState = () => {
     goToLocationRequest,
     goToPhotoCapture,
     goToComplete,
+    goToOnboarding,
     goToLoadingModal,
     goToScanConfirmModal,
     progressPercent,

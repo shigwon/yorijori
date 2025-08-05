@@ -7,6 +7,7 @@ import ManualInputScreen from './components/04_ManualInputScreen.vue'
 import ManualConfirmScreen from './components/05_ManualConfirmScreen.vue'
 import LocationRequestScreen from './components/06_LocationRequestScreen.vue'
 import PhotoCaptureScreen from './components/07_PhotoCaptureScreen.vue'
+import CompleteScreen from './components/08_CompleteScreen.vue'
 
 const { currentScreen, progressPercent } = useAppState()
 </script>
@@ -27,6 +28,7 @@ const { currentScreen, progressPercent } = useAppState()
     <ManualConfirmScreen v-else-if="currentScreen === 'manual-confirm'" />
     <LocationRequestScreen v-else-if="currentScreen === 'location-request'" />
     <PhotoCaptureScreen v-else-if="currentScreen === 'photo-capture'" />
+    <CompleteScreen v-else-if="currentScreen === 'complete'" />
   </div>
 </template>
 
