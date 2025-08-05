@@ -83,6 +83,7 @@
   
           <!-- 로그인 버튼 -->
           <button type="submit" class="login-button" :disabled="isLoading">
+            <span v-if="isLoading" class="loading-spinner"></span>
             {{ isLoading ? 'Logging in...' : 'Log in' }}
           </button>
   
@@ -137,7 +138,7 @@
     errorMessage.value = ''
     setTimeout(() => {
       successMessage.value = ''
-    }, 1000)
+    }, 300)
   }
   
   // 입력값 검증
@@ -180,10 +181,10 @@
         localStorage.setItem('adminEmail', formData.value.email)
       }
       
-      // 잠시 후 페이지 이동
+      // 즉시 페이지 이동 (UX 개선)
       setTimeout(() => {
-        router.push('/main')
-      }, 1500)
+        router.push('/dashboard-detail')
+      }, 500)
       
     } catch (error) {
       console.error('로그인 오류:', error)
@@ -459,6 +460,24 @@
   .login-button:disabled {
     background-color: #4b5563;
     cursor: not-allowed;
+  }
+  
+  /* 로딩 스피너 */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   
   /* 추가 링크들 */
