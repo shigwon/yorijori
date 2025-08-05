@@ -21,15 +21,15 @@ def generate_launch_description():
     # )
 
     controller_node = Node(
-        package='driving_pkg',
+        package='contoller_pkg',
         executable='controller_node',
         name='controller',
         output='screen'
     )
 
-    face_recognition_node = Node(
-        package='face_recognitnion_pkg',
-        executable='face_recognitnion_node',
+    face_recognition_server_node = Node(
+        package='face_recognition_pkg',
+        executable='face_recognition_server_node',
         name='face_recognition',
         output='screen'
     )
@@ -44,6 +44,6 @@ def generate_launch_description():
     return LaunchDescription([
         # included_launch,
         controller_node,
-        face_recognition_node,
+        face_recognition_server_node,
         mqtt_bridge_node
     ])
