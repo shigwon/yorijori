@@ -36,6 +36,11 @@ const goToLocationRequest = () => {
   console.log('화면 전환:', currentScreen.value)
 }
 
+const goToPhotoCapture = () => {
+  currentScreen.value = 'photo-capture'
+  console.log('화면 전환:', currentScreen.value)
+}
+
 const goToLoadingModal = () => {
   currentScreen.value = 'loading-modal'
   console.log('화면 전환:', currentScreen.value)
@@ -62,6 +67,7 @@ export const useAppState = () => {
     goToManualInput,
     goToManualConfirm,
     goToLocationRequest,
+    goToPhotoCapture,
     goToLoadingModal,
     goToScanConfirmModal,
     progressPercent,

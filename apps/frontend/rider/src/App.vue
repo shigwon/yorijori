@@ -5,6 +5,7 @@ import ScanOptionScreen from './components/02_ScanOptionScreen.vue'
 import ReceiptScanScreen from './components/03_ReceiptScanScreen.vue'
 import ManualInputScreen from './components/04_ManualInputScreen.vue'
 import ManualConfirmScreen from './components/05_ManualConfirmScreen.vue'
+import LocationRequestScreen from './components/06_LocationRequestScreen.vue'
 
 const { currentScreen, progressPercent } = useAppState()
 </script>
@@ -23,6 +24,7 @@ const { currentScreen, progressPercent } = useAppState()
     <ReceiptScanScreen v-else-if="currentScreen === 'receipt-scan'" />
     <ManualInputScreen v-else-if="currentScreen === 'manual-input'" />
     <ManualConfirmScreen v-else-if="currentScreen === 'manual-confirm'" />
+    <LocationRequestScreen v-else-if="currentScreen === 'location-request'" />
   </div>
 </template>
 
