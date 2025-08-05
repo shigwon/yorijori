@@ -13,6 +13,16 @@ const goToScanOption = () => {
   console.log('화면 전환:', currentScreen.value)
 }
 
+const goToReceiptScan = () => {
+  currentScreen.value = 'receipt-scan'
+  console.log('화면 전환:', currentScreen.value)
+}
+
+const goToManualInput = () => {
+  currentScreen.value = 'manual-input'
+  console.log('화면 전환:', currentScreen.value)
+}
+
 export const useAppState = () => {
   const goToHowToUse = () => {
     currentScreen.value = 'how-to-use'
@@ -23,6 +33,8 @@ export const useAppState = () => {
     currentScreen,
     goToHowToUse,
     goToScanOption,
+    goToReceiptScan,
+    goToManualInput,
     progressPercent,
     setProgressPercent,
   }

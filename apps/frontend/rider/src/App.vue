@@ -1,6 +1,7 @@
 <script setup>
 import { useAppState } from './composables/useAppState'
 import HowToUseScreen from './components/01_HowToUseScreen.vue'
+import ScanOptionScreen from './components/02_ScanOptionScreen.vue'
 
 const { currentScreen, progressPercent } = useAppState()
 </script>
@@ -15,11 +16,12 @@ const { currentScreen, progressPercent } = useAppState()
   
   <div class="app-modal">
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" />
+    <ScanOptionScreen v-else-if="currentScreen === 'scan-option'" />
   </div>
 </template>
 
 <style>
-/* 진행률 바 */
+/* 기존 스타일 유지 */
 .progress-bar-wrapper {
   width: 90%;
   padding: 0;
@@ -47,7 +49,6 @@ const { currentScreen, progressPercent } = useAppState()
   transition: width 0.3s ease;
 }
 
-/* 기본 스타일 */
 * {
   margin: 0;
   padding: 0;
