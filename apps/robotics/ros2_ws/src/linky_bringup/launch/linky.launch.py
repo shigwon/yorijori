@@ -20,7 +20,6 @@ def generate_launch_description():
     #     )
     # )
 
-    # 노드 직접 실행 예시 1 - Steering + Throttle controller
     controller_node = Node(
         package='driving_pkg',
         executable='controller_node',
@@ -32,11 +31,19 @@ def generate_launch_description():
         package='face_recognitnion_pkg',
         executable='face_recognitnion_node',
         name='face_recognition',
-        output='screen's
+        output='screen'
+    )
+
+    mqtt_bridge_node = Node(
+        package='mqtt_bridge_pkg',
+        executable='mqtt_bridge_node',
+        name='mqtt_bridge',
+        output='screen'
     )
 
     return LaunchDescription([
         # included_launch,
         controller_node,
-        face_recognition_node
+        face_recognition_node,
+        mqtt_bridge_node
     ])

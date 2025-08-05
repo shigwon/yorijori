@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'driving_pkg'
+package_name = 'mqtt_bridge_pkg'
 
 setup(
     name=package_name,
@@ -13,16 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='c102',
-    maintainer_email='c102@todo.todo',
+    maintainer='juno',
+    maintainer_email='juno980220@naver.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller_node = driving_pkg.controller:main',
-            'dc_motor_node = driving_pkg.dc_motor:main',
-            'servo_motor_node = driving_pkg.servo_motor:main',
-        ]
+            'mqtt_bridge_node=mqtt_bridge_pkg.mqtt_bridge:main'
+        ],
     },
 )
