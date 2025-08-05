@@ -2,13 +2,15 @@
   <div id="app">
     <WelcomeScreen v-if="currentScreen === 'welcome'" @start="handleStart" />
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="handleNext" />
+    <TermsAgreementScreen v-if="currentScreen === 'terms'" @next="handleTermsNext" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import WelcomeScreen from './components/01_WelcomeScreen.vue'
-import HowToUseScreen from './components/02_HowToUseScreen.vue'
+import HowToUseScreen from './components/03_HowToUseScreen.vue'
+import TermsAgreementScreen from './components/04_TermsAgreementScreen.vue'
 
 const currentScreen = ref('welcome')
 
@@ -17,7 +19,11 @@ const handleStart = () => {
 }
 
 const handleNext = () => {
-  console.log('다음 화면으로 이동')
+  currentScreen.value = 'terms'
+}
+
+const handleTermsNext = () => {
+  console.log('약관 동의 완료')
 }
 </script>
 
