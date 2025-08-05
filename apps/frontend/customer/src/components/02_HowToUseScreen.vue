@@ -15,11 +15,7 @@
       <div class="step-item">
         <div class="step-icon">
           <div class="icon-circle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="6" y="6" width="12" height="12" rx="2" stroke="white" stroke-width="2" fill="none"/>
-              <circle cx="12" cy="12" r="3" stroke="white" stroke-width="2" fill="none"/>
-              <circle cx="12" cy="10" r="1" fill="white"/>
-            </svg>
+            <img src="../assets/camera.png" alt="camera" class="camera-icon" />
           </div>
         </div>
         <div class="step-content">
@@ -134,7 +130,7 @@ const handleNext = () => {
   margin-top: 10px;
 }
 
-/* Steps Section */
+
 .steps-section {
   flex: 1;
   display: flex;
@@ -181,6 +177,13 @@ const handleNext = () => {
   box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
 }
 
+.camera-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
 .step-content {
   flex: 1;
   padding-top: 8px;
@@ -203,7 +206,7 @@ const handleNext = () => {
   text-align: left;
 }
 
-/* Footer Section */
+
 .footer-section {
   width: 100%;
   padding: 20px 0;
@@ -222,6 +225,8 @@ const handleNext = () => {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(124, 60, 237, 0.2);
+  position: relative;
+  bottom: 40px;
 }
 
 .next-button:hover {
@@ -283,6 +288,8 @@ const handleNext = () => {
   
   .step-item {
     gap: 16px;
+    margin-bottom: 10px;
+
   }
   
   .icon-circle {

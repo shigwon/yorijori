@@ -32,9 +32,9 @@ const progressPercent = computed(() => {
     case 'photo-selection':
       return 45
     case 'camera-capture':
-      return 75
+      return 60
     case 'location-setting':
-      return 90
+      return 75
     case 'delivery-tracking':
       return 90
     default:
@@ -111,6 +111,7 @@ const handleSurvey = () => {
       v-if="currentScreen === 'delivery-tracking'" 
       :delivery-location="deliveryLocation"
       :delivery-address="deliveryAddress"
+      :face-image="capturedImage"
       @delivery-completed="currentScreen = 'photo-selection'"
       @show-compartment="showFoodCompartment = true"
     />

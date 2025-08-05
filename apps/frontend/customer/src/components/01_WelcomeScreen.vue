@@ -162,7 +162,7 @@ const handleStart = () => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   z-index: 20;
   position: absolute;
-  bottom: 100px;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -243,14 +243,6 @@ const handleStart = () => {
   .brand-subtitle {
     font-size: 20px;
   }
-  
-  .start-button {
-    height: 52px;
-    font-size: 16px;
-    bottom: 80px;
-  }
-  
-
   
   .chatbot-system {
     position: absolute;

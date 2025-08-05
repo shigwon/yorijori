@@ -217,7 +217,7 @@ const closeModal = () => {
   font-size: 16px;
 }
 
-/* Checkbox */
+
 .checkbox-container {
   flex-shrink: 0;
   position: relative;

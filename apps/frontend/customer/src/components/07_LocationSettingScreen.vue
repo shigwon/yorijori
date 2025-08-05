@@ -5,6 +5,7 @@
       <h1 class="title">
         <span class="highlight">LiNKY</span>를 만날 위치를 설정하세요
       </h1>
+      <p class="subtitle">핀 위치를 조정해주세요</p>
     </div>
 
     <!-- 지도 섹션 -->
@@ -12,17 +13,16 @@
       <div id="map" class="map-container"></div>
     </div>
 
-    <!-- 주소 섹션 -->
-    <div class="address-section">
-      <div class="address-box">
-        <div class="address-text">{{ currentAddress }}</div>
-        <div class="address-link">지번주소로 보기</div>
-      </div>
-      
-      <button class="confirm-button" @click="confirmLocation">
-        이 위치로 주소 설정
-      </button>
-    </div>
+         <!-- 주소 섹션 -->
+     <div class="address-section">
+       <div class="address-box">
+         <div class="address-text">{{ currentAddress }}</div>
+       </div>
+       
+       <button class="confirm-button" @click="confirmLocation">
+         이 위치로 주소 설정
+       </button>
+     </div>
   </div>
 </template>
 
@@ -452,6 +452,13 @@ onMounted(async () => {
   color: #7C3AED;
 }
 
+.subtitle {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
 /* Map Section */
 .map-section {
   flex: 1;
@@ -492,6 +499,7 @@ onMounted(async () => {
   font-weight: 600;
   color: #1F2937;
   margin-bottom: 4px;
+  text-align: center;
 }
 
 .address-link {
