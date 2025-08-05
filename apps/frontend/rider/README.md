@@ -1,35 +1,78 @@
-# rider
+# LiNKY Rider App
 
-This template should help get you started developing with Vue 3 in Vite.
+라이더용 배송 관리 앱입니다.
 
-## Recommended IDE Setup
+## 기능
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- 영수증 스캔 (자동/수동)
+- 위치 정보 수집 동의
+- 사진 촬영
+- 배송 진행 상태 확인
 
-## Customize configuration
+## 개발 환경
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- Vue 3
+- Vite
+- JavaScript
 
-## Project Setup
+## 설치 및 실행
 
-```sh
+```bash
+# 의존성 설치
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# 개발 서버 실행
 npm run dev
-```
 
-### Compile and Minify for Production
-
-```sh
+# 빌드
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## 모바일 테스트
 
-```sh
-npm run lint
+ngrok을 사용하여 모바일에서 테스트할 수 있습니다:
+
+```bash
+# ngrok 설치
+npm install -g ngrok
+
+# ngrok 설정
+ngrok config add-authtoken YOUR_TOKEN
+
+# 개발 서버 실행
+npm run dev
+
+# 새 터미널에서 ngrok 실행
+ngrok http 5173
 ```
+
+## API 설정
+
+`vite.config.js`에서 백엔드 서버 주소를 설정하세요:
+
+```javascript
+proxy: {
+  '/api': {
+    target: 'http://YOUR_BACKEND_IP:8080',
+    changeOrigin: true,
+    rewrite: path => path,
+  },
+}
+```
+
+## 화면 구성
+
+1. HowToUseScreen - 이용방법 안내
+2. ScanOptionScreen - 스캔 방식 선택
+3. ReceiptScanScreen - 영수증 스캔
+4. ManualInputScreen - 수동 입력
+5. ManualConfirmScreen - 수동 입력 확인
+6. LocationRequestScreen - 위치 정보 동의
+7. PhotoCaptureScreen - 사진 촬영
+8. CompleteScreen - 완료 화면
+9. LoadingModal - 로딩 모달
+10. ScanConfirmModal - 스캔 결과 확인
+
+## 라이센스
+
+SSAFY S13P11C102 프로젝트

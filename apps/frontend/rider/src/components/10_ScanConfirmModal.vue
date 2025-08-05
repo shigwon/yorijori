@@ -71,11 +71,8 @@ const handleNext = async () => {
     id: editedReceiptData.value.id,
     tel: editedReceiptData.value.tel
   }
-  
   try {
     console.log('주문정보 API 요청 시작...')
-    
-  
     const response = await fetch('/api/v1/orders/create', {
       method: 'POST',
       headers: {
@@ -87,21 +84,16 @@ const handleNext = async () => {
         tel: editedReceiptData.value.tel
       })
     })
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
     const result = await response.json()
     console.log('주문정보 API 응답:', result)
-    
-    // API 성공 시 위치정보 동의 화면으로 이동
-    goToLocationRequest(editedReceiptData.value.id, editedReceiptData.value.tel)
-    
   } catch (error) {
     console.error('주문정보 API 호출 실패:', error)
-    // API 실패 시에도 위치정보 동의 화면으로 이동 (사용자 경험 개선)
-    goToLocationRequest(editedReceiptData.value.id, editedReceiptData.value.tel)
+  } finally {
+    // 성공/실패 관계없이 항상 이동
+    goToLocationRequest()
   }
 }
 

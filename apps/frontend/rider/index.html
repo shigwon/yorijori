@@ -1,15 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, minimal-ui" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#7C3AED" />
+    <meta name="msapplication-TileColor" content="#7C3AED" />
+    <meta name="apple-mobile-web-app-title" content="LiNKY Rider" />
+    <meta name="application-name" content="LiNKY Rider" />
+    <meta name="msapplication-config" content="none" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="format-detection" content="date=no" />
+    <meta name="format-detection" content="address=no" />
+    <meta name="format-detection" content="email=no" />
     <title>LiNKY Rider</title>
     <style>
+      /* 전체 여백 제거 및 브라우저 UI 숨김 */
       html, body {
         margin: 0 !important;
         padding: 0 !important;
@@ -25,9 +35,12 @@
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
         -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
         user-select: none;
       }
       
+      /* #app 스타일 추가 */
       #app {
         width: 100vw !important;
         height: 100vh !important;
@@ -41,6 +54,37 @@
         bottom: 0 !important;
         background: white !important;
         z-index: 9999 !important;
+      }
+      
+      /* 브라우저 UI 숨김 시도 */
+      @media screen and (display-mode: standalone) {
+        html, body {
+          height: 100vh !important;
+          height: -webkit-fill-available !important;
+        }
+      }
+      
+      /* iOS Safari 특별 처리 */
+      @supports (-webkit-touch-callout: none) {
+        html, body {
+          height: -webkit-fill-available !important;
+        }
+      }
+      
+      /* 브라우저 UI 숨김 시도 (더 강력한 방법) */
+      @media screen and (max-width: 768px) {
+        /* 주소창 숨김 시도 */
+        html {
+          height: 100vh !important;
+          height: -webkit-fill-available !important;
+        }
+        
+        body {
+          height: 100vh !important;
+          height: -webkit-fill-available !important;
+          padding-top: env(safe-area-inset-top) !important;
+          padding-bottom: env(safe-area-inset-bottom) !important;
+        }
       }
     </style>
   </head>
