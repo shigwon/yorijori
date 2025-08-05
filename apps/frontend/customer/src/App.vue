@@ -5,8 +5,11 @@ import WelcomeScreen from './components/01_WelcomeScreen.vue'
 import HowToUseScreen from './components/03_HowToUseScreen.vue'
 import TermsAgreementScreen from './components/04_TermsAgreementScreen.vue'
 import CameraCapture from './components/05_CameraCapture.vue'
+import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
 
 const currentScreen = ref('welcome')
+const showFaceRecognitionModal = ref(false)
+const capturedImage = ref('')
 
 const progressPercent = computed(() => {
   switch (currentScreen.value) {
@@ -26,6 +29,16 @@ const progressPercent = computed(() => {
 const handlePhotoCaptured = (base64Image) => {
   console.log('사진 촬영 완료')
 }
+
+const handleShowFaceRecognition = (imageData) => {
+  console.log('얼굴 인식 모달 표시 함수 호출됨')
+  if (imageData) {
+    capturedImage.value = `data:image/jpeg;base64,${imageData}`
+  }
+  setTimeout(() => {
+    showFaceRecognitionModal.value = true
+  }, 50)
+}
 </script>
 
 <template>
@@ -41,7 +54,15 @@ const handlePhotoCaptured = (base64Image) => {
     <WelcomeScreen v-if="currentScreen === 'welcome'" @start="currentScreen = 'how-to-use'" />
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="currentScreen = 'terms-agreement'" />
     <TermsAgreementScreen v-if="currentScreen === 'terms-agreement'" @next="currentScreen = 'camera-capture'" />
-    <CameraCapture v-if="currentScreen === 'camera-capture'" @image-captured="handlePhotoCaptured" />
+    <CameraCapture v-if="currentScreen === 'camera-capture'" @image-captured="handlePhotoCaptured" @show-face-recognition="handleShowFaceRecognition" />
+    
+    <!-- 얼굴 인식 모달 -->
+    <FaceRecognitionModal 
+      v-if="showFaceRecognitionModal" 
+      :captured-image="capturedImage"
+      @previous="showFaceRecognitionModal = false"
+      @next="showFaceRecognitionModal = false"
+    />
   </div>
 </template>
 
