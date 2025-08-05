@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 import WelcomeScreen from './components/01_WelcomeScreen.vue'
 import HowToUseScreen from './components/03_HowToUseScreen.vue'
 import TermsAgreementScreen from './components/04_TermsAgreementScreen.vue'
+import PhotoSelectionScreen from './components/07_PhotoSelectionScreen.vue'
 import CameraCapture from './components/05_CameraCapture.vue'
 import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
 
@@ -19,6 +20,8 @@ const progressPercent = computed(() => {
       return 15
     case 'terms-agreement':
       return 30
+    case 'photo-selection':
+      return 45
     case 'camera-capture':
       return 75
     default:
@@ -53,7 +56,8 @@ const handleShowFaceRecognition = (imageData) => {
     <!-- 현재 화면 값에 따른 동적 화면들 -->
     <WelcomeScreen v-if="currentScreen === 'welcome'" @start="currentScreen = 'how-to-use'" />
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="currentScreen = 'terms-agreement'" />
-    <TermsAgreementScreen v-if="currentScreen === 'terms-agreement'" @next="currentScreen = 'camera-capture'" />
+    <TermsAgreementScreen v-if="currentScreen === 'terms-agreement'" @next="currentScreen = 'photo-selection'" />
+    <PhotoSelectionScreen v-if="currentScreen === 'photo-selection'" @take-selfie="currentScreen = 'camera-capture'" @show-face-recognition="handleShowFaceRecognition" />
     <CameraCapture v-if="currentScreen === 'camera-capture'" @image-captured="handlePhotoCaptured" @show-face-recognition="handleShowFaceRecognition" />
     
     <!-- 얼굴 인식 모달 -->
