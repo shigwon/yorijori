@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#7C3AED">
+    <meta name="msapplication-navbutton-color" content="#7C3AED">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e5b95788a7c8f514bec9b176e73c6725&libraries=services&autoload=false"></script>
+    <script>
+      // 카카오맵 API 수동 로드
+      window.addEventListener('load', function() {
+        if (window.kakao && window.kakao.maps) {
+          window.kakao.maps.load(function() {
+            console.log('카카오맵 API 로드 완료')
+          })
+        } else {
+          console.error('카카오맵 API 로드 실패')
+        }
+      })
+    </script>
+  </body>
+</html>
