@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'driving_pkg'
+package_name = 'contoller_pkg'
 
 setup(
     name=package_name,
@@ -20,9 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'controller_node = driving_pkg.controller:main',
-            'dc_motor_node = driving_pkg.dc_motor:main',
-            'servo_motor_node = driving_pkg.servo_motor:main',
+            'controller_node = contoller_pkg.controller:main',
+            'dc_motor_node = contoller_pkg.dc_motor:main',
+            'servo_motor_node = contoller_pkg.servo_motor:main',
         ]
     },
 )

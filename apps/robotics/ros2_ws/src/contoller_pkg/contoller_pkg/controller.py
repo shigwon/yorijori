@@ -8,28 +8,31 @@ import board
 import busio
 
 import time
-
 class Controller(Node):
     def __init__(self):
         super().__init__('controller_node')
 
-        i2c = busio.I2C(board.SCL, board.SDA)
+        self.hardware_ready = False
 
-        # 스티어링 서보 (0x60)
-        self.servo_kit = ServoKit(channels=16, i2c=i2c, address=0x60)
+        try:
+            i2c = busio.I2C(board.SCL, board.SDA)
 
-        # 스로틀용 PCA9685 (0x40)
-        self.pca_throttle = PCA9685(i2c, address=0x40)
-        self.pca_throttle.frequency = 60
+            self.servo_kit = ServoKit(channels=16, i2c=i2c, address=0x60)
+            self.pca_throttle = PCA9685(i2c, address=0x40)
+            self.pca_throttle.frequency = 60
 
-        # MotorHatB 채널 설정 (TB6612FNG)
-        self.in1 = 3
-        self.in2 = 4
-        self.ena = 5
+            self.in1 = 3
+            self.in2 = 4
+            self.ena = 5
 
-        # Steering 보정값
-        self.STEER_CENTER = 70  # 실제 바퀴가 정면을 보는 서보 각도
-        self.STEER_RANGE = 30   # ±30도 논리각 → ±30도 실제 서보 움직임
+            self.STEER_CENTER = 70
+            self.STEER_RANGE = 30
+
+            self.hardware_ready = True
+            self.get_logger().info("Hardware initialized.")
+
+        except Exception as e:
+            self.get_logger().warn(f"Hardware not initialized (running in mock mode): {e}")
 
         self.subscription = self.create_subscription(
             Float32MultiArray,
@@ -50,8 +53,12 @@ class Controller(Node):
             return
 
         logical_angle, speed = msg.data
+        self.get_logger().info(f"Received control: angle={logical_angle}, speed={speed}")
 
-        # 서보 각도로 변환
+        if not self.hardware_ready:
+            self.get_logger().warn("Hardware not available. Skipping control.")
+            return
+
         try:
             servo_angle = self.logical_to_servo_angle(logical_angle)
             self.servo_kit.servo[0].angle = servo_angle
@@ -59,7 +66,6 @@ class Controller(Node):
         except Exception as e:
             self.get_logger().error(f"Servo error: {e}")
 
-        # DC 모터 제어
         try:
             pulse = int(0xFFFF * abs(speed))
             if speed > 0:
@@ -78,9 +84,11 @@ class Controller(Node):
             self.get_logger().error(f"Motor error: {e}")
 
     def destroy_node(self):
-        self.pca_throttle.deinit()
-        self.get_logger().info("Node destroyed, PWM deinitialized.")
+        if self.hardware_ready:
+            self.pca_throttle.deinit()
+            self.get_logger().info("PWM deinitialized.")
         super().destroy_node()
+
 
 
 def main(args=None):
