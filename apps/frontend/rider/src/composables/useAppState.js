@@ -8,6 +8,7 @@ function setProgressPercent(percent) {
 
 const currentScreen = ref('how-to-use')
 const receiptData = ref({ id: '', tel: '' })
+const orderData = ref({ orderNumber: '', safeNumber: '' })
 
 const goToScanOption = () => {
   currentScreen.value = 'scan-option'
@@ -21,6 +22,17 @@ const goToReceiptScan = () => {
 
 const goToManualInput = () => {
   currentScreen.value = 'manual-input'
+  console.log('화면 전환:', currentScreen.value)
+}
+
+const goToManualConfirm = (orderNumber, safeNumber) => {
+  orderData.value = { orderNumber, safeNumber }
+  currentScreen.value = 'manual-confirm'
+  console.log('화면 전환:', currentScreen.value)
+}
+
+const goToLocationRequest = () => {
+  currentScreen.value = 'location-request'
   console.log('화면 전환:', currentScreen.value)
 }
 
@@ -43,10 +55,13 @@ export const useAppState = () => {
   return {
     currentScreen,
     receiptData,
+    orderData,
     goToHowToUse,
     goToScanOption,
     goToReceiptScan,
     goToManualInput,
+    goToManualConfirm,
+    goToLocationRequest,
     goToLoadingModal,
     goToScanConfirmModal,
     progressPercent,
