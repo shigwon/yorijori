@@ -3,6 +3,7 @@ import { useAppState } from './composables/useAppState'
 import HowToUseScreen from './components/01_HowToUseScreen.vue'
 import ScanOptionScreen from './components/02_ScanOptionScreen.vue'
 import ReceiptScanScreen from './components/03_ReceiptScanScreen.vue'
+import ManualInputScreen from './components/04_ManualInputScreen.vue'
 
 const { currentScreen, progressPercent } = useAppState()
 </script>
@@ -19,6 +20,7 @@ const { currentScreen, progressPercent } = useAppState()
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" />
     <ScanOptionScreen v-else-if="currentScreen === 'scan-option'" />
     <ReceiptScanScreen v-else-if="currentScreen === 'receipt-scan'" />
+    <ManualInputScreen v-else-if="currentScreen === 'manual-input'" />
   </div>
 </template>
 
