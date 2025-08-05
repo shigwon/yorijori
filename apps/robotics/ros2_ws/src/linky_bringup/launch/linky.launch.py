@@ -28,7 +28,15 @@ def generate_launch_description():
         output='screen'
     )
 
+    face_recognition_node = Node(
+        package='face_recognitnion_pkg',
+        executable='face_recognitnion_node',
+        name='face_recognition',
+        output='screen's
+    )
+
     return LaunchDescription([
         # included_launch,
-        controller_node
+        controller_node,
+        face_recognition_node
     ])
