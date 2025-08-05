@@ -15,4 +15,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    host: '0.0.0.0',  // 외부 접속 허용
+    port: 5173,
+    allowedHosts: ['.ngrok-free.app'],  // ✅ ngrok 주소 허용
+  }
 })
