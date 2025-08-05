@@ -7,10 +7,13 @@ import TermsAgreementScreen from './components/04_TermsAgreementScreen.vue'
 import PhotoSelectionScreen from './components/07_PhotoSelectionScreen.vue'
 import CameraCapture from './components/05_CameraCapture.vue'
 import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
+import LocationSettingScreen from './components/08_LocationSettingScreen.vue'
 
 const currentScreen = ref('welcome')
 const showFaceRecognitionModal = ref(false)
 const capturedImage = ref('')
+const deliveryLocation = ref(null)
+const deliveryAddress = ref('')
 
 const progressPercent = computed(() => {
   switch (currentScreen.value) {
@@ -24,6 +27,8 @@ const progressPercent = computed(() => {
       return 45
     case 'camera-capture':
       return 75
+    case 'location-setting':
+      return 90
     default:
       return 0
   }
@@ -41,6 +46,13 @@ const handleShowFaceRecognition = (imageData) => {
   setTimeout(() => {
     showFaceRecognitionModal.value = true
   }, 50)
+}
+
+const handleLocationConfirmed = (locationData) => {
+  console.log('위치 설정 완료:', locationData)
+  deliveryLocation.value = locationData.location
+  deliveryAddress.value = locationData.address
+  currentScreen.value = 'delivery-tracking'
 }
 </script>
 
@@ -65,7 +77,13 @@ const handleShowFaceRecognition = (imageData) => {
       v-if="showFaceRecognitionModal" 
       :captured-image="capturedImage"
       @previous="showFaceRecognitionModal = false"
-      @next="showFaceRecognitionModal = false"
+      @next="currentScreen = 'location-setting'; showFaceRecognitionModal = false"
+    />
+    
+    <LocationSettingScreen 
+      v-if="currentScreen === 'location-setting'" 
+      :face-image="capturedImage"
+      @location-confirmed="handleLocationConfirmed" 
     />
   </div>
 </template>
