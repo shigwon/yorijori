@@ -8,12 +8,15 @@ import PhotoSelectionScreen from './components/07_PhotoSelectionScreen.vue'
 import CameraCapture from './components/05_CameraCapture.vue'
 import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
 import LocationSettingScreen from './components/08_LocationSettingScreen.vue'
+import DeliveryTrackingScreen from './components/10_DeliveryTrackingScreen.vue'
+import FoodCompartmentScreen from './components/09_FoodCompartmentScreen.vue'
 
 const currentScreen = ref('welcome')
 const showFaceRecognitionModal = ref(false)
 const capturedImage = ref('')
 const deliveryLocation = ref(null)
 const deliveryAddress = ref('')
+const showFoodCompartment = ref(false)
 
 const progressPercent = computed(() => {
   switch (currentScreen.value) {
@@ -28,6 +31,8 @@ const progressPercent = computed(() => {
     case 'camera-capture':
       return 75
     case 'location-setting':
+      return 90
+    case 'delivery-tracking':
       return 90
     default:
       return 0
@@ -54,11 +59,18 @@ const handleLocationConfirmed = (locationData) => {
   deliveryAddress.value = locationData.address
   currentScreen.value = 'delivery-tracking'
 }
+
+const handleCompartmentConfirm = () => {
+  console.log('확인 버튼 클릭')
+  showFoodCompartment.value = false
+  // 페이지 나가기
+  window.close()
+}
 </script>
 
 <template>
   <!-- Progress Bar (separated from modal) -->
-  <div class="progress-bar-wrapper">
+  <div class="progress-bar-wrapper" v-if="!showFoodCompartment">
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
     </div>
@@ -84,6 +96,20 @@ const handleLocationConfirmed = (locationData) => {
       v-if="currentScreen === 'location-setting'" 
       :face-image="capturedImage"
       @location-confirmed="handleLocationConfirmed" 
+    />
+    
+    <DeliveryTrackingScreen 
+      v-if="currentScreen === 'delivery-tracking'" 
+      :delivery-location="deliveryLocation"
+      :delivery-address="deliveryAddress"
+      @delivery-completed="currentScreen = 'photo-selection'"
+      @show-compartment="showFoodCompartment = true"
+    />
+    
+    <!-- 음식함 화면 -->
+    <FoodCompartmentScreen 
+      v-if="showFoodCompartment" 
+      @confirm="handleCompartmentConfirm"
     />
   </div>
 </template>
