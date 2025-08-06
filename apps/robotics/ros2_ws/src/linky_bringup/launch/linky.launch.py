@@ -10,16 +10,15 @@ import os
 
 def generate_launch_description():
     return LaunchDescription([
-        # 다른 패키지의 launch 파일 포함
-        # included_launch = IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(
-        #         PathJoinSubstitution([
-        #             FindPackageShare('other_pkg_name'),
-        #             'launch',
-        #             'other_launch_file.launch.py'
-        #         ])
-        #     )
-        # )
+        included_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution([
+                    FindPackageShare('realsense2_camera'),
+                    'launch',
+                    'rs_launch.py'
+                ])
+            )
+        )
 
         Node(
             package='face_recognition_pkg',
@@ -41,12 +40,13 @@ def generate_launch_description():
             output='screen'
         ),
         
-        # Node(
-        #     package='webrtc_streamer_pkg',
-        #     executable='webrtc_streamer_node',
-        #     name='webrtc_streamer',
-        #     output='screen'
-        # ),
+        Node(
+            package='webrtc_streamer_pkg',
+            executable='webrtc_streamer_node',
+            name='webrtc_streamer',
+            output='screen'
+        ),
+
         Node(
             package='slam_pkg',
             executable='slam_node',
