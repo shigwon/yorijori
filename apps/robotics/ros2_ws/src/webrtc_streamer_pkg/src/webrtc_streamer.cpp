@@ -113,6 +113,7 @@
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_answer_sdp_;
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ice_candidate_;
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_offer_sdp_;
+        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_ice_candidate_;
 
         GstElement* pipeline_;
         GstElement* appsrc_;
