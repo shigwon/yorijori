@@ -51,7 +51,7 @@ public class OrderController {
             int orderId = orderService.searchOrderId(createOrderRequest);
             Order order = orderMapper.toEntity(createOrderRequest);
             int sectionNum = orderService.searchOrderCreateActivate(order.getRobotId());
-            messageService.messageSend(order.getTel(), "https://naver.com?orderId=" + orderId +"&robotId=" + order.getRobotId() + "&code=" + order.getCode() + "&sectionNum=" + sectionNum);
+            //messageService.messageSend(order.getTel(), "https://naver.com?orderId=" + orderId +"&robotId=" + order.getRobotId() + "&code=" + order.getCode() + "&sectionNum=" + sectionNum);
             mqttService.sendCloseSection(order.getRobotId(), Section.builder().sectionNum(sectionNum).sectionStatus("CLOSE").build());
             return ApiResponseEntity.successResponseEntity("주문 생성에 성공했습니다.");
         } else {

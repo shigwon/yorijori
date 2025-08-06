@@ -61,7 +61,7 @@ public class MqttService {
     }
 
     public void sendResult(int robotId, JoinResponse joinResponse) {
-        sendPayload(robotId, "result", joinResponse);
+        sendPayload(robotId, "responseWebRTC", joinResponse);
     }
 
     public void sendOrderList(int robotId, List<OrderSummary> orderList) {
@@ -106,7 +106,7 @@ public class MqttService {
 
         try {
             switch (command) {
-                case "joinWebRTC":
+                case "requestWebRTC":
                     JoinRequest joinRequest = objectMapper.readValue(payload, JoinRequest.class);
                     String data = streamService.joinSession(joinRequest);
                     JoinResponse joinResponse = streamMapper.toEntity(data != null, data);
