@@ -23,4 +23,5 @@ public class RobotMapper {
                 .status(updateRobotStatusDto.getStatus())
                 .build();
     }
+
 }
