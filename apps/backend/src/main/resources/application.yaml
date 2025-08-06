@@ -55,7 +55,7 @@ spring:
       port: 6379
 
   mqtt:
-    broker-url: tcp://localhost:1883
+    broker-url: tcp://192.168.100.83:1883
     client-id: linky-server
     topic: linky/robot
 
