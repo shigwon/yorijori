@@ -1,0 +1,36 @@
+ros2 topic pub /slam/position geometry_msgs/Point "{x: 37.1234, y: 127.5678, z: 0.0}"
+
+
+ros2 topic pub /robot/delivery_state std_msgs/String "data: 'DELIVERING'"
+
+
+ros2 topic pub /robot/status std_msgs/String "data: 'ACTIVE'"
+
+
+mosquitto_pub -h 192.168.100.83 -p 1883 -t "server/robot/0/command" -m '{"command":"closeSection","sectionNum":"A1","sectionStatus":"closed"}'
+
+
+ros2 topic echo /robot/close_section
+
+
+ros2 topic echo /robot/close_section
+
+
+mosquitto_pub -h 192.168.100.83 -p 1883 -t "server/robot/0/command" -m '{"command":"updateRobotStatus","robotId":"0","status":"IDLE"}'
+
+
+ros2 topic echo /server/update_robot_status
+
+
+mosquitto_pub -h 192.168.100.83 -p 1883 -t "server/robot/0/command" -m '{"command":"result","result":"completed"}'
+
+
+ros2 topic echo /server/request_result
+
+
+ros2 topic list
+
+
+ros2 topic echo /slam/position
+ros2 topic echo /robot/status
+ros2 topic echo /robot/delivery_state

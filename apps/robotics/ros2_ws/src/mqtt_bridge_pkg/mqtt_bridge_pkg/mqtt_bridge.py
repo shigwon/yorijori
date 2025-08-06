@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from rcl_interfaces.msg import String # 예시: 문자열 메시지 사용
-from geometry_msgs.msg import Point # 예시: 위치 메시지 사용
+from std_msgs.msg import String
+from geometry_msgs.msg import Point
 
 import paho.mqtt.client as mqtt
 import threading
@@ -11,14 +11,18 @@ import json
 MQTT_HOST = '192.168.100.83'
 MQTT_PORT = 1883
 
-ROBOT_ID = "0"
-TOPIC_SERVER_TO_ROBOT = f"server/robot/{ROBOT_ID}/command"
-TOPIC_ROBOT_TO_SERVER = f"robot/{ROBOT_ID}/status"
+ROBOT_ID = "1"
+SERVER_ID = "0"
+TOPIC_SERVER_TO_ROBOT = f"linky/robot/{ROBOT_ID}"
+TOPIC_ROBOT_TO_SERVER = f"linky/robot/{SERVER_ID}"
 
 class MQTTBridgeNode(Node):
     def __init__(self):
         super().__init__('mqtt_bridge_node')
 
+        self.mqtt_host = MQTT_HOST
+        self.mqtt_port = MQTT_PORT
+        
         self.get_logger().info(f"Starting MQTT Bridge Node for Robot ID: {ROBOT_ID}")
         
         self.location_sub = self.create_subscription(
@@ -62,7 +66,7 @@ class MQTTBridgeNode(Node):
             if not self._connected:
                 try:
                     self.get_logger().info(f"Attempting to connect to MQTT broker at {self.mqtt_host}:{self.mqtt_port}")
-                    self.mqtt_client.connect(MQTT_HOST, MQTT_PORT)
+                    self.mqtt_client.connect(self.mqtt_host, self.mqtt_port)
                     self.mqtt_client.loop_start()
                 except Exception as e:
                     self.get_logger().warn(f"MQTT connection failed: {e}")
@@ -72,9 +76,22 @@ class MQTTBridgeNode(Node):
         if rc == 0:
             self.get_logger().info("Connected to MQTT broker successfully.")
             self._connected = True
-            # 연결 성공 시 MQTT 토픽 구독
-            client.subscribe(TOPIC_SERVER_TO_ROBOT)
-            self.get_logger().info(f"Subscribed to MQTT topic: {TOPIC_SERVER_TO_ROBOT}")
+
+            # 여러 개의 세부 토픽 구독
+            client.subscribe(TOPIC_SERVER_TO_ROBOT + "/closeSection")
+            client.subscribe(TOPIC_SERVER_TO_ROBOT + "/result")
+            client.subscribe(TOPIC_SERVER_TO_ROBOT + "/responseWebRTC")
+            client.subscribe(TOPIC_SERVER_TO_ROBOT + "/orderList")
+
+            self.get_logger().info(f"Subscribed to MQTT topics:")
+            
+            self.get_logger().info(f" - {TOPIC_SERVER_TO_ROBOT}/closeSection")
+            self.get_logger().info(f" - {TOPIC_SERVER_TO_ROBOT}/result")
+            self.get_logger().info(f" - {TOPIC_SERVER_TO_ROBOT}/responseWebRTC")
+            self.get_logger().info(f" - {TOPIC_SERVER_TO_ROBOT}/orderList")
+            
+            self.request_webrtc_connection()
+
         else:
             self.get_logger().error(f"MQTT connection failed with code {rc}")
             self._connected = False
@@ -84,21 +101,22 @@ class MQTTBridgeNode(Node):
         self.get_logger().warn(f"Disconnected from MQTT broker (rc={rc})")
 
     def on_message(self, client, userdata, msg):
-        """ MQTT 메시지가 도착했을 때 실행되는 콜백 함수 """
         try:
             payload = json.loads(msg.payload.decode('utf-8'))
-            command = payload.get('command')
-            
-            self.get_logger().info(f"Received MQTT command: {command} with payload: {payload}")
+            topic = msg.topic
 
-            if command == 'closeSection':
+            self.get_logger().info(f"Received MQTT message on topic: {topic} with payload: {payload}")
+            
+            if topic.endswith("/closeSection"):
                 self.handle_close_section(payload)
-            elif command == 'updateRobotStatus':
-                self.handle_update_robot_status(payload)
-            elif command == 'result':
+            elif topic.endswith("/result"):
                 self.handle_result(payload)
+            elif topic.endswith("/responseWebRTC"):
+                self.handle_webrtc_response(payload)
+            elif topic.endswith("/orderList"):
+                self.handle_orderList(payload)
             else:
-                self.get_logger().warn(f"Unknown command received: {command}")
+                self.get_logger().warn(f"Unknown topic received: {topic}")
         except json.JSONDecodeError:
             self.get_logger().error("Failed to decode JSON payload.")
         except Exception as e:
@@ -108,12 +126,12 @@ class MQTTBridgeNode(Node):
         if not self._connected: return
 
         payload = {
-            "orderId": "undefined", ########### juno 이거 말해봐야 할 듯.
-            "robotId": ROBOT_ID,
-            "customerLatitude": msg.x,
-            "customerLongitude": msg.y,
+            "robotId": ROBOT_ID, ########### juno 이거 말해봐야 할 듯.
+            "latitude": msg.x,
+            "longitude": msg.y,
         }
-        topic = f"robot/{ROBOT_ID}/updateLocation"
+        
+        topic = TOPIC_ROBOT_TO_SERVER + "/updateLocation"
         
         self.mqtt_client.publish(topic, json.dumps(payload))
         self.get_logger().info(f"Published location to MQTT: {payload}")
@@ -122,11 +140,11 @@ class MQTTBridgeNode(Node):
         if not self._connected: return
         
         payload = {
-            "orderId": "undefined", # ROS 2 메시지에 orderId가 포함될 경우 수정
+            "orderId": "1", # ROS 2 메시지에 orderId가 포함될 경우 수정
             "robotId": ROBOT_ID,
             "state": msg.data
         }
-        topic = f"robot/{ROBOT_ID}/updateDeliveryState"
+        topic = TOPIC_ROBOT_TO_SERVER + "/updateDeliveryState"
         
         self.mqtt_client.publish(topic, json.dumps(payload))
         self.get_logger().info(f"Published delivery state to MQTT: {payload}")
@@ -139,14 +157,10 @@ class MQTTBridgeNode(Node):
             "robotId": ROBOT_ID,
             "status": msg.data
         }
-        topic = f"robot/{ROBOT_ID}/status"
+        topic = TOPIC_ROBOT_TO_SERVER + "/updateRobotStatus"
         
         self.mqtt_client.publish(topic, json.dumps(payload))
         self.get_logger().info(f"Published robot status to MQTT: {payload}")
-
-    # ======================================================================
-    # MQTT 메시지를 ROS 2 메시지로 발행하는 핸들러
-    # ======================================================================
 
     def handle_close_section(self, payload):
         """closeSection 명령을 처리하고 ROS 2 토픽으로 발행"""
@@ -179,6 +193,49 @@ class MQTTBridgeNode(Node):
             msg.data = str(result)
             self.result_pub.publish(msg)
             self.get_logger().info(f"Published to ROS 2 topic '/server/request_result': {msg.data}")
+            
+    def handle_webrtc_response(self, payload):
+        result = payload.get("result")
+        data = payload.get("data")
+
+        if result is not None and data is not None:
+            self.get_logger().info(f"WebRTC Connection Response: result={result}, data={data}")
+        else:
+            self.get_logger().warn("Invalid WebRTC response payload.")
+            
+    def handle_orderList(self, payload):
+        if not isinstance(payload, list):
+            self.get_logger().warn("Invalid order list payload format (expected list).")
+            return
+
+        order_count = len(payload)
+        self.get_logger().info(f"Received Order List: {order_count} order(s)")
+
+        for i, order in enumerate(payload[:3], 1):  # 최대 3개만 처리
+            order_id = order.get("orderId")
+            code = order.get("code")
+            tel = order.get("tel")
+            lat = order.get("customerLatitude")
+            lon = order.get("customerLongitude")
+            space_num = order.get("spaceNum")
+            face_url = order.get("faceImageUrl")
+
+        self.get_logger().info(
+            f"[Order {i}] ID={order_id}, Code={code}, Tel={tel}, "
+            f"Space={space_num}, Location=({lat}, {lon}), FaceURL={face_url}"
+        )
+            
+    def request_webrtc_connection(self):
+        if not self._connected: 
+            return
+
+        payload = {
+            "robotId": int(ROBOT_ID),
+            "role": "PUBLISHER"
+        }
+        topic = TOPIC_ROBOT_TO_SERVER + "/requestWebRTC"
+        self.mqtt_client.publish(topic, json.dumps(payload))
+        self.get_logger().info(f"Published WebRTC connection request: {payload}")
 
     def destroy_node(self):
         self._stop_event.set()
