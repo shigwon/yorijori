@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { onMounted, defineEmits, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 const emit = defineEmits(['location-confirmed'])
 
@@ -222,7 +222,7 @@ onMounted(async () => {
       
       const options = {
         center: new window.kakao.maps.LatLng(lat, lng),
-        level: 3
+        level: 4
       }
       
              try {

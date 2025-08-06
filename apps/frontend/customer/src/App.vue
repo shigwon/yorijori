@@ -20,6 +20,7 @@ const deliveryLocation = ref(null)
 const deliveryAddress = ref('')
 const showFoodCompartment = ref(false)
 const showSurveyScreen = ref(false)
+const showChatbot = ref(false)
 
 const progressPercent = computed(() => {
   switch (currentScreen.value) {
@@ -75,11 +76,15 @@ const handleSurvey = () => {
   showFoodCompartment.value = false
   showSurveyScreen.value = true
 }
+
+const handleChatbotToggle = (isOpen) => {
+  showChatbot.value = isOpen
+}
 </script>
 
 <template>
   <!-- Progress Bar (separated from modal) -->
-  <div class="progress-bar-wrapper" v-if="!showFoodCompartment && !showSurveyScreen">
+  <div class="progress-bar-wrapper" v-if="!showFoodCompartment && !showSurveyScreen && !showChatbot">
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
     </div>
@@ -87,7 +92,7 @@ const handleSurvey = () => {
   
   <div class="app-modal">
     <!-- 현재 화면 값에 따른 동적 화면들 -->
-    <WelcomeScreen v-if="currentScreen === 'welcome'" @start="currentScreen = 'how-to-use'" />
+    <WelcomeScreen v-if="currentScreen === 'welcome'" @start="currentScreen = 'how-to-use'" @chatbot-toggle="handleChatbotToggle" />
     <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="currentScreen = 'terms-agreement'" />
     <TermsAgreementScreen v-if="currentScreen === 'terms-agreement'" @next="currentScreen = 'photo-selection'" />
     <PhotoSelectionScreen v-if="currentScreen === 'photo-selection'" @take-selfie="currentScreen = 'camera-capture'" @show-face-recognition="handleShowFaceRecognition" />
