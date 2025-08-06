@@ -7,8 +7,13 @@ import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.dto.RobotLocationDto;
 import com.linky.api.robot.dto.RobotRequestResultDto;
+import com.linky.api.robot.dto.UpdateRobotStatusDto;
 import com.linky.api.robot.entity.Section;
 import com.linky.api.robot.service.RobotService;
+import com.linky.api.stream.entity.JoinRequest;
+import com.linky.api.stream.entity.JoinResponse;
+import com.linky.api.stream.mapper.StreamMapper;
+import com.linky.api.stream.service.StreamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -30,7 +35,9 @@ public class MqttService {
     private final MessageChannel mqttOutboundChannel;
     private final OrderService orderService;
     private final RobotService robotService;
+    private final StreamService streamService;
     private final ObjectMapper objectMapper;
+    private final StreamMapper streamMapper;
 
     public void sendPayload(int robotId, String topicSuffix, Object payloadObj) {
         String topic = "linky/robot/" + robotId + "/" + topicSuffix;
@@ -51,6 +58,10 @@ public class MqttService {
 
     public void sendResult(int robotId, RobotRequestResultDto result) {
         sendPayload(robotId, "result", result);
+    }
+
+    public void sendResult(int robotId, JoinResponse joinResponse) {
+        sendPayload(robotId, "result", joinResponse);
     }
 
     public void sendOrderList(int robotId, List<OrderSummary> orderList) {
@@ -95,10 +106,19 @@ public class MqttService {
 
         try {
             switch (command) {
+                case "joinWebRTC":
+                    JoinRequest joinRequest = objectMapper.readValue(payload, JoinRequest.class);
+                    String data = streamService.joinSession(joinRequest);
+                    JoinResponse joinResponse = streamMapper.toEntity(data != null, data);
+                    sendResult(joinRequest.getRobotId(), joinResponse);
+                    break;
+                case "updateRobotStatus":
+                    UpdateRobotStatusDto updateRobotStatusDto = objectMapper.readValue(payload, UpdateRobotStatusDto.class);
+                    sendResult(updateRobotStatusDto.getRobotId(), new RobotRequestResultDto(robotService.updateRobotStatus(updateRobotStatusDto)));
+                    break;
                 case "updateDeliveryState":
                     UpdateDeliveryStateDto updateDeliveryStateDto = objectMapper.readValue(payload, UpdateDeliveryStateDto.class);
-                    boolean result = orderService.updateDeliveryState(updateDeliveryStateDto.getOrderId(), updateDeliveryStateDto.getState());
-                    sendResult(updateDeliveryStateDto.getRobotId(), new RobotRequestResultDto(result));
+                    sendResult(updateDeliveryStateDto.getRobotId(), new RobotRequestResultDto(orderService.updateDeliveryState(updateDeliveryStateDto.getOrderId(), updateDeliveryStateDto.getState())));
                     break;
                 case "updateLocation":
                     RobotLocationDto robotLocationDto = objectMapper.readValue(payload, RobotLocationDto.class);

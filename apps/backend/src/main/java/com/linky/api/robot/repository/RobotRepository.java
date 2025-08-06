@@ -17,4 +17,7 @@ public interface RobotRepository {
     List<Robot> findRobotsByStatus(@Param("status") String status);
 
     int countAllRobots();
+
+    int updateRobotStatus(RobotStatus robotStatus);
 }
+

@@ -1,10 +1,13 @@
 // com.linky.api.robot.service.impl.RobotServiceImpl (확장)
 package com.linky.api.robot.service.impl;
 
+import com.linky.api.robot.dto.RobotLocationDto;
+import com.linky.api.robot.dto.UpdateRobotStatusDto;
 import com.linky.api.robot.dto.*;
 import com.linky.api.robot.entity.Robot;
 import com.linky.api.robot.entity.RobotLocation;
-import com.linky.api.robot.mapper.RobotLocationMapper;
+import com.linky.api.robot.entity.RobotStatus;
+import com.linky.api.robot.mapper.RobotMapper;
 import com.linky.api.robot.repository.RobotRedisRepository;
 import com.linky.api.robot.repository.RobotRepository;
 import com.linky.api.robot.service.RobotService;
@@ -21,16 +24,23 @@ import java.util.Optional;
 public class RobotServiceImpl implements RobotService {
 
     private final RobotRedisRepository robotRedisRepository;
+    private final RobotRepository robotRepository;
+    private final RobotMapper robotMapper;
     private final RobotLocationMapper robotLocationMapper;
     private final RobotRepository robotRepository;
 
     @Override
     public void saveLocationToRedis(RobotLocationDto robotLocationDto) {
-        RobotLocation robotLocation = robotLocationMapper.toEntity(robotLocationDto);
+        RobotLocation robotLocation = robotMapper.toEntity(robotLocationDto);
         robotRedisRepository.save(robotLocation);
     }
 
     @Override
+    public boolean updateRobotStatus(UpdateRobotStatusDto updateRobotStatusDto) {
+        RobotStatus robotStatus = robotMapper.toEntity(updateRobotStatusDto);
+        return robotRepository.updateRobotStatus(robotStatus) > 0;
+    }
+
     public RobotListResponseDto getAllRobots() {
         try {
             List<Robot> robots = robotRepository.findAllRobots();
@@ -200,3 +210,4 @@ public class RobotServiceImpl implements RobotService {
         };
     }
 }
+

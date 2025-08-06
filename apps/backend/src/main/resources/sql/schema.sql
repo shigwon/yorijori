@@ -4,7 +4,7 @@ CREATE DATABASE IF NOT EXISTS linky
 
 USE linky;
 
-CREATE TABLE IF NOT EXISTS `Robots` (
+CREATE TABLE IF NOT EXISTS `robots` (
     `id`          INT           NOT NULL COMMENT '로봇식별번호',
     `code`        VARCHAR(20)   NULL COMMENT '로봇코드',
     `status`      VARCHAR(20)   NULL COMMENT '로봇상태',

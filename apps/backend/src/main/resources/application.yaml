@@ -78,5 +78,5 @@ sms:
   secret-key: ${SMS_SECRET_KEY}
 
 openvidu:
-  url: http://i13c102.p.ssafy.io:4443
-  secret: 1234
+  url: https://i13c102.p.ssafy.io:443
+  secret: linky1234

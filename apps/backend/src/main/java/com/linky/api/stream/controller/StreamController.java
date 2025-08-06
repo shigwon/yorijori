@@ -2,6 +2,7 @@ package com.linky.api.stream.controller;
 
 import com.linky.api.common.response.entity.ApiResponseEntity;
 import com.linky.api.stream.entity.JoinRequest;
+import com.linky.api.stream.service.StreamService;
 import io.openvidu.java.client.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,42 +22,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StreamController {
 
     private final OpenVidu openVidu;
+    private final StreamService streamService;
     private final Map<Integer, Session> sessionMap = new ConcurrentHashMap<>();
 
     @PostMapping("/join")
     public ResponseEntity<ApiResponseEntity<String>> joinSession(@RequestBody JoinRequest request)
             throws OpenViduJavaClientException, OpenViduHttpException {
 
-        int robotId = request.getRobotId();
-        String role = request.getRole();
-
-        Session session = sessionMap.computeIfAbsent(robotId, id -> {
-            try {
-                return openVidu.createSession(
-                        new SessionProperties.Builder()
-                                .customSessionId(String.valueOf(robotId)) // 문자열로 변환
-                                .build()
-                );
-            } catch (Exception e) {
-                log.error(">>> [webRTC] 세션 생성 실패: {}", e.getMessage());
-                return null;
-            }
-        });
-
-        if (session == null) {
+        String token = streamService.joinSession(request);
+        if (token == null) {
             return ApiResponseEntity.failResponseEntity("세션 생성 실패");
         }
-
-        OpenViduRole openViduRole = "PUBLISHER".equalsIgnoreCase(role)
-                ? OpenViduRole.PUBLISHER
-                : OpenViduRole.SUBSCRIBER;
-
-        ConnectionProperties properties = new ConnectionProperties.Builder()
-                .type(ConnectionType.WEBRTC)
-                .role(openViduRole)
-                .build();
-
-        String token = session.createConnection(properties).getToken();
         return ApiResponseEntity.successResponseEntity(token);
     }
 }
