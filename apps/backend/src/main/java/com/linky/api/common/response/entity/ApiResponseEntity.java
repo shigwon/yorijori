@@ -58,4 +58,23 @@ public record ApiResponseEntity<T>(
         log.warn("[API FAIL] result={}, msg={}, data={}", body.result, body.msg, data);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    public static <T> ResponseEntity<ApiResponseEntity<T>> unauthorizedResponseEntity(String msg) {
+        ApiResponseEntity<T> body = ApiResponseEntity.<T>builder()
+                .result("unauthorized")
+                .msg(msg != null ? msg : "인증이 필요합니다")
+                .build();
+        log.warn("[API UNAUTHORIZED] result={}, msg={}", body.result, body.msg);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    public static <T> ResponseEntity<ApiResponseEntity<T>> unauthorizedResponseEntity(T data, String msg) {
+        ApiResponseEntity<T> body = ApiResponseEntity.<T>builder()
+                .result("unauthorized")
+                .msg(msg != null ? msg : "인증이 필요합니다")
+                .data(data)
+                .build();
+        log.warn("[API UNAUTHORIZED] result={}, msg={}, data={}", body.result, body.msg, data);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
 }

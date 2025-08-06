@@ -9,41 +9,48 @@ from launch_ros.substitutions import FindPackageShare
 import os
 
 def generate_launch_description():
-    # 다른 패키지의 launch 파일 포함
-    # included_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         PathJoinSubstitution([
-    #             FindPackageShare('other_pkg_name'),
-    #             'launch',
-    #             'other_launch_file.launch.py'
-    #         ])
-    #     )
-    # )
-
-    controller_node = Node(
-        package='driving_pkg',
-        executable='controller_node',
-        name='controller',
-        output='screen'
-    )
-
-    face_recognition_node = Node(
-        package='face_recognitnion_pkg',
-        executable='face_recognitnion_node',
-        name='face_recognition',
-        output='screen'
-    )
-
-    mqtt_bridge_node = Node(
-        package='mqtt_bridge_pkg',
-        executable='mqtt_bridge_node',
-        name='mqtt_bridge',
-        output='screen'
-    )
-
     return LaunchDescription([
-        # included_launch,
-        controller_node,
-        face_recognition_node,
-        mqtt_bridge_node
+        # 다른 패키지의 launch 파일 포함
+        # included_launch = IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         PathJoinSubstitution([
+        #             FindPackageShare('other_pkg_name'),
+        #             'launch',
+        #             'other_launch_file.launch.py'
+        #         ])
+        #     )
+        # )
+
+        Node(
+            package='face_recognition_pkg',
+            executable='face_recognition_server_node',
+            name='face_recognition',
+            output='screen'
+        ),
+        
+        Node(
+            package='mqtt_bridge_pkg',
+            executable='mqtt_bridge_node',
+            name='mqtt_bridge',
+            output='screen'
+        ),
+        Node(
+            package='vehicle_contoller_pkg',
+            executable='drive_controller_node',
+            name='drive_controller',
+            output='screen'
+        ),
+        
+        Node(
+            package='webrtc_streamer_pkg',
+            executable='webrtc_streamer_node',
+            name='webrtc_streamer',
+            output='screen'
+        ),
+        Node(
+            package='slam_pkg',
+            executable='slam_node',
+            name='slam',
+            output='screen'
+        )
     ])
