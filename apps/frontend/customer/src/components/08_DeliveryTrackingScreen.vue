@@ -21,12 +21,7 @@
      
                <!-- 로봇 마스코트 -->
        <div class="robot-mascot">
-         <div class="robot-body">
-           <div class="robot-eyes">
-             <div class="eye left"></div>
-             <div class="eye right"></div>
-           </div>
-         </div>
+         <img src="../assets/homerobot.png" alt="homerobot" class="robot-image" />
        </div>
        
                <!-- 타임라인 컨테이너 -->
@@ -348,29 +343,11 @@ onMounted(() => {
   top: 50px;
 }
 
-.robot-body {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-}
-
-.robot-eyes {
-  display: flex;
-  gap: 3px;
-}
-
-.eye {
-  width: 5px;
-  height: 5px;
-  background: #10B981;
-  border-radius: 50%;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+.robot-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
 }
 
 /* 타임라인 컨테이너 */
@@ -485,9 +462,9 @@ onMounted(() => {
     font-size: 16px;
   }
   
-  .robot-body {
-    width: 36px;
-    height: 36px;
+  .robot-image {
+    width: 50px;
+    height: 50px;
   }
   
   .timeline-markers {
@@ -498,4 +475,4 @@ onMounted(() => {
     font-size: 11px;
   }
 }
-</style> 
+</style>

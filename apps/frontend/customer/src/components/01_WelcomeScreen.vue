@@ -35,25 +35,30 @@
            
          </div>
         
-                 <!-- 로봇 아이콘 -->
-         <div class="chatbot-icon">
-           <img src="../assets/robot.png" alt="robot" class="robot-icon-image" />
-         </div>
+                                   <!-- 로봇 아이콘 -->
+          <div class="chatbot-icon" @click="openChatbot">
+            <img src="../assets/robot.png" alt="robot" class="robot-icon-image" />
+          </div>
       </div>
       
-      <!-- 시작 버튼 -->
-      <button class="start-button" @click="handleStart">
-        시작하기
-      </button>
-    </div>
-  </div>
-</template>
+             <!-- 시작 버튼 -->
+       <button class="start-button" @click="handleStart">
+         시작하기
+       </button>
+     </div>
+   </div>
+   
+   <!-- 챗봇 인터페이스 -->
+   <ChatbotInterface v-if="showChatbot" @close="closeChatbot" />
+ </template>
 
 <script setup>
 import { ref } from 'vue'
+import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const emit = defineEmits(['start'])
+const emit = defineEmits(['start', 'chatbot-toggle'])
 const showChatMessage = ref(true)
+const showChatbot = ref(false)
 
 const handleStart = () => {
   emit('start')
@@ -65,6 +70,16 @@ const toggleChatMessage = () => {
 
 const hideChatMessage = () => {
   showChatMessage.value = false
+}
+
+const openChatbot = () => {
+  showChatbot.value = true
+  emit('chatbot-toggle', true)
+}
+
+const closeChatbot = () => {
+  showChatbot.value = false
+  emit('chatbot-toggle', false)
 }
 </script>
 
@@ -276,6 +291,12 @@ const hideChatMessage = () => {
   justify-content: center;
   background: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.chatbot-icon:hover {
+  transform: scale(1.05);
 }
 
 .robot-icon-image {
