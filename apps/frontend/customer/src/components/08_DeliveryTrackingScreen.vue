@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { onMounted, defineEmits, ref, defineProps } from 'vue'
+import { onMounted, ref } from 'vue'
 import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
 const emit = defineEmits(['delivery-completed', 'show-compartment'])
@@ -102,7 +102,7 @@ onMounted(() => {
       
              const options = {
          center: new window.kakao.maps.LatLng(deliveryLat, deliveryLng),
-         level: 4
+         level: 3
        }
       
              try {
@@ -230,10 +230,10 @@ onMounted(() => {
    setTimeout(initDeliveryMap, 3000)
    
    // 4초 후 배달 완료 모달 표시 (비활성화)
-   // setTimeout(() => {
-   //   console.log('배달 완료 모달 표시')
-   //   showDeliveryCompleteModal.value = true
-   // }, 4000)
+   setTimeout(() => {
+     console.log('배달 완료 모달 표시')
+     showDeliveryCompleteModal.value = true
+   }, 4000)
  })
 
 

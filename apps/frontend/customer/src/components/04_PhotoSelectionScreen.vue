@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { defineEmits, ref } from 'vue'
+import { ref } from 'vue'
 
 const emit = defineEmits(['select-album', 'take-selfie', 'photo-selected', 'photo-uploaded', 'show-face-recognition'])
 
