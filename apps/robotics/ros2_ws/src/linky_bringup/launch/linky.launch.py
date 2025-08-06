@@ -41,12 +41,12 @@ def generate_launch_description():
             output='screen'
         ),
         
-        Node(
-            package='webrtc_streamer_pkg',
-            executable='webrtc_streamer_node',
-            name='webrtc_streamer',
-            output='screen'
-        ),
+        # Node(
+        #     package='webrtc_streamer_pkg',
+        #     executable='webrtc_streamer_node',
+        #     name='webrtc_streamer',
+        #     output='screen'
+        # ),
         Node(
             package='slam_pkg',
             executable='slam_node',
