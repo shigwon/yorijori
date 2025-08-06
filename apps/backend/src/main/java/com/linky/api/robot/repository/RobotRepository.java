@@ -1,6 +1,7 @@
 package com.linky.api.robot.repository;
 
 import com.linky.api.robot.entity.Robot;
+import com.linky.api.robot.entity.RobotStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
