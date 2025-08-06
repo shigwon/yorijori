@@ -21,7 +21,5 @@ public interface RobotService {
 
     List<RobotWithLocationDto> getAllRobotsWithLocation();
 
-    void saveLocationToRedis(RobotLocationDto robotLocationDto);
-
     boolean updateRobotStatus(UpdateRobotStatusDto updateRobotStatusDto);
 }

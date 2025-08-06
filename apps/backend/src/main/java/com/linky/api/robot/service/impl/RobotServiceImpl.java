@@ -26,8 +26,6 @@ public class RobotServiceImpl implements RobotService {
     private final RobotRedisRepository robotRedisRepository;
     private final RobotRepository robotRepository;
     private final RobotMapper robotMapper;
-    private final RobotLocationMapper robotLocationMapper;
-    private final RobotRepository robotRepository;
 
     @Override
     public void saveLocationToRedis(RobotLocationDto robotLocationDto) {

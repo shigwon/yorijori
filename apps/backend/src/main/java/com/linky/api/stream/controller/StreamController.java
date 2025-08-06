@@ -23,7 +23,6 @@ public class StreamController {
 
     private final OpenVidu openVidu;
     private final StreamService streamService;
-    private final Map<Integer, Session> sessionMap = new ConcurrentHashMap<>();
 
     @PostMapping("/join")
     public ResponseEntity<ApiResponseEntity<String>> joinSession(@RequestBody JoinRequest request)
