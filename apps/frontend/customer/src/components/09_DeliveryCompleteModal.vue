@@ -4,19 +4,13 @@
       <!-- Title -->
       <div class="title">음식이 도착했어요!</div>
       
-      <!-- Robot Character -->
-      <div class="robot-character">
-        <div class="robot-head">
-          <div class="antenna left"></div>
-          <div class="antenna right"></div>
-          <div class="eyes">
-            <div class="eye left"></div>
-            <div class="eye right"></div>
-          </div>
-          <div class="mouth"></div>
-        </div>
-        <div class="robot-body"></div>
-        <div class="robot-shadow"></div>
+      <!-- Robot Scan Image -->
+      <div class="face-image-container">
+        <img 
+          src="../assets/robotscan.png" 
+          alt="로봇 스캔" 
+          class="face-image"
+        />
       </div>
       
       <!-- Instruction Text -->
@@ -26,7 +20,7 @@
 </template>
 
 <script setup>
-import { defineEmits, onMounted } from 'vue'
+import { onMounted } from 'vue'
 
 const emit = defineEmits(['close', 'show-compartment'])
 
@@ -77,79 +71,36 @@ onMounted(() => {
   margin-bottom: 30px;
 }
 
-.robot-character {
-  position: relative;
+.face-image-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
   margin-bottom: 30px;
 }
 
-.robot-head {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  background: #E5E7EB;
+.face-image {
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #7C3AED;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.face-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #E5E7EB;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 15px;
+  border: 4px solid #7C3AED;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
-.antenna {
-  position: absolute;
-  top: -8px;
-  width: 2px;
-  height: 12px;
-  background: #6B7280;
-  border-radius: 1px;
-}
-
-.antenna.left {
-  left: 30px;
-}
-
-.antenna.right {
-  right: 30px;
-}
-
-.eyes {
-  display: flex;
-  gap: 12px;
-}
-
-.eye {
-  width: 12px;
-  height: 12px;
-  background: #374151;
-  border-radius: 50%;
-}
-
-.mouth {
-  position: absolute;
-  bottom: 20px;
-  width: 16px;
-  height: 6px;
-  border: 2px solid #374151;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-}
-
-.robot-body {
-  width: 60px;
-  height: 70px;
-  background: linear-gradient(135deg, #60A5FA 0%, #34D399 100%);
-  border-radius: 30px 30px 20px 20px;
-  position: relative;
-}
-
-.robot-shadow {
-  width: 50px;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  margin-top: 8px;
+.face-placeholder span {
+  font-size: 48px;
+  color: #9CA3AF;
 }
 
 .instruction {
@@ -170,14 +121,14 @@ onMounted(() => {
     margin-bottom: 25px;
   }
   
-  .robot-head {
-    width: 70px;
-    height: 70px;
+  .face-image,
+  .face-placeholder {
+    width: 130px;
+    height: 130px;
   }
   
-  .robot-body {
-    width: 50px;
-    height: 60px;
+  .face-placeholder span {
+    font-size: 40px;
   }
   
   .instruction {
