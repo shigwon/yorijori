@@ -7,6 +7,7 @@ import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.dto.RobotLocationDto;
 import com.linky.api.robot.dto.RobotRequestResultDto;
+import com.linky.api.robot.dto.UpdateRobotStatusDto;
 import com.linky.api.robot.entity.Section;
 import com.linky.api.robot.service.RobotService;
 import lombok.RequiredArgsConstructor;
@@ -95,10 +96,13 @@ public class MqttService {
 
         try {
             switch (command) {
+                case "updateRobotStatus":
+                    UpdateRobotStatusDto updateRobotStatusDto = objectMapper.readValue(payload, UpdateRobotStatusDto.class);
+                    sendResult(updateRobotStatusDto.getRobotId(), new RobotRequestResultDto(robotService.updateRobotStatus(updateRobotStatusDto)));
+                    break;
                 case "updateDeliveryState":
                     UpdateDeliveryStateDto updateDeliveryStateDto = objectMapper.readValue(payload, UpdateDeliveryStateDto.class);
-                    boolean result = orderService.updateDeliveryState(updateDeliveryStateDto.getOrderId(), updateDeliveryStateDto.getState());
-                    sendResult(updateDeliveryStateDto.getRobotId(), new RobotRequestResultDto(result));
+                    sendResult(updateDeliveryStateDto.getRobotId(), new RobotRequestResultDto(orderService.updateDeliveryState(updateDeliveryStateDto.getOrderId(), updateDeliveryStateDto.getState())));
                     break;
                 case "updateLocation":
                     RobotLocationDto robotLocationDto = objectMapper.readValue(payload, RobotLocationDto.class);

@@ -34,7 +34,7 @@ public class StreamController {
             try {
                 return openVidu.createSession(
                         new SessionProperties.Builder()
-                                .customSessionId(String.valueOf(robotId)) // 문자열로 변환
+                                .customSessionId("robot-" + String.valueOf(robotId)) // 문자열로 변환
                                 .build()
                 );
             } catch (Exception e) {
