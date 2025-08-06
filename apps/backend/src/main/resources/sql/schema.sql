@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS `robots` (
     );
 
 CREATE TABLE IF NOT EXISTS `orders` (
-                                        `id`                  INT             NOT NULL AUTO_INCREMENT COMMENT '주문식별번호',
-                                        `robot_id`            INT             NOT NULL COMMENT '로봇식별번호',
-                                        `code`                VARCHAR(20)     NULL COMMENT '주문번호' UNIQUE,
+    `id`                  INT             NOT NULL AUTO_INCREMENT COMMENT '주문식별번호',
+    `robot_id`            INT             NOT NULL COMMENT '로봇식별번호',
+    `code`                VARCHAR(20)     NULL COMMENT '주문번호' UNIQUE,
     `tel`                 VARCHAR(20)     NOT NULL COMMENT '전화번호',
     `customer_latitude`   DECIMAL(10,6)   NULL COMMENT '고객위치위도',
     `customer_longitude`  DECIMAL(10,6)   NULL COMMENT '고객위치경도',
@@ -31,19 +31,21 @@ CREATE TABLE IF NOT EXISTS `orders` (
     );
 
 CREATE TABLE IF NOT EXISTS `reviews` (
-                                         `id`	INT	NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                                         `order_id`	INT	NOT NULL,
-                                         `rating`	INT	NULL,
-                                         `content`	TEXT	NULL,
-                                         `created_at`	DATETIME	NULL,
-                                         CONSTRAINT `fk_reviews_orders_id` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`)
+    `id`	INT	NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `order_id`	INT	NOT NULL,
+    `rating`	INT	NULL,
+    `content`	TEXT	NULL,
+    `created_at`	DATETIME	NULL,
+    CONSTRAINT `fk_reviews_orders_id` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`)
     );
 
-CREATE TABLE IF NOT `admins` (
-                                 `id` INT NOT NULL AUTO_INCREMENT,
-                                 `email` VARCHAR(50) NOT NULL,
-    `password` VARCHAR(50) NOT NULL,
-    `name` VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS `admins` (
+    `id`          INT          NOT NULL AUTO_INCREMENT COMMENT '관리자식별번호',
+    `email`       VARCHAR(50)  NOT NULL COMMENT '이메일',
+    `password`    VARCHAR(60)  NOT NULL COMMENT '해시된 비밀번호 (bcrypt)',
+    `name`        VARCHAR(20)  NOT NULL COMMENT '관리자명',
+    `created_at`  DATETIME     NULL DEFAULT NOW() COMMENT '생성일시',
+    `updated_at`  DATETIME     NULL DEFAULT NOW() ON UPDATE NOW() COMMENT '수정일시',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_admins_email` (`email`)
     );
