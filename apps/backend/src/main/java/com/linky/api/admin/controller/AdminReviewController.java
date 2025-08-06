@@ -33,20 +33,16 @@ public class AdminReviewController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(defaultValue = "0") int minRating,
-            @RequestParam(defaultValue = "DESC") String sortOption) {
+            @RequestParam(defaultValue = "DESC") com.linky.api.review.enums.SortOption sortOption) {
 
         log.info("[Admin] 리뷰 목록 조회 요청 - page: {}, pageSize: {}, minRating: {}, sortOption: {}",
                 page, pageSize, minRating, sortOption);
-
-        if (!"ASC".equalsIgnoreCase(sortOption) && !"DESC".equalsIgnoreCase(sortOption)) {
-            sortOption = "DESC";
-        }
 
         PaginatedReviewsRequestDto request = new PaginatedReviewsRequestDto(
                 page,
                 pageSize,
                 minRating,
-                com.linky.api.review.enums.SortOption.valueOf(sortOption.toUpperCase())
+                sortOption
         );
 
         PaginatedReviewsResponseDto reviews = reviewService.getPaginatedReviews(request);
