@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  base: '/rider/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -14,9 +15,9 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'],
     proxy: {
       '/api': {
-        target: 'http://192.168.100.83:8080',  // 백엔드 서버 IP
+        target: 'http://192.168.100.83:8080', // 백엔드 서버 IP
         changeOrigin: true,
-        rewrite: path => path,
+        rewrite: (path) => path,
       },
     },
   },
@@ -27,9 +28,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['vue']
-        }
-      }
-    }
-  }
+          vendor: ['vue'],
+        },
+      },
+    },
+  },
 })
