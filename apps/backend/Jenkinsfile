@@ -48,10 +48,8 @@ pipeline {
         stage('Docker 이미지 빌드') {
             steps {
                 script {
-                    dir('apps/backend') {
-                        sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
-                        sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
-                    }
+                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                    sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
                 }
             }
         }
