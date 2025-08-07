@@ -25,4 +25,9 @@ public class RobotWithLocationDto {
     private boolean locationAvailable;
     private String locationStatus;
     private String locationDisplay;
+
+    // 실시간 모니터링용 추가 필드
+    private LocalDateTime lastUpdated;
+    private boolean isOnline;
+    private String movementStatus;
 }
