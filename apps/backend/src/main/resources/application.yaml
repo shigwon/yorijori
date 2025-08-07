@@ -18,19 +18,10 @@ spring:
     password: ${DB_PASSWORD}
 
   hikari:
-    minimum-idle: 3
-    maximum-pool-size: 5
+    minimum-idle: 5
+    maximum-pool-size: 20
     connection-timeout: 600000
     idle-timeout: 300000
-
-  logging:
-    level:
-      org.springframework.ai: DEBUG
-      org.springframework.web.client: DEBUG
-      com.linky.api.aichat: DEBUG
-
-    pattern:
-      console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
   servlet:
     multipart:
@@ -48,16 +39,6 @@ spring:
       credentials:
         access-key: ${AWS_ACCESS_KEY}
         secret-key: ${AWS_SECRET_KEY}
-  data:
-    redis:
-      password: 1234
-      host: localhost
-      port: 6379
-
-  mqtt:
-    broker-url: tcp://192.168.100.83:1883
-    client-id: linky-server
-    topic: linky/robot
 
   ai:
     openai:
@@ -67,7 +48,7 @@ spring:
           temperature: 0.7
           max-tokens: 4096
       api-key: ${GMS_API_KEY}
-      base-url: https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions
+      base-url: ${GMS_API_URL}
 
 mybatis:
   mapper-locations: classpath:/mappers/**/*.xml
@@ -78,5 +59,5 @@ sms:
   secret-key: ${SMS_SECRET_KEY}
 
 openvidu:
-  url: https://i13c102.p.ssafy.io:443
-  secret: linky1234
+  url: ${OPENVIDU_API_URL}
+  secret: ${OPENVIDU_API_SECRET}
