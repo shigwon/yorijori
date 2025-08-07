@@ -28,8 +28,9 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const emit = defineEmits(['location-confirmed'])
+const { goToDeliveryTracking, deliveryLocation, deliveryAddress } = useAppState()
 
 // props로 얼굴 이미지 받기
 const props = defineProps({
@@ -56,6 +57,13 @@ const confirmLocation = async () => {
   console.log('위치 설정 완료')
   console.log('현재 위치:', currentLocation.value)
   console.log('현재 주소:', currentAddress.value)
+  
+  // useAppState에 위치 정보 저장
+  deliveryLocation.value = currentLocation.value
+  deliveryAddress.value = currentAddress.value
+  
+  console.log('useAppState에 저장된 위치:', deliveryLocation.value)
+  console.log('useAppState에 저장된 주소:', deliveryAddress.value)
   
   // 백엔드로 위치 정보 전송
   try {
@@ -84,11 +92,8 @@ const confirmLocation = async () => {
     console.error('위치 정보 전송 오류:', error)
   }
   
-  // 기존 로직 - 상위 컴포넌트로 데이터 전달
-  emit('location-confirmed', {
-    location: currentLocation.value,
-    address: currentAddress.value
-  })
+  // 라우터로 다음 화면으로 이동
+  goToDeliveryTracking()
 }
 
 const getCurrentLocation = () => {

@@ -77,8 +77,9 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const emit = defineEmits(['close'])
+const { closeChatbot } = useAppState()
 
 const userInput = ref('')
 const messages = ref([])
@@ -169,7 +170,7 @@ const scrollToBottom = () => {
 }
 
 const closeChat = () => {
-  emit('close')
+  closeChatbot()
 }
 
 onMounted(() => {

@@ -54,14 +54,15 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAppState } from '../composables/useAppState'
 import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const emit = defineEmits(['start', 'chatbot-toggle'])
+const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal } = useAppState()
 const showChatMessage = ref(true)
 const showChatbot = ref(false)
 
 const handleStart = () => {
-  emit('start')
+  goToHowToUse()
 }
 
 const toggleChatMessage = () => {
@@ -74,12 +75,12 @@ const hideChatMessage = () => {
 
 const openChatbot = () => {
   showChatbot.value = true
-  emit('chatbot-toggle', true)
+  openChatbotGlobal()
 }
 
 const closeChatbot = () => {
   showChatbot.value = false
-  emit('chatbot-toggle', false)
+  closeChatbotGlobal()
 }
 </script>
 

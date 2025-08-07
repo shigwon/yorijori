@@ -104,8 +104,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const emit = defineEmits(['next'])
+const { goToPhotoSelection } = useAppState()
 
 const masterAgreement = ref(false)
 const agreements = ref({
@@ -140,7 +141,7 @@ const checkMasterAgreement = () => {
 const handleNext = () => {
   if (isButtonEnabled.value) {
     console.log('약관 동의 완료')
-    emit('next')
+    goToPhotoSelection()
   }
 }
 

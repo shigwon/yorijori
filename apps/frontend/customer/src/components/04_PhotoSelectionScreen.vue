@@ -91,8 +91,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const emit = defineEmits(['select-album', 'take-selfie', 'photo-selected', 'photo-uploaded', 'show-face-recognition'])
+const { goToCameraCapture, openFaceRecognitionModal } = useAppState()
 
 const fileInput = ref(null)
 
@@ -129,7 +130,7 @@ const handleFileSelect = async (event) => {
       // 얼굴 인식 모달 표시 (약간의 지연 후)
       setTimeout(() => {
         console.log('앨범 선택 후 얼굴 인식 모달 표시 이벤트 발생')
-        emit('show-face-recognition', base64Image)
+        openFaceRecognitionModal(base64Image)
       }, 100)
       
     } catch (error) {
@@ -185,7 +186,7 @@ const sendImageToBackend = async (base64Image, fileName) => {
 
 const takeSelfie = () => {
   console.log('셀카 찍기 클릭됨')
-  emit('take-selfie')
+  goToCameraCapture()
 }
 </script>
 

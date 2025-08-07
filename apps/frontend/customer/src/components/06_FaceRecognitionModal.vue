@@ -30,6 +30,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
 const props = defineProps({
   capturedImage: {
@@ -38,22 +39,23 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['previous', 'next'])
+const { closeFaceRecognitionModal, goToLocationSetting } = useAppState()
 
 const isLoading = ref(true)
 
 const handleOverlayClick = () => {
   // 로딩 중에는 오버레이 클릭으로 닫히지 않도록 방지
   if (isLoading.value) return
-  emit('previous')
+  closeFaceRecognitionModal()
 }
 
 const handlePrevious = () => {
-  emit('previous')
+  closeFaceRecognitionModal()
 }
 
 const handleNext = () => {
-  emit('next')
+  closeFaceRecognitionModal()
+  goToLocationSetting()
 }
 
 onMounted(() => {
