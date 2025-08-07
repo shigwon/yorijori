@@ -1,19 +1,8 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:28.3.3'
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
-
-    tools {
-        gradle 'gradle-9.0.0'
-        jdk 'jdk-17'
-    }
+    agent none  // 전체에는 agent 없음
 
     environment {
         GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
-
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = "parkheejun/linky-backend"
         IMAGE_TAG = "1.0.0"
@@ -21,69 +10,79 @@ pipeline {
 
     stages {
         stage('릴리즈파일 체크아웃') {
+            agent any
             steps {
                 git branch: 'feature/deploy',
                     credentialsId: 'gitlab-credentials',
                     url: "${GITLAB_URL}"
+
+                // 작업 공간을 다음 스테이지에서 사용할 수 있도록 저장
+                stash includes: '**/*', name: 'source-code'
             }
         }
 
         stage('소스 빌드') {
-            steps {
-                script {
-                    sh 'apt-get update && apt-get install -y openjdk-17-jdk'
-                    sh "chmod +x ./apps/backend/gradlew"
-                    sh "./apps/backend/gradlew clean build --no-daemon"
+            agent {
+                docker {
+                    image 'gradle:8-jdk17'
                 }
+            }
+            steps {
+                unstash 'source-code'
+                sh "chmod +x ./apps/backend/gradlew"
+                sh "./apps/backend/gradlew clean build --no-daemon"
+
+                // 빌드 결과물 저장
+                stash includes: 'apps/backend/build/**/*', name: 'build-artifacts'
             }
         }
 
-        stage('Docker 이미지 빌드') {
-            steps {
-                script {
-                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
-                    sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
+        stage('Docker 이미지 빌드 및 배포') {
+            agent {
+                docker {
+                    image 'docker:28.3.3'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
-        }
-
-        stage('Docker Hub 로그인 및 푸시') {
             steps {
-                script {
-                    sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                unstash 'source-code'
+                unstash 'build-artifacts'
 
-                    sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
-                }
+                // Docker 빌드
+                sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
+
+                // Docker Hub 푸시
+                sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${DOCKER_IMAGE}:latest"
             }
         }
 
         stage('쿠버네티스 배포') {
-            steps {
-                script {
-                    sh "kubectl apply -f ./k8s/app/namespace.yaml"
-                    sh "kubectl apply -f ./k8s/app/configmap.yaml"
-                    sh "kubectl apply -f ./k8s/app/secret.yaml"
-                    sh "kubectl apply -f ./k8s/app/service.yaml"
-                    sh "kubectl apply -f ./k8s/app/deployment.yaml"
+            agent {
+                docker {
+                    image 'bitnami/kubectl:latest'
                 }
+            }
+            steps {
+                unstash 'source-code'
+                sh "kubectl apply -f ./k8s/app/namespace.yaml"
+                sh "kubectl apply -f ./k8s/app/configmap.yaml"
+                sh "kubectl apply -f ./k8s/app/secret.yaml"
+                sh "kubectl apply -f ./k8s/app/service.yaml"
+                sh "kubectl apply -f ./k8s/app/deployment.yaml"
             }
         }
     }
 
     post {
         always {
-            sh "docker rmi ${DOCKER_IMAGE}:${IMAGE_TAG} || true"
-            sh "docker rmi ${DOCKER_IMAGE}:latest || true"
-            sh "docker logout || true"
-        }
-
-        success {
-            echo "배포가 성공적으로 완료되었습니다!"
-        }
-
-        failure {
-            echo "배포 중 오류가 발생했습니다."
+            node('') {
+                sh "docker rmi ${DOCKER_IMAGE}:${IMAGE_TAG} || true"
+                sh "docker rmi ${DOCKER_IMAGE}:latest || true"
+                sh "docker logout || true"
+            }
         }
     }
 }
