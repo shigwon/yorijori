@@ -25,7 +25,7 @@ pipeline {
                 checkout scmGit(
                     branches: [[name: '*/feature/deploy']],
                     extensions: [[$class: 'SparseCheckoutPaths',
-                                  sparseCheckoutPaths: [[path: "apps/backend"]]]],
+                                  sparseCheckoutPaths: [[path: "/apps/backend"]]]],
                     userRemoteConfigs: [[
                         url: "${GITLAB_URL}",
                         credentialsId: 'gitlab-credentials'
@@ -37,10 +37,8 @@ pipeline {
         stage('소스 빌드') {
             steps {
                 script {
-                    dir('apps/backend') {
-                        sh "chmod +x ./gradlew"
-                        sh "./gradlew clean build --no-daemon"
-                    }
+                    sh "chmod +x ./gradlew"
+                    sh "./gradlew clean build --no-daemon"
                 }
             }
         }
@@ -71,7 +69,6 @@ pipeline {
                     dir('apps/backend') {
                         sh "kubectl apply -f ./k8s/app/namespace.yaml"
                         sh "kubectl apply -f ./k8s/app/configmap.yaml"
-                        sh "kubectl apply -f ./k8s/app/secret.yaml"
                         sh "kubectl apply -f ./k8s/app/service.yaml"
                         sh "kubectl apply -f ./k8s/app/deployment.yaml"
                     }
