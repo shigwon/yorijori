@@ -4,7 +4,7 @@ pipeline {
     environment {
         GIT_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
         GIT_BRANCH = "test/jenkins-rider"
-        GIT_CREDENTIALS_ID = "linky-api-token"
+        GIT_CREDENTIALS_ID = "Gitlab"
         DOCKER_IMAGE = "baejunyeong/linky-frontend-rider"
         DOCKER_CONTAINER = "frontend-rider"
         IMAGE_TAG = "1.0.0"
@@ -15,8 +15,8 @@ pipeline {
             agent any
             steps {
                 git branch: "${GIT_BRANCH}", 
-                credentialsId: "${GIT_CREDENTIALS_ID}",
-                url: "${GIT_URL}"
+                    credentialsId: "${GIT_CREDENTIALS_ID}",
+                    url: "${GIT_URL}"
 
                 sh 'echo "Checked out branch ${GIT_BRANCH} from ${GIT_URL}"'
                 stash includes: '**/*', name: 'frontend-source-code'
