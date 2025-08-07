@@ -52,17 +52,22 @@ pipeline {
                     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
-            steps {
-                unstash 'source-code'
-                unstash 'build-artifacts'
+             steps {
+                            unstash 'source-code'
+                            unstash 'build-artifacts'
 
-                sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
-                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
+                            script {
+                                dir('apps/backend') {
+                                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                                }
 
-                sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
-                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                sh "docker push ${DOCKER_IMAGE}:latest"
-            }
+                                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
+                            }
+
+                            sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                            sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                            sh "docker push ${DOCKER_IMAGE}:latest"
+                        }
         }
 
         stage('쿠버네티스 배포') {
