@@ -69,21 +69,5 @@ pipeline {
                             sh "docker push ${DOCKER_IMAGE}:latest"
                         }
         }
-
-        stage('쿠버네티스 배포') {
-            agent {
-                docker {
-                    image 'bitnami/kubectl:latest'
-                }
-            }
-            steps {
-                unstash 'source-code'
-                sh "kubectl apply -f ./k8s/app/namespace.yaml"
-                sh "kubectl apply -f ./k8s/app/configmap.yaml"
-                sh "kubectl apply -f ./k8s/app/secret.yaml"
-                sh "kubectl apply -f ./k8s/app/service.yaml"
-                sh "kubectl apply -f ./k8s/app/deployment.yaml"
-            }
-        }
     }
 }
