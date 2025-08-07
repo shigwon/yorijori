@@ -46,6 +46,12 @@ const marker = ref(null)
 const customOverlay = ref(null)
 const capturedFaceImage = ref('') // 촬영된 얼굴 이미지
 
+// URL에서 주문번호 가져오기
+const getOrderId = () => {
+  const urlParams = new URLSearchParams(window.location.search)
+  return urlParams.get('orderId') || 'default'
+}
+
 const confirmLocation = async () => {
   console.log('위치 설정 완료')
   console.log('현재 위치:', currentLocation.value)
@@ -53,7 +59,9 @@ const confirmLocation = async () => {
   
   // 백엔드로 위치 정보 전송
   try {
-    const orderId = 'example' // 실제 orderId로 변경 필요
+    const orderId = getOrderId() // URL에서 가져온 주문번호
+    console.log('주문번호:', orderId)
+    
     const response = await fetch(`/api/v1/orders/${orderId}/location`, {
       method: 'POST',
       headers: {
