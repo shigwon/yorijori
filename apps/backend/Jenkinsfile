@@ -1,5 +1,5 @@
 pipeline {
-    agent none  // 전체에는 agent 없음
+    agent none
 
     environment {
         GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
@@ -16,7 +16,10 @@ pipeline {
                     credentialsId: 'gitlab-credentials',
                     url: "${GITLAB_URL}"
 
-                // 작업 공간을 다음 스테이지에서 사용할 수 있도록 저장
+                // 프로젝트 구조 확인
+                sh 'echo "프로젝트 구조:"'
+                sh 'find . -name "settings.gradle*" -o -name "build.gradle*" | head -10'
+
                 stash includes: '**/*', name: 'source-code'
             }
         }
@@ -29,10 +32,15 @@ pipeline {
             }
             steps {
                 unstash 'source-code'
-                sh "chmod +x ./apps/backend/gradlew"
-                sh "./apps/backend/gradlew clean build --no-daemon"
 
-                // 빌드 결과물 저장
+                script {
+                    // apps/backend 디렉토리로 이동해서 빌드
+                    dir('apps/backend') {
+                        sh "chmod +x ./gradlew"
+                        sh "./gradlew clean build --no-daemon"
+                    }
+                }
+
                 stash includes: 'apps/backend/build/**/*', name: 'build-artifacts'
             }
         }
@@ -48,11 +56,9 @@ pipeline {
                 unstash 'source-code'
                 unstash 'build-artifacts'
 
-                // Docker 빌드
                 sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
                 sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
 
-                // Docker Hub 푸시
                 sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
                 sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 sh "docker push ${DOCKER_IMAGE}:latest"
@@ -72,16 +78,6 @@ pipeline {
                 sh "kubectl apply -f ./k8s/app/secret.yaml"
                 sh "kubectl apply -f ./k8s/app/service.yaml"
                 sh "kubectl apply -f ./k8s/app/deployment.yaml"
-            }
-        }
-    }
-
-    post {
-        always {
-            node('') {
-                sh "docker rmi ${DOCKER_IMAGE}:${IMAGE_TAG} || true"
-                sh "docker rmi ${DOCKER_IMAGE}:latest || true"
-                sh "docker logout || true"
             }
         }
     }
