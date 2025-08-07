@@ -102,7 +102,7 @@ onMounted(() => {
       
              const options = {
          center: new window.kakao.maps.LatLng(deliveryLat, deliveryLng),
-         level: 3
+         level: 4
        }
       
              try {
@@ -115,10 +115,10 @@ onMounted(() => {
            const markerContent = `
              <div style="position: relative; display: inline-block;">
                <div style="
-                 width: 40px;
-                 height: 40px;
+                 width: 28px;
+                 height: 28px;
                  border-radius: 50%;
-                 border: 3px solid white;
+                 border: 2px solid white;
                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                  overflow: hidden;
                  background: #7C3AED;
@@ -129,20 +129,20 @@ onMounted(() => {
                ">
                  ${props.faceImage ? 
                    `<img src="${props.faceImage}" alt="얼굴" style="width: 100%; height: 100%; object-fit: cover;" />` : 
-                   '<span style="font-size: 16px; color: white;">👤</span>'
+                   '<span style="font-size: 12px; color: white;">👤</span>'
                  }
                </div>
                <!-- 만날 위치 텍스트 -->
                <div style="
                  position: absolute;
-                 top: 45px;
+                 top: 32px;
                  left: 50%;
                  transform: translateX(-50%);
                  background: rgba(0, 0, 0, 0.8);
                  color: white;
-                 padding: 4px 8px;
-                 border-radius: 6px;
-                 font-size: 12px;
+                 padding: 3px 6px;
+                 border-radius: 4px;
+                 font-size: 10px;
                  font-weight: 600;
                  white-space: nowrap;
                  z-index: 3;
@@ -170,8 +170,8 @@ onMounted(() => {
            const pickupMarkerContent = `
              <div style="position: relative; display: inline-block;">
                <div style="
-                 width: 35px;
-                 height: 35px;
+                 width: 24px;
+                 height: 24px;
                  position: relative;
                  z-index: 2;
                  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
@@ -181,14 +181,14 @@ onMounted(() => {
                <!-- 픽업존 텍스트 -->
                <div style="
                  position: absolute;
-                 top: 40px;
+                 top: 28px;
                  left: 50%;
                  transform: translateX(-50%);
                  background: rgba(0, 0, 0, 0.8);
                  color: white;
-                 padding: 4px 8px;
-                 border-radius: 6px;
-                 font-size: 12px;
+                 padding: 3px 6px;
+                 border-radius: 4px;
+                 font-size: 10px;
                  font-weight: 600;
                  white-space: nowrap;
                  z-index: 3;
