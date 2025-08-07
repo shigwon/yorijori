@@ -1,6 +1,6 @@
 <template>
     <div class="line-chart">
-      <apexchart
+      <VueApexCharts
         :options="chartOptions"
         :series="series"
         :height="height"
