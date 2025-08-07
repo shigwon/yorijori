@@ -41,8 +41,10 @@
 <script setup>
 import { useAppState } from '../composables/useAppState'
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const { goToLocationRequest, goToScanOption, receiptData } = useAppState()
+const { goToLocationRequest, receiptData } = useAppState()
+const router = useRouter()
 
 // URL에서 robotId 파라미터 가져오기
 const getRobotId = () => {
@@ -98,7 +100,9 @@ const handleNext = async () => {
 }
 
 const handleProblemClick = () => {
-  goToScanOption()
+  // 강제로 스캔 옵션 페이지로 이동
+  window.location.href = '/rider/scan-option'
+  console.log('스캔 옵션으로 강제 이동')
 }
 </script>
 

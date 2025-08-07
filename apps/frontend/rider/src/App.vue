@@ -1,17 +1,42 @@
 <script setup>
-import { useAppState } from './composables/useAppState'
-import HowToUseScreen from './components/01_HowToUseScreen.vue'
-import ScanOptionScreen from './components/02_ScanOptionScreen.vue'
-import ReceiptScanScreen from './components/03_ReceiptScanScreen.vue'
-import ManualInputScreen from './components/04_ManualInputScreen.vue'
-import ManualConfirmScreen from './components/05_ManualConfirmScreen.vue'
-import LocationRequestScreen from './components/06_LocationRequestScreen.vue'
-import PhotoCaptureScreen from './components/07_PhotoCaptureScreen.vue'
-import CompleteScreen from './components/08_CompleteScreen.vue'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import LoadingModal from './components/09_LoadingModal.vue'
 import ScanConfirmModal from './components/10_ScanConfirmModal.vue'
 
-const { currentScreen, progressPercent } = useAppState()
+const route = useRoute()
+
+// 모달 상태 관리
+const showLoadingModal = ref(false)
+const showScanConfirmModal = ref(false)
+
+// 현재 라우트의 progress 메타데이터를 기반으로 진행률 계산
+const progressPercent = computed(() => {
+  return route.meta.progress || 0
+})
+
+// 모달 표시 함수들
+const openLoadingModal = () => {
+  showLoadingModal.value = true
+}
+
+const closeLoadingModal = () => {
+  showLoadingModal.value = false
+}
+
+const openScanConfirmModal = () => {
+  showScanConfirmModal.value = true
+}
+
+const closeScanConfirmModal = () => {
+  showScanConfirmModal.value = false
+}
+
+// 전역으로 모달 함수들을 제공
+window.openLoadingModal = openLoadingModal
+window.closeLoadingModal = closeLoadingModal
+window.openScanConfirmModal = openScanConfirmModal
+window.closeScanConfirmModal = closeScanConfirmModal
 </script>
 
 <template>
@@ -23,17 +48,12 @@ const { currentScreen, progressPercent } = useAppState()
   </div>
   
   <div class="app-modal">
-    <HowToUseScreen v-if="currentScreen === 'how-to-use'" />
-    <ScanOptionScreen v-else-if="currentScreen === 'scan-option'" />
-    <ReceiptScanScreen v-else-if="currentScreen === 'receipt-scan'" />
-    <ManualInputScreen v-else-if="currentScreen === 'manual-input'" />
-    <ManualConfirmScreen v-else-if="currentScreen === 'manual-confirm'" />
-    <LocationRequestScreen v-else-if="currentScreen === 'location-request'" />
-    <PhotoCaptureScreen v-else-if="currentScreen === 'photo-capture'" />
-    <CompleteScreen v-else-if="currentScreen === 'complete'" />
-    <LoadingModal v-else-if="currentScreen === 'loading-modal'" />
-    <ScanConfirmModal v-else-if="currentScreen === 'scan-confirm-modal'" />
+    <router-view />
   </div>
+
+  <!-- 모달들 -->
+  <LoadingModal v-if="showLoadingModal" @close="closeLoadingModal" />
+  <ScanConfirmModal v-if="showScanConfirmModal" @close="closeScanConfirmModal" />
 </template>
 
 <style>
