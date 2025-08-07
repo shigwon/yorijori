@@ -12,7 +12,7 @@ pipeline {
     }
 
     environment {
-        GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102"
+        GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
 
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = "parkheejun/linky-backend"
@@ -20,36 +20,22 @@ pipeline {
     }
 
     stages {
-        stage('소스파일 체크아웃') {
-                    steps {
-                        git branch: 'feature/deploy', url: 'https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git'
-                    }
-        }
-
-        stage('소스 빌드') {
-             steps {
-                    script {
-                        sh "chmod +x ./gradlew"
-                        sh "./gradlew clean build --no-daemon"
-                    }
-             }
-        }
-
         stage('릴리즈파일 체크아웃') {
             steps {
-                checkout scmGit(
-                    branches: [[name: '*/feature/deploy']],
-                    extensions: [[$class: 'SparseCheckoutPaths',
-                                  sparseCheckoutPaths: [[path: "/apps/backend"]]]],
-                    userRemoteConfigs: [[
-                        url: "${GITLAB_URL}",
-                        credentialsId: 'gitlab-credentials'
-                    ]]
-                )
+                git branch: 'feature/deploy',
+                    credentialsId: 'Gitlabs',
+                    url: "${GITLAB_URL}"
             }
         }
 
-
+        stage('소스 빌드') {
+            steps {
+                script {
+                    sh "chmod +x ./gradlew"
+                    sh "./gradlew clean build --no-daemon"
+                }
+            }
+        }
 
         stage('Docker 이미지 빌드') {
             steps {
@@ -74,12 +60,11 @@ pipeline {
         stage('쿠버네티스 배포') {
             steps {
                 script {
-                    dir('apps/backend') {
-                        sh "kubectl apply -f ./k8s/app/namespace.yaml"
-                        sh "kubectl apply -f ./k8s/app/configmap.yaml"
-                        sh "kubectl apply -f ./k8s/app/service.yaml"
-                        sh "kubectl apply -f ./k8s/app/deployment.yaml"
-                    }
+                    sh "kubectl apply -f ./k8s/app/namespace.yaml"
+                    sh "kubectl apply -f ./k8s/app/configmap.yaml"
+                    sh "kubectl apply -f ./k8s/app/secret.yaml"
+                    sh "kubectl apply -f ./k8s/app/service.yaml"
+                    sh "kubectl apply -f ./k8s/app/deployment.yaml"
                 }
             }
         }
