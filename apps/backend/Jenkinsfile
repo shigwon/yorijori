@@ -20,6 +20,21 @@ pipeline {
     }
 
     stages {
+        stage('소스파일 체크아웃') {
+                    steps {
+                        git branch: '/feature/deploy', url: 'https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git'
+                    }
+        }
+
+        stage('소스 빌드') {
+             steps {
+                    script {
+                        sh "chmod +x ./gradlew"
+                        sh "./gradlew clean build --no-daemon"
+                    }
+             }
+        }
+
         stage('릴리즈파일 체크아웃') {
             steps {
                 checkout scmGit(
@@ -34,14 +49,7 @@ pipeline {
             }
         }
 
-        stage('소스 빌드') {
-            steps {
-                script {
-                    sh "chmod +x ./gradlew"
-                    sh "./gradlew clean build --no-daemon"
-                }
-            }
-        }
+
 
         stage('Docker 이미지 빌드') {
             steps {
