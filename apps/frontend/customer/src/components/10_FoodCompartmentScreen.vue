@@ -32,6 +32,7 @@
 
 <script setup>
 
+
 const emit = defineEmits(['confirm', 'survey'])
 
 const handleConfirm = () => {
@@ -67,8 +68,8 @@ const handleSurvey = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 20px;
+  justify-content: flex-start;
+  padding: 60px 20px 0 20px;
   text-align: center;
 }
 
@@ -77,7 +78,7 @@ const handleSurvey = () => {
   font-size: 24px;
   font-weight: 700;
   color: white;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
   line-height: 1.4;
 }
 
@@ -97,21 +98,21 @@ const handleSurvey = () => {
 }
 
 .babo-image {
-  width: 280px;
-  height: 280px;
+  width: 240px;
+  height: 240px;
   object-fit: contain;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 /* Bottom Section */
 .bottom-section {
-  padding: 40px 20px;
+  padding: 30px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   position: fixed;
-  top: 550px;
+  top: 480px;
   left: 0;
   right: 0;
   z-index: 1000;
@@ -156,9 +157,13 @@ const handleSurvey = () => {
 
 /* Responsive Design */
 @media (max-width: 480px) {
+  .main-content {
+    padding: 40px 20px 0 20px;
+  }
+  
   .title-text {
     font-size: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
   }
   
   .number-part {
@@ -166,8 +171,13 @@ const handleSurvey = () => {
   }
   
   .babo-image {
-    width: 220px;
-    height: 220px;
+    width: 200px;
+    height: 200px;
+  }
+  
+  .bottom-section {
+    top: 420px;
+    padding: 25px 20px;
   }
   
   .confirm-button {

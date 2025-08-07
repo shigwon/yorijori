@@ -46,10 +46,37 @@ const marker = ref(null)
 const customOverlay = ref(null)
 const capturedFaceImage = ref('') // 촬영된 얼굴 이미지
 
-const confirmLocation = () => {
+const confirmLocation = async () => {
   console.log('위치 설정 완료')
   console.log('현재 위치:', currentLocation.value)
   console.log('현재 주소:', currentAddress.value)
+  
+  // 백엔드로 위치 정보 전송
+  try {
+    const orderId = 'example' // 실제 orderId로 변경 필요
+    const response = await fetch(`/api/v1/orders/${orderId}/location`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        robotId: 1, 
+        customerLatitude: currentLocation.value.latitude,
+        customerLongitude: currentLocation.value.longitude
+      })
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      console.log('위치 정보 전송 성공:', result)
+    } else {
+      console.error('위치 정보 전송 실패:', response.status)
+    }
+  } catch (error) {
+    console.error('위치 정보 전송 오류:', error)
+  }
+  
+  // 기존 로직 - 상위 컴포넌트로 데이터 전달
   emit('location-confirmed', {
     location: currentLocation.value,
     address: currentAddress.value
@@ -222,7 +249,7 @@ onMounted(async () => {
       
       const options = {
         center: new window.kakao.maps.LatLng(lat, lng),
-        level: 4
+        level: 3
       }
       
              try {

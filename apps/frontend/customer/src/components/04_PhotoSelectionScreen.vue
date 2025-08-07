@@ -154,17 +154,18 @@ const sendImageToBackend = async (base64Image, fileName) => {
   try {
     console.log('백엔드로 앨범 이미지 전송 중...')
     
-    const response = await fetch('/api/upload-image', {
+    // base64 → Blob 변환
+    const blob = await (await fetch(`data:image/jpeg;base64,${base64Image}`)).blob()
+    
+    // FormData 생성
+    const formData = new FormData()
+    formData.append('orderCode', 'example') // 실제 주문코드로 변경 필요
+    formData.append('fileCategory', 'FACE') // 얼굴 사진
+    formData.append('file', blob, fileName)
+    
+    const response = await fetch('/api/v1/files', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image: base64Image,
-        filename: fileName,
-        timestamp: new Date().toISOString(),
-        type: 'album_selection'
-      })
+      body: formData
     })
     
     if (response.ok) {
