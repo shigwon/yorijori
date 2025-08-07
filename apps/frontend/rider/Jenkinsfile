@@ -14,8 +14,7 @@ pipeline {
         stage('Checkout branch') {
             agent any
             steps {
-                git 
-                    credentialsId: "${GIT_CREDENTIALS_ID}",
+                git credentialsId: "${GIT_CREDENTIALS_ID}",
                     url: "${GIT_URL}"
 
                 sh 'echo "Checked out branch ${GIT_BRANCH} from ${GIT_URL}"'
