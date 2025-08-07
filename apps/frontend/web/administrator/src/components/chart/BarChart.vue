@@ -1,6 +1,6 @@
 <template>
     <div class="bar-chart-container">
-      <apexchart
+      <VueApexCharts
         :options="chartOptions"
         :series="series"
         type="bar"
