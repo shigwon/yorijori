@@ -22,6 +22,6 @@ public class LocationHistoryRequestDto {
     @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다")
     private int pageSize = 20;
 
-    private String startDate; // yyyy-MM-dd HH:mm:ss
-    private String endDate;   // yyyy-MM-dd HH:mm:ss
+    private String startDate;
+    private String endDate;
 }
