@@ -42,7 +42,8 @@ pipeline {
                     extensions: [[$class: 'SparseCheckoutPaths',
                                   sparseCheckoutPaths: [[path: "/apps/backend"]]]],
                     userRemoteConfigs: [[
-                        url: "${GITLAB_URL}"
+                        url: "${GITLAB_URL}",
+                        credentialsId: 'gitlab-credentials'
                     ]]
                 )
             }
