@@ -31,9 +31,8 @@ pipeline {
         stage('소스 빌드') {
             steps {
                 script {
-                    sh "cd apps/backend"
-                    sh "chmod +x ./gradlew"
-                    sh "./gradlew clean build --no-daemon"
+                    sh "chmod +x ./apps/backend/gradlew"
+                    sh "./apps/backend/gradlew clean build --no-daemon"
                 }
             }
         }
