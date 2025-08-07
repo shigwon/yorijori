@@ -1,64 +1,171 @@
 <template>
   <div class="survey-container">
-    <!-- 로봇 캐릭터 -->
-    <div class="robot-character">
-      <div class="robot-head">
-        <div class="antenna left"></div>
-        <div class="antenna right"></div>
-        <div class="eyes">
-          <div class="eye left">
-            <div class="pupil"></div>
-          </div>
-          <div class="eye right">
-            <div class="pupil"></div>
-          </div>
-        </div>
-        <div class="mouth"></div>
+    <!-- 질문 -->
+    <div class="question">{{ questionText }}</div>
+    
+    <!-- 별점 평가 -->
+    <div class="star-rating">
+      <div 
+        v-for="star in 5" 
+        :key="star"
+        class="star"
+        :class="{ 'filled': star <= selectedRating }"
+        @click="selectedRating = star"
+      >
+        ★
       </div>
-      <div class="robot-body">
-        <div class="arm left"></div>
-        <div class="arm right"></div>
-      </div>
-      <div class="robot-shadow"></div>
     </div>
-
-    <!-- 설문조사 콘텐츠 -->
-    <div class="survey-content">
-              <!-- 질문 -->
-      <div class="question">배송은 어떠셨나요</div>
-      
-              <!-- 별점 평가 -->
-      <div class="star-rating">
-        <div 
-          v-for="star in 5" 
-          :key="star"
-          class="star"
-          :class="{ 'filled': star <= selectedRating }"
-          @click="selectedRating = star"
+    
+    <!-- 불편한 점 선택 옵션들 -->
+    <div class="feedback-options">
+      <div class="option-row">
+        <button 
+          v-for="option in row1Options" 
+          :key="option"
+          class="option-button"
+          :class="{ 'selected': selectedOptions.includes(option) }"
+          @click="toggleOption(option)"
         >
-          ★
-        </div>
+          {{ option }}
+        </button>
+      </div>
+      <div class="option-row">
+        <button 
+          v-for="option in row2Options" 
+          :key="option"
+          class="option-button"
+          :class="{ 'selected': selectedOptions.includes(option) }"
+          @click="toggleOption(option)"
+        >
+          {{ option }}
+        </button>
       </div>
       
-              <!-- 리뷰 입력 -->
-      <div class="review-section">
-        <div class="review-input">
-          <div class="placeholder-text">
-            배송에 대한 솔직한 리뷰를 남겨주세요
-          </div>
-          <div class="placeholder-text">
-            남겨주신 의견 서비스 품질에 개선됩니다.
-          </div>
-        </div>
-      </div>
     </div>
+    
+
+    
+                   <!-- 추가 피드백 입력 -->
+      <div class="feedback-input-section">
+        <textarea 
+          v-model="additionalFeedback"
+          class="feedback-textarea"
+          placeholder="불편하셨던 사항을 자유롭게 남겨주세요."
+        ></textarea>
+      </div>
+    
+    <!-- 평가 보내기 버튼 -->
+    <button class="submit-button" @click="submitSurvey">
+      평가 보내기
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-const selectedRating = ref(0)
+const selectedRating = ref(1)
+const selectedOptions = ref([])
+const additionalFeedback = ref('')
+
+// 별점에 따른 옵션 텍스트 변경
+const row1Options = computed(() => {
+  if (selectedRating.value <= 1) {
+    return ['위치가 틀림', '얼굴 인식 실패', '앱 접속 오류']
+  } else if (selectedRating.value === 2) {
+    return ['위치 정확도 개선', '얼굴 인식 정확도', '앱 안정성 개선']
+  } else if (selectedRating.value === 3) {
+    return ['위치 서비스 개선', '얼굴 인식 서비스', '앱 사용성 개선']
+  } else {
+    return ['위치가 틀림', '얼굴 인식 실패', '앱 접속 오류']
+  }
+})
+
+const row2Options = computed(() => {
+  if (selectedRating.value <= 1) {
+    return ['내 위치가 안 보임', '너무 느림', '로봇이 바보같음']
+  } else if (selectedRating.value === 2) {
+    return ['위치 표시 개선', '속도 개선', '로봇 인식 정확도']
+  } else if (selectedRating.value === 3) {
+    return ['위치 확인 개선', '반응 속도 개선', '로봇 서비스 개선']
+  } else {
+    return ['내 위치가 안 보임', '너무 느림', '로봇이 바보같음']
+  }
+})
+
+// 별점에 따른 질문 텍스트 변경
+const questionText = computed(() => {
+  if (selectedRating.value <= 1) {
+    return '어떤 점이 불편하셨나요?'
+  } else if (selectedRating.value === 2) {
+    return '어떤 점을 개선하면 좋을까요?'
+  } else if (selectedRating.value === 4) {
+    return '어떤 점이 좋으셨나요?'
+  } else if (selectedRating.value === 5) {
+    return '어떤 점이 만족스러웠나요?'
+  } else {
+    return '어떤 점을 개선하면 좋을까요?'
+  }
+})
+
+const toggleOption = (option) => {
+  const index = selectedOptions.value.indexOf(option)
+  if (index > -1) {
+    selectedOptions.value.splice(index, 1)
+    // 텍스트 영역에서 해당 옵션 제거
+    additionalFeedback.value = additionalFeedback.value.replace(option + '\n', '')
+    additionalFeedback.value = additionalFeedback.value.replace(option, '')
+  } else {
+    selectedOptions.value.push(option)
+    // 텍스트 영역에 해당 옵션 추가
+    if (additionalFeedback.value.trim() === '') {
+      additionalFeedback.value = option
+    } else {
+      additionalFeedback.value += '\n' + option
+    }
+  }
+}
+
+// URL에서 주문번호 가져오기
+const getOrderCode = () => {
+  const urlParams = new URLSearchParams(window.location.search)
+  // code 파라미터가 주문번호 (예: code=0N063)
+  return urlParams.get('code') || 'default'
+}
+
+const submitSurvey = async () => {
+  try {
+    const orderCode = getOrderCode()
+    const reviewData = {
+      orderCode: orderCode,
+      rating: selectedRating.value,
+      content: additionalFeedback.value || null
+    }
+
+    console.log('평가 제출:', reviewData)
+    console.log('주문번호:', orderCode)
+
+    const response = await fetch('/api/v1/reviews', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reviewData)
+    })
+
+    if (response.ok) {
+      console.log('평가 제출 성공!')
+      // 성공 시 처리 (예: 완료 화면으로 이동)
+      alert('평가가 성공적으로 제출되었습니다!')
+    } else {
+      console.error('평가 제출 실패:', response.status)
+      alert('평가 제출에 실패했습니다. 다시 시도해주세요.')
+    }
+  } catch (error) {
+    console.error('평가 제출 중 오류 발생:', error)
+    alert('평가 제출 중 오류가 발생했습니다. 다시 시도해주세요.')
+  }
+}
 </script>
 
 <style scoped>
@@ -66,7 +173,7 @@ const selectedRating = ref(0)
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+  background: white;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -75,262 +182,160 @@ const selectedRating = ref(0)
   left: 0;
   right: 0;
   bottom: 0;
-  overflow: hidden;
+  overflow-y: auto;
   z-index: 9999;
   padding: 40px 20px;
 }
 
-/* Robot Character */
-.robot-character {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 40px;
-}
-
-.robot-head {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, #60A5FA 0%, #34D399 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-
-.antenna {
-  position: absolute;
-  top: -15px;
-  width: 4px;
-  height: 20px;
-  background: #374151;
-  border-radius: 2px;
-}
-
-.antenna.left {
-  left: 40px;
-}
-
-.antenna.right {
-  right: 40px;
-}
-
-.eyes {
-  display: flex;
-  gap: 20px;
-}
-
-.eye {
-  width: 20px;
-  height: 20px;
-  background: #374151;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pupil {
-  width: 8px;
-  height: 8px;
-  background: white;
-  border-radius: 50%;
-}
-
-.mouth {
-  position: absolute;
-  bottom: 30px;
-  width: 24px;
-  height: 10px;
-  border: 3px solid #374151;
-  border-top: none;
-  border-radius: 0 0 12px 12px;
-}
-
-.robot-body {
-  position: relative;
-  width: 100px;
-  height: 120px;
-  background: linear-gradient(135deg, #60A5FA 0%, #34D399 100%);
-  border-radius: 50px 50px 30px 30px;
-  margin-bottom: 20px;
-}
-
-.arm {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #60A5FA 0%, #34D399 100%);
-  border-radius: 50%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.arm.left {
-  left: -12px;
-}
-
-.arm.right {
-  right: -12px;
-}
-
-.robot-shadow {
-  width: 100px;
-  height: 15px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  margin-top: 15px;
-}
-
-/* Survey Content */
-.survey-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 400px;
-}
-
 .question {
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 30px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
   text-align: center;
 }
 
-/* Star Rating */
+/* 별점 평가 */
 .star-rating {
   display: flex;
-  gap: 10px;
-  margin-bottom: 40px;
+  gap: 8px;
+  margin-bottom: 30px;
 }
 
 .star {
-  font-size: 40px;
-  color: transparent;
-  border: 2px solid white;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 24px;
+  color: #ddd;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: transparent;
+  transition: color 0.2s ease;
 }
 
 .star.filled {
-  color: #F59E0B;
-  background: #F59E0B;
-  border-color: #F59E0B;
+  color: #7C3AED;
 }
 
-.star:hover {
-  transform: scale(1.1);
-}
-
-/* Review Section */
-.review-section {
+/* 불편한 점 선택 옵션들 */
+.feedback-options {
   width: 100%;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  min-height: 120px;
+  max-width: 400px;
+  margin-bottom: 30px;
+}
+
+.option-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.review-input {
-  width: 100%;
-  text-align: center;
-}
-
-.placeholder-text {
-  color: #6B7280;
-  font-size: 14px;
-  line-height: 1.5;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.placeholder-text:last-child {
-  margin-bottom: 0;
+.option-button {
+  flex: 1;
+  padding: 12px 8px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Responsive Design */
+.option-button.selected {
+  background: #7C3AED;
+  color: white;
+  border-color: #7C3AED;
+}
+
+.option-button:hover {
+  background: #e9ecef;
+}
+
+.option-button.selected:hover {
+  background: #6D28D9;
+}
+
+
+
+/* 피드백 입력 섹션 */
+.feedback-input-section {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 30px;
+}
+
+
+
+.feedback-textarea {
+  width: 100%;
+  height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: none;
+  font-family: inherit;
+}
+
+.feedback-textarea::placeholder {
+  color: #ccc;
+  opacity: 0.7;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: #7C3AED;
+}
+
+/* 제출 버튼 */
+.submit-button {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px;
+  background: #7C3AED;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.submit-button:hover {
+  background: #6D28D9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* 반응형 디자인 */
 @media (max-width: 480px) {
   .survey-container {
     padding: 20px 15px;
   }
   
-  .robot-head {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .antenna.left {
-    left: 32px;
-  }
-  
-  .antenna.right {
-    right: 32px;
-  }
-  
-  .eyes {
-    gap: 16px;
-  }
-  
-  .eye {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .pupil {
-    width: 7px;
-    height: 7px;
-  }
-  
-  .mouth {
-    bottom: 25px;
-    width: 20px;
-    height: 8px;
-  }
-  
-  .robot-body {
-    width: 80px;
-    height: 100px;
-  }
-  
-  .arm {
-    width: 20px;
-    height: 20px;
-  }
-  
   .question {
-    font-size: 20px;
-    margin-bottom: 25px;
+    font-size: 16px;
+    margin-bottom: 15px;
   }
   
   .star {
-    font-size: 32px;
-    width: 40px;
-    height: 40px;
+    font-size: 20px;
   }
   
-  .review-section {
-    padding: 15px;
-    min-height: 100px;
+  .option-button {
+    padding: 10px 6px;
+    font-size: 11px;
   }
   
-  .placeholder-text {
-    font-size: 13px;
+  .feedback-textarea {
+    height: 80px;
   }
 }
 </style> 
