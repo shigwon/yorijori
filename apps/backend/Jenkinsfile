@@ -23,7 +23,6 @@ pipeline {
         stage('소스파일 체크아웃') {
                     steps {
                         git branch: 'feature/deploy', url: 'https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git'
-                        credentialsId: 'gitlab-credentials'
                     }
         }
 
