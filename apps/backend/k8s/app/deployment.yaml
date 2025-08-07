@@ -28,7 +28,7 @@ spec:
         blue-green-no: "1"
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k8s-master
+        kubernetes.io/hostname: k8s-worker1
       containers:
         - name: api-tester-2214-2
           image: parkheejun/linky-backend:1.0.0
