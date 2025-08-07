@@ -35,10 +35,10 @@ pipeline {
 
                 script {
                     dir('apps/frontend/rider') {
-                        sh 'echo "Current directory: ${pwd()}"'
-                        sh 'echo "Installing dependencies and building the application..."'
-                        sh 'npm install'
-                        sh 'echo "Building the application..."'
+                        sh "echo Current directory: ${pwd()}"
+                        sh "echo Installing dependencies and building the application..."
+                        sh "npm install"
+                        sh "echo Building the application..."
                         sh 'npm run build'
                     }
                 }
@@ -60,13 +60,12 @@ pipeline {
 
                 script {
                     dir('apps/frontend/rider') {
-                        sh 'echo "Current directory: ${pwd()}"'
-                        sh 'echo "Building Docker image..."'
-                        sh 'docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")'
-                        sh 'echo "Docker image built: ${image.imageName()}"'
+                        sh "echo Current directory: ${pwd()}"
+                        sh "echo Building Docker image..."
+                        sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
                     }
-                    sh 'echo "Docker image built successfully."'
-                    sh 'docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest'
+                    sh "echo Docker image built successfully."
+                    sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
                 }
             }
         }
@@ -79,11 +78,11 @@ pipeline {
                 }   
             }
             steps {
-                sh 'echo "Deploying application..."'
-                sh 'docker stop ${DOCKER_CONTAINER} || true'
-                sh 'docker rm ${DOCKER_CONTAINER} || true'
-                sh 'docker run -d --name ${DOCKER_CONTAINER} -p 7080:7080 ${DOCKER_IMAGE}:${IMAGE_TAG}'
-                sh 'echo "Application deployed successfully."'
+                sh "echo Deploying application..."
+                sh "docker stop ${DOCKER_CONTAINER} || true"
+                sh "docker rm ${DOCKER_CONTAINER} || true"
+                sh "docker run -d --name ${DOCKER_CONTAINER} -p 7080:7080 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "echo Application deployed successfully."
             }
         }
     }
