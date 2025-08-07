@@ -23,7 +23,7 @@ pipeline {
         stage('릴리즈파일 체크아웃') {
             steps {
                 git branch: 'feature/deploy',
-                    credentialsId: 'Gitlabs',
+                    credentialsId: 'gitlab-credentials',
                     url: "${GITLAB_URL}"
             }
         }
