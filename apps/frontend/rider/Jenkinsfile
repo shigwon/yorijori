@@ -81,7 +81,7 @@ pipeline {
                 sh "echo Deploying application..."
                 sh "docker stop ${DOCKER_CONTAINER} || true"
                 sh "docker rm ${DOCKER_CONTAINER} || true"
-                sh "docker run -d --name ${DOCKER_CONTAINER} -p 7080:7080 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker run -d --name ${DOCKER_CONTAINER} --restart=unless-stopped -p 7080:7080 ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 sh "echo Application deployed successfully."
             }
         }
