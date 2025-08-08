@@ -14,6 +14,8 @@ import com.linky.api.stream.entity.JoinRequest;
 import com.linky.api.stream.entity.JoinResponse;
 import com.linky.api.stream.mapper.StreamMapper;
 import com.linky.api.stream.service.StreamService;
+import com.linky.api.streaming.dto.StreamingImage;
+import com.linky.api.streaming.service.StreamingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -35,7 +37,8 @@ public class MqttService {
     private final MessageChannel mqttOutboundChannel;
     private final OrderService orderService;
     private final RobotService robotService;
-    private final StreamService streamService;
+//    private final StreamService streamService;
+    private final StreamingService streamingService;
     private final ObjectMapper objectMapper;
     private final StreamMapper streamMapper;
 
@@ -106,12 +109,16 @@ public class MqttService {
 
         try {
             switch (command) {
-                case "requestWebRTC":
-                    JoinRequest joinRequest = objectMapper.readValue(payload, JoinRequest.class);
-                    String data = streamService.joinSession(joinRequest);
-                    JoinResponse joinResponse = streamMapper.toEntity(data != null, data);
-                    sendResult(joinRequest.getRobotId(), joinResponse);
+                case "sendStreamingImage":
+                    StreamingImage streamingImage = objectMapper.readValue(payload, StreamingImage.class);
+                    streamingService.sendStreamingImage(streamingImage);
                     break;
+//                    case "requestWebRTC":
+//                    JoinRequest joinRequest = objectMapper.readValue(payload, JoinRequest.class);
+//                    String data = streamService.joinSession(joinRequest);
+//                    JoinResponse joinResponse = streamMapper.toEntity(data != null, data);
+//                    sendResult(joinRequest.getRobotId(), joinResponse);
+//                    break;
                 case "updateRobotStatus":
                     UpdateRobotStatusDto updateRobotStatusDto = objectMapper.readValue(payload, UpdateRobotStatusDto.class);
                     sendResult(updateRobotStatusDto.getRobotId(), new RobotRequestResultDto(robotService.updateRobotStatus(updateRobotStatusDto)));
