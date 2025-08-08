@@ -32,11 +32,11 @@ const closeModal = () => {
 onMounted(() => {
   console.log('배달 완료 모달 마운트됨')
   
-  // 4초 후 음식 칸 화면으로 전환
+  // 2초 후 음식 칸 화면으로 전환
   setTimeout(() => {
     console.log('4초 후 자동으로 음식 칸 화면으로 전환')
     goToFoodCompartment()
-  }, 4000)
+  }, 6000)
 })
 </script>
 

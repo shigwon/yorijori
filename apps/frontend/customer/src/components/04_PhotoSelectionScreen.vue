@@ -119,70 +119,90 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
 const { goToCameraCapture, goToLocationSetting, capturedImage } = useAppState()
 
 const fileInput = ref(null)
 const showFaceRecognitionModal = ref(false)
-const isLoading = ref(true)
+const isLoading = ref(false)
+
+// 모달 상태 감시
+watch(showFaceRecognitionModal, (newValue) => {
+  console.log('showFaceRecognitionModal 변경됨:', newValue)
+})
+
+watch(isLoading, (newValue) => {
+  console.log('isLoading 변경됨:', newValue)
+})
 
 const selectFromAlbum = () => {
   console.log('앨범에서 선택하기 클릭됨')
+  console.log('fileInput.value:', fileInput.value)
   // 실제 파일 선택 다이얼로그 열기
-  fileInput.value.click()
+  if (fileInput.value) {
+    fileInput.value.click()
+    console.log('파일 선택 다이얼로그 열기 완료')
+  } else {
+    console.error('fileInput이 null입니다!')
+  }
 }
 
 const handleFileSelect = async (event) => {
+  console.log('handleFileSelect 함수 호출됨')
+  console.log('event.target.files:', event.target.files)
+  
   const file = event.target.files[0]
   if (file) {
     console.log('선택된 파일:', file.name)
+    console.log('파일 크기:', file.size)
+    console.log('파일 타입:', file.type)
     
     try {
       // 파일을 Base64로 변환
       const base64Image = await fileToBase64(file)
       console.log('이미지 Base64 변환 완료')
       
-      // 백엔드로 이미지 전송 (에러가 있어도 계속 진행)
-      try {
-        await sendImageToBackend(base64Image, file.name)
-      } catch (uploadError) {
-        console.warn('백엔드 전송 실패, 계속 진행:', uploadError)
-      }
-      
-      // 얼굴 인식 모달 표시 (즉시)
-      console.log('앨범 선택 후 얼굴 인식 모달 표시')
-      
-      // useAppState에 선택한 사진 저장
-      capturedImage.value = `data:image/jpeg;base64,${base64Image}`
-      console.log('useAppState에 앨범 사진 저장 완료')
-      
-      // 직접 모달 표시
+      // 바로 얼굴 인식 모달 표시 (백엔드 전송 전에)
+      console.log('앨범 선택 후 바로 얼굴 인식 모달 표시')
       showFaceRecognitionModal.value = true
       isLoading.value = true
       
-      console.log('얼굴 인식 모달 표시 완료')
-      
-      // 5초 후 로딩 완료
-      setTimeout(() => {
-        console.log('로딩 완료, 완료 상태로 변경')
+      // 백엔드로 이미지 전송 (백그라운드에서)
+      sendImageToBackend(base64Image, file.name).then(() => {
+        console.log('백엔드 전송 완료')
+        // 전송 완료 후 로딩 완료
+        console.log('백엔드 전송 완료 후 로딩 완료')
         isLoading.value = false
-      }, 5000)
+      }).catch((uploadError) => {
+        console.warn('백엔드 전송 실패, 계속 진행:', uploadError)
+        // 전송 실패해도 로딩 완료
+        console.log('백엔드 전송 실패 후 로딩 완료')
+        isLoading.value = false
+      })
+      
+      // useAppState에 선택한 사진 저장 (즉시)
+      capturedImage.value = `data:image/jpeg;base64,${base64Image}`
+      console.log('useAppState에 앨범 사진 저장 완료')
       
     } catch (error) {
       console.error('파일 처리 오류:', error)
-      // 오류 발생 시에도 모달 표시 시도
+      // 오류 발생 시에도 즉시 모달 표시 (사진 촬영처럼)
+      console.log('파일 처리 오류로 인한 얼굴 인식 모달 표시')
+      showFaceRecognitionModal.value = true
+      isLoading.value = true
+      
+      // 에러 상황에서도 2초 후 로딩 완료
       setTimeout(() => {
-        console.log('파일 처리 오류로 인한 얼굴 인식 모달 표시')
-        if (window.openFaceRecognitionModal) {
-          window.openFaceRecognitionModal('')
-        } else {
-          openFaceRecognitionModal('')
-        }
-      }, 100)
+        console.log('에러 상황에서도 로딩 완료')
+        isLoading.value = false
+      }, 2000)
     }
   }
+  
+  // 파일 입력 초기화 (같은 파일을 다시 선택할 수 있도록)
+  event.target.value = ''
 }
 
 const fileToBase64 = (file) => {
@@ -236,10 +256,22 @@ const takeSelfie = () => {
 
 const closeFaceRecognitionModal = () => {
   showFaceRecognitionModal.value = false
+  isLoading.value = false
   console.log('얼굴 인식 모달 닫기')
 }
 
 const handleNext = () => {
+  // 모달에 표시된 이미지를 useAppState에 저장 (이미 저장되어 있음)
+  console.log('앨범 선택에서 다음 버튼 클릭')
+  console.log('현재 capturedImage:', capturedImage.value ? '있음' : '없음')
+  
+  // 이미지가 저장되어 있는지 한 번 더 확인
+  if (capturedImage.value) {
+    console.log('이미지가 저장되어 있음, 위치 설정 화면으로 이동')
+  } else {
+    console.warn('이미지가 저장되어 있지 않음!')
+  }
+  
   closeFaceRecognitionModal()
   console.log('다음 버튼 클릭 - 위치 설정 화면으로 이동')
   goToLocationSetting()

@@ -219,11 +219,11 @@ const captureImage = async () => {
     console.error('백엔드 전송 실패:', error)
   }
   
-  // 5초 후 로딩 완료
+  // 2초 후 로딩 완료
   setTimeout(() => {
     console.log('로딩 완료, 완료 상태로 변경')
     isLoading.value = false
-  }, 5000)
+  }, 2000)
 }
 
 const closeFaceRecognitionModal = () => {
@@ -232,6 +232,17 @@ const closeFaceRecognitionModal = () => {
 }
 
 const handleNext = () => {
+  // 모달에 표시된 이미지를 useAppState에 저장
+  if (capturedImage.value) {
+    console.log('카메라 캡처에서 이미지 저장:', capturedImage.value ? '있음' : '없음')
+    // useAppState에 이미지 저장
+    const { capturedImage: globalCapturedImage } = useAppState()
+    globalCapturedImage.value = capturedImage.value
+    console.log('useAppState에 카메라 이미지 저장 완료')
+  } else {
+    console.warn('카메라 이미지가 없습니다!')
+  }
+  
   closeFaceRecognitionModal()
   console.log('다음 버튼 클릭 - 위치 설정 화면으로 이동')
   goToLocationSetting()

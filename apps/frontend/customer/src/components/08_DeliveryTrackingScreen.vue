@@ -108,6 +108,7 @@ onMounted(() => {
       
       // 커스텀 마커 HTML 생성 (사용자 사진 포함)
       const userImage = capturedImage.value || ''
+      console.log('배달 지도에서 사용자 이미지:', userImage ? '있음' : '없음')
       const markerContent = `
         <div style="position: relative; display: inline-block;">
           <div style="
@@ -233,11 +234,11 @@ onMounted(() => {
   // 즉시 시도
   checkAndInitMap()
   
-  // 4초 후 배달 완료 모달 표시
+
   setTimeout(() => {
     console.log('배달 완료 모달 표시')
     showDeliveryCompleteModal.value = true
-  }, 4000)
+  }, 5000)
 })
 </script>
 

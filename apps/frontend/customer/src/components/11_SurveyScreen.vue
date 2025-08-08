@@ -50,7 +50,7 @@
         <textarea 
           v-model="additionalFeedback"
           class="feedback-textarea"
-          placeholder="불편하셨던 사항을 자유롭게 남겨주세요."
+          placeholder="의견을 자유롭게 남겨주세요."
         ></textarea>
       </div>
     
@@ -63,8 +63,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const selectedRating = ref(1)
+const selectedRating = ref(5)
 const selectedOptions = ref([])
 const additionalFeedback = ref('')
 
@@ -76,8 +77,10 @@ const row1Options = computed(() => {
     return ['위치 정확도 개선', '얼굴 인식 정확도', '앱 안정성 개선']
   } else if (selectedRating.value === 3) {
     return ['위치 서비스 개선', '얼굴 인식 서비스', '앱 사용성 개선']
+  } else if (selectedRating.value === 4) {
+    return ['위치가 정확함', '얼굴 인식이 빠름', '앱이 안정적임']
   } else {
-    return ['위치가 틀림', '얼굴 인식 실패', '앱 접속 오류']
+    return ['위치가 매우 정확함', '얼굴 인식이 완벽함', '앱이 매우 안정적임']
   }
 })
 
@@ -88,8 +91,10 @@ const row2Options = computed(() => {
     return ['위치 표시 개선', '속도 개선', '로봇 인식 정확도']
   } else if (selectedRating.value === 3) {
     return ['위치 확인 개선', '반응 속도 개선', '로봇 서비스 개선']
+  } else if (selectedRating.value === 4) {
+    return ['내 위치가 잘 보임', '속도가 빠름', '로봇이 똑똑함']
   } else {
-    return ['내 위치가 안 보임', '너무 느림', '로봇이 바보같음']
+    return ['내 위치가 완벽하게 보임', '속도가 매우 빠름', '로봇이 매우 똑똑함']
   }
 })
 
@@ -131,13 +136,22 @@ const getOrderCode = () => {
   // Pinia 스토어에서 주문번호 가져오기
   const { orderCode } = useAppState()
   
+  console.log('스토어의 orderCode:', orderCode.value)
+  
   if (orderCode.value) {
+    console.log('스토어에서 주문번호 가져옴:', orderCode.value)
     return orderCode.value
   }
   
   // 스토어에 없으면 URL에서 가져오기 (fallback)
   const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('code') || 'default'
+  const urlCode = urlParams.get('code')
+  console.log('URL 파라미터 code:', urlCode)
+  
+  // 테스트용 주문번호 설정
+  const finalCode = urlCode || '0DNCG3'
+  console.log('최종 주문번호:', finalCode)
+  return finalCode
 }
 
 const submitSurvey = async () => {
@@ -151,6 +165,7 @@ const submitSurvey = async () => {
 
     console.log('평가 제출:', reviewData)
     console.log('주문번호:', orderCode)
+    console.log('API 요청 URL:', '/api/v1/reviews')
 
     const response = await fetch('/api/v1/reviews', {
       method: 'POST',
@@ -160,19 +175,23 @@ const submitSurvey = async () => {
       body: JSON.stringify(reviewData)
     })
 
+    console.log('응답 상태:', response.status)
+    console.log('응답 헤더:', response.headers)
+
     if (response.ok) {
-      console.log('평가 제출 성공!')
-      // 성공 시 처리 (예: 완료 화면으로 이동)
+      const responseData = await response.json()
+      console.log('평가 제출 성공!', responseData)
       alert('평가가 성공적으로 제출되었습니다!')
-      // 페이지 나가기
       window.close()
     } else {
-      console.error('평가 제출 실패:', response.status)
-      alert('평가 제출에 실패했습니다. 다시 시도해주세요.')
+      const errorText = await response.text()
+      console.error('평가 제출 실패:', response.status, errorText)
+      alert(`평가 제출에 실패했습니다. (${response.status}) 다시 시도해주세요.`)
     }
   } catch (error) {
     console.error('평가 제출 중 오류 발생:', error)
-    alert('평가 제출 중 오류가 발생했습니다. 다시 시도해주세요.')
+    console.error('오류 상세:', error.message)
+    alert(`평가 제출 중 오류가 발생했습니다: ${error.message}`)
   }
 }
 </script>

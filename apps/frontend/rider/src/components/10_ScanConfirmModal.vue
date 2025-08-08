@@ -43,7 +43,7 @@ import { useAppState } from '../composables/useAppState'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const { goToLocationRequest, receiptData } = useAppState()
+const { goToLocationRequest, goToScanOption, receiptData } = useAppState()
 const router = useRouter()
 
 // URL에서 robotId 파라미터 가져오기
@@ -94,15 +94,19 @@ const handleNext = async () => {
   } catch (error) {
     console.error('주문정보 API 호출 실패:', error)
   } finally {
+    // 모달 닫기
+    window.closeScanConfirmModal()
     // 성공/실패 관계없이 항상 이동
     goToLocationRequest()
   }
 }
 
 const handleProblemClick = () => {
-  // 강제로 스캔 옵션 페이지로 이동
-  window.location.href = '/rider/scan-option'
-  console.log('스캔 옵션으로 강제 이동')
+  // 모달 닫기
+  window.closeScanConfirmModal()
+  // 스캔 옵션 화면으로 강제 이동
+  window.location.href = '/scan-option'
+  console.log('스캔 옵션 화면으로 강제 이동')
 }
 </script>
 
@@ -129,7 +133,7 @@ const handleProblemClick = () => {
   align-items: center;
   justify-content: flex-start; /* 위로 정렬 */
   min-height: 100vh;
-  padding-top: 100px;
+  padding-top: 170px;
 }
 .modal-content {
   width: 100%;

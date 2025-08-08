@@ -55,7 +55,9 @@ export const useAppState = () => {
   }
 
   const openFaceRecognitionModal = (imageData) => {
-    window.openFaceRecognitionModal(imageData)
+    if (window.openFaceRecognitionModal) {
+      window.openFaceRecognitionModal(imageData)
+    }
     console.log('얼굴 인식 모달 표시')
   }
 

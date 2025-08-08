@@ -32,26 +32,26 @@
               <!-- 상담 옵션 -->
         <div class="consultation-options">
           <div class="options-row">
-            <button class="option-button" @click="selectOption('수유/이유식')">수유/이유식</button>
-            <button class="option-button" @click="selectOption('수면')">수면</button>
-            <button class="option-button" @click="selectOption('생활습관/스케줄')">생활습관/스케줄</button>
-            <button class="option-button" @click="selectOption('성장/발달')">성장/발달</button>
-            <button class="option-button" @click="selectOption('놀이/행동/울음')">놀이/행동/울음</button>
-            <button class="option-button" @click="selectOption('기타')">기타</button>
+            <button class="option-button" @click="selectOption('메롱')">메롱</button>
+            <button class="option-button" @click="selectOption('개못해')">개못해</button>
+            <button class="option-button" @click="selectOption('그것도 못하냐')">그것도 못하냐</button>
+            <button class="option-button" @click="selectOption('알아서 잘해라')">알아서 잘해라</button>
+            <button class="option-button" @click="selectOption('ㅋㅋㅋㅋ')">ㅋㅋㅋㅋ</button>
+            <button class="option-button" @click="selectOption('싸우자')">싸우자</button>
           </div>
         </div>
 
                                                                                                                    <!-- 채팅 메시지들 -->
-                       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.type">
+                       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.sender === 'bot' ? 'bot-message' : 'user-message'">
               <div class="message-wrapper">
                 <div class="message-content">
-                  <div v-if="message.type === 'bot-message'" class="message-header">
+                  <div v-if="message.sender === 'bot'" class="message-header">
                     <img src="../assets/robot.png" alt="robot" class="message-robot-icon" />
                     <span class="message-bot-name">링키 챗봇</span>
                   </div>
-                  <div class="message-text">{{ message.text }}</div>
+                  <div class="message-text">{{ message.content }}</div>
                 </div>
-                <div class="message-time">{{ message.time }}</div>
+                <div class="message-time">{{ message.timestamp }}</div>
               </div>
             </div>
      </div>
@@ -65,11 +65,13 @@
          type="text" 
          placeholder="질문을 입력하세요" 
          class="message-input"
+         :disabled="isLoading"
        />
-       <button class="send-button" @click="sendMessage">
-         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+       <button class="send-button" @click="sendMessage" :disabled="isLoading">
+         <svg v-if="!isLoading" width="20" height="20" viewBox="0 0 24 24" fill="none">
            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>
          </svg>
+         <div v-else class="loading-spinner"></div>
        </button>
      </div>
   </div>
@@ -78,11 +80,14 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAppState } from '../composables/useAppState'
+import { useWebSocket } from '../composables/useWebSocket'
+import { useAiChat } from '../composables/useAiChat'
 
-const { closeChatbot } = useAppState()
+const { closeChatbot, goToWelcome } = useAppState()
+const { connected, messages, sendMessage: sendWebSocketMessage, setOrderCode } = useWebSocket()
+const { sendMessage: sendAiMessage, isLoading, error } = useAiChat()
 
 const userInput = ref('')
-const messages = ref([])
 const chatArea = ref(null)
 
 const currentDate = computed(() => {
@@ -102,64 +107,48 @@ const getCurrentTime = () => {
   return `${hours}:${minutes}`
 }
 
-const selectOption = (option) => {
+const selectOption = async (option) => {
    const time = getCurrentTime()
    
-   // 사용자 선택 추가
-   messages.value.push({
-     type: 'user-message',
-     text: `[${option}] ${option}`,
-     time: time
-   })
+   // WebSocket을 통해 사용자 선택 메시지 전송
+   sendWebSocketMessage('user', `[${option}] ${option}`)
 
-   // 봇 응답 추가
-   setTimeout(() => {
-     messages.value.push({
-       type: 'bot-message',
-       text: `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`,
-       time: time
-     })
-     scrollToBottom()
-   }, 500)
- }
-
- const sendMessage = () => {
-   if (!userInput.value.trim()) return
-
-   const time = getCurrentTime()
+   // AI API 호출
+   try {
+     const aiResponse = await sendAiMessage(`${option}에 대한 상담을 받고 싶습니다.`)
+     sendWebSocketMessage('bot', aiResponse)
+   } catch (err) {
+     console.error('AI 응답 실패:', err)
+     sendWebSocketMessage('bot', `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`)
+   }
    
-   // 사용자 메시지 추가
-   messages.value.push({
-     type: 'user-message',
-     text: userInput.value,
-     time: time
-   })
-
-   const userQuestion = userInput.value
-   userInput.value = ''
-
-   // 봇 응답 시뮬레이션
-   setTimeout(() => {
-     const botResponse = generateBotResponse(userQuestion)
-     messages.value.push({
-       type: 'bot-message',
-       text: botResponse,
-       time: time
-     })
-     scrollToBottom()
-   }, 1000)
+   scrollToBottom()
  }
 
- const generateBotResponse = (question) => {
-   // 키워드 기반 간단한 응답 생성
-   if (question.includes('수면') || question.includes('잠')) {
-     return '아기들마다 밤잠시간은 차이가 있을 수 있습니다. 월령이 높아질수록 12시간의 밤잠 총 시간을 채우기란 쉽지 않을 수 있어요. 특히 아직 낮잠 2회를 자는 아기라면 더더욱 밤장은 9시간에서 10시간 정도 유지되고 있을 가능성이 큽니다.'
-   }
-   if (question.includes('수유') || question.includes('먹이')) {
-     return '수유는 아기의 성장과 발달에 매우 중요합니다. 아기의 월령과 체중에 따라 적절한 수유량을 조절하는 것이 좋습니다.'
-   }
-   return '바보냐 ㅋㅋ 나한테 물어보게'
- }
+ const sendMessage = async () => {
+  if (!userInput.value.trim()) return
+
+  const time = getCurrentTime()
+  const userQuestion = userInput.value
+  
+  // WebSocket을 통해 사용자 메시지 전송
+  sendWebSocketMessage('user', userQuestion)
+  
+  userInput.value = ''
+
+  // AI API 호출
+  try {
+    const aiResponse = await sendAiMessage(userQuestion)
+    sendWebSocketMessage('bot', aiResponse)
+  } catch (err) {
+    console.error('AI 응답 실패:', err)
+    sendWebSocketMessage('bot', '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다.')
+  }
+  
+  scrollToBottom()
+}
+
+
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -171,6 +160,7 @@ const scrollToBottom = () => {
 
 const closeChat = () => {
   closeChatbot()
+  goToWelcome()
 }
 
 onMounted(() => {
@@ -491,6 +481,25 @@ onMounted(() => {
 
  .send-button:hover {
    background: #6D28D9;
+ }
+
+ .send-button:disabled {
+   background: #ccc;
+   cursor: not-allowed;
+ }
+
+ .loading-spinner {
+   width: 16px;
+   height: 16px;
+   border: 2px solid #ffffff;
+   border-top: 2px solid transparent;
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+ }
+
+ @keyframes spin {
+   0% { transform: rotate(0deg); }
+   100% { transform: rotate(360deg); }
  }
 
  /* 반응형 디자인 */

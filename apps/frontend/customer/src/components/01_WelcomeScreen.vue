@@ -203,7 +203,6 @@ const closeChatbot = () => {
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(124, 60, 237, 0.2);
   z-index: 20;
   position: absolute;
@@ -218,7 +217,7 @@ const closeChatbot = () => {
 }
 
 .start-button:active {
-  transform: translateY(0);
+  /* 움직임 제거 */
 }
 
 /* Chatbot System */
