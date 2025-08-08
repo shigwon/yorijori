@@ -26,9 +26,15 @@ pipeline {
 
                 script {
                     CHANGED_FILES = sh(
-                        script: "git diff --name-only ${env.gitlabBeforeCommit} ${env.gitlabAfterCommit}",                        
+                        script: "git diff --name-only ${beforeCommit} ${afterCommit}",
                         returnStdout: true
                     ).trim()
+
+                    def isRiderChanged = CHANGED_FILES.tokenize('\n').any { it.startsWith('apps/frontend/rider/') }
+                    def isCustomerChanged = CHANGED_FILES.tokenize('\n').any { it.startsWith('apps/frontend/customer/') }
+
+                    echo "Rider changed? ${isRiderChanged}"
+                    echo "Customer changed? ${isCustomerChanged}"
                     sh "echo \"Changed files:\\n${CHANGED_FILES}\""
                 }
             }
