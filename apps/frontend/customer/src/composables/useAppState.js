@@ -10,47 +10,47 @@ export const useAppState = () => {
   const router = useRouter()
 
   const goToWelcome = () => {
-    router.push('/welcome')
+    router.push('/customer/welcome')
     console.log('화면 전환: welcome')
   }
 
   const goToHowToUse = () => {
-    router.push('/how-to-use')
+    router.push('/customer/how-to-use')
     console.log('화면 전환: how-to-use')
   }
 
   const goToTermsAgreement = () => {
-    router.push('/terms-agreement')
+    router.push('/customer/terms-agreement')
     console.log('화면 전환: terms-agreement')
   }
 
   const goToPhotoSelection = () => {
-    router.push('/photo-selection')
+    router.push('/customer/photo-selection')
     console.log('화면 전환: photo-selection')
   }
 
   const goToCameraCapture = () => {
-    router.push('/camera-capture')
+    router.push('/customer/camera-capture')
     console.log('화면 전환: camera-capture')
   }
 
   const goToLocationSetting = () => {
-    router.push('/location-setting')
+    router.push('/customer/location-setting')
     console.log('화면 전환: location-setting')
   }
 
   const goToDeliveryTracking = () => {
-    router.push('/delivery-tracking')
+    router.push('/customer/delivery-tracking')
     console.log('화면 전환: delivery-tracking')
   }
 
   const goToFoodCompartment = () => {
-    router.push('/food-compartment')
+    router.push('/customer/food-compartment')
     console.log('화면 전환: food-compartment')
   }
 
   const goToSurvey = () => {
-    router.push('/survey')
+    router.push('/customer/survey')
     console.log('화면 전환: survey')
   }
 
