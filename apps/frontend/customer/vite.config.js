@@ -6,7 +6,6 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
   plugins: [
     vue(),
     vueDevTools(),
@@ -16,6 +15,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   server: {
     host: '0.0.0.0',  // 외부 접속 허용
     port: 5173,
@@ -24,6 +26,12 @@ export default defineConfig({
       '/api': {
         target: 'http://192.168.100.82:8080', // 백엔드 서버 IP
         changeOrigin: true,
+        rewrite: (path) => path,
+      },
+      '/ws': {
+        target: 'http://192.168.100.82:8080', // WebSocket 프록시
+        changeOrigin: true,
+        ws: true, // WebSocket 지원
         rewrite: (path) => path,
       },
     },
