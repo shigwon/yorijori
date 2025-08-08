@@ -73,13 +73,16 @@ pipeline {
                 sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' apps/backend/k8s/app/deployment.yaml
                 """
 
-                sh """
-                git config user.email "qmzo553@gmail.com"
-                git config user.name "박희준"
-                git add apps/backend/k8s/app/deployment.yaml
-                git commit -m "Update backend image to ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                git push origin feature/deploy
-                """
+                withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                                    sh """
+                                    git config user.email "qmzo553@gmail.com"
+                                    git config user.name "박희준"
+                                    git add apps/backend/k8s/app/deployment.yaml
+                                    git commit -m "Update backend image to ${DOCKER_IMAGE}:${IMAGE_TAG}" || true
+                                    git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git
+                                    git push origin feature/deploy
+                                    """
+                                }
             }
         }
     }
