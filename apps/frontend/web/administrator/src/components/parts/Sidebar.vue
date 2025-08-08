@@ -94,18 +94,48 @@
   const emit = defineEmits(['menu-change'])
   
   // Reactive data
-  const activeMenu = ref('dashboard')
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const emit = defineEmits(['menu-change'])
+
+// 현재 활성 메뉴
+const activeMenu = ref('dashboard')
+
+// 라우트 매핑
+const routes = {
+  'dashboard': '/dashboard-detail',
+  'robot-status': '/robot-status',
+  'likes': '/likes',
+  'chat': '/chat',
+  'calendar': '/calendar',
+  'system-logs': '/system-logs',
+  'driving-stream': '/driving-stream',
+  'robot-position': '/robot-position'
+}
+
+// 메뉴 클릭 핸들러
+const setActiveMenu = (menu) => {
+  activeMenu.value = menu
+  emit('menu-change', menu)
   
-  // Methods
-  const setActiveMenu = (menu) => {
-    activeMenu.value = menu
-    emit('menu-change', menu)
-    
-    // Dashboard 메뉴 클릭 시 상세페이지로 이동
-    if (menu === 'dashboard') {
-      router.push('/dashboard-detail')
-    }
+  // 라우트 이동
+  if (routes[menu]) {
+    router.push(routes[menu])
   }
+}
+
+// 필요한 경우 개별 메뉴 함수들
+const goToDashboard = () => setActiveMenu('dashboard')
+const goToRobotStatus = () => setActiveMenu('robot-status')
+const goToLikes = () => setActiveMenu('likes')
+const goToChat = () => setActiveMenu('chat')
+const goToCalendar = () => setActiveMenu('calendar')
+const goToSystemLogs = () => setActiveMenu('system-logs')
+const goToDrivingStream = () => setActiveMenu('driving-stream')
+const goToRobotPosition = () => setActiveMenu('robot-position')
+
   </script>
   
   <style scoped>

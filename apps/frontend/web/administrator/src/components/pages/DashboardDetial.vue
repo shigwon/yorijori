@@ -7,8 +7,7 @@
       </div>
       <div class="chart-content">
         <LineChart 
-          :data="dayChartData"
-          :categories="dayChartCategories"
+          
           :colors="dayChartColors"
           height="300"
         />
@@ -21,8 +20,6 @@
       </div>
       <div class="chart-content">
         <BarChart 
-          :data="weekChartData"
-          :categories="weekChartCategories"
           :colors="weekChartColors"
           :yAxisMax="40"
           :yAxisStep="10"
@@ -38,14 +35,8 @@ import { ref } from 'vue'
 import BarChart from '../chart/BarChart.vue'
 import LineChart from '../chart/LineChart.vue'
 
-// Orders / Day 차트 데이터 (시간별) - 이미지 기반 데이터 (8개 포인트)
-const dayChartData = ref([15, 25, 35, 15, 15, 15, 15, 15])
-const dayChartCategories = ref(['3', '6', '9', '12', '15', '18', '21', '24'])
+// 차트 색상 설정
 const dayChartColors = ref(['#1e40af'])
-
-// Orders / Week 차트 데이터 (요일별) - 이미지 기반 데이터
-const weekChartData = ref([25, 30, 20, 25, 35, 35, 20])
-const weekChartCategories = ref(['월', '화', '수', '목', '금', '토', '일'])
 const weekChartColors = ref(['#1d4ed8'])
 </script>
 
