@@ -1,14 +1,13 @@
-FROM node:lts-alpine AS build-stage
-WORKDIR /pubweb
+FROM node:lts-alpine AS builder
+WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginx:stable-alpine AS production-stage
-COPY --from=build-stage /pubweb/dist /usr/share/nginx/html
+FROM nginx:stable-alpine
 
-# 올바른 Nginx 설정 파일 복사
+COPY --from=builder /app/dist /usr/share/nginx/html/rider
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 7080
