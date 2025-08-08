@@ -71,28 +71,31 @@ pipeline {
             }
             steps {
                 unstash 'frontend-source-code'
-                unstash 'frontend-rider-build'
-
                 script {
-                    dir('apps/frontend/rider') {
-                        sh "echo Current directory: ${pwd()}"
-                        sh "echo Building Docker image..."
-                        sh "docker build -t ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ."
-                    }
-                    sh "echo Docker image for rider built successfully."
-                    sh "docker tag ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ${DOCKER_IMAGE_RIDER}:latest"
+                    parallel(
+                        riderBuild: {
+                            unstash 'frontend-rider-build'
+                            dir('apps/frontend/rider') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Building Docker image..."
+                                sh "docker build -t ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ."
+                                sh "docker tag ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ${DOCKER_IMAGE_RIDER}:latest"
+                                sh "echo Docker image for rider built successfully."
+                            }
+                        },
+                        customerBuild: {
+                            unstash 'frontend-customer-build'
+                            dir('apps/frontend/customer') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Building Docker image for customer..."
+                                sh "docker build -t ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ."
+                                sh "docker tag ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ${DOCKER_IMAGE_CUSTOMER}:latest"
+                                sh "echo Docker image for customer built successfully."
+                            }
+                        }
+                    )
                 }
-
-                script {
-                    dir('apps/frontend/customer') {
-                        unstash 'frontend-customer-build'
-                        sh "echo Current directory: ${pwd()}"
-                        sh "echo Building Docker image for customer..."
-                        sh "docker build -t ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ."
-                    }
-                    sh "echo Docker image for customer built successfully."
-                    sh "docker tag ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ${DOCKER_IMAGE_CUSTOMER}:latest"
-                }
+                sh "echo Docker images built successfully for both rider and customer applications."
             }
         }
 
