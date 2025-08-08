@@ -103,7 +103,7 @@
   <script setup>
   import { ref, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
-  import axios from 'axios'
+  import { login } from '../../api/examples.js'
   
   const router = useRouter()
   
@@ -167,11 +167,8 @@
     successMessage.value = ''
     
     try {
-      // API 호출
-      const { data } = await axios.post('/api/admin/login', {
-        email: formData.value.email,
-        password: formData.value.password
-      })
+      // API 호출 (examples.js의 login 함수 사용)
+      const data = await login(formData.value.email, formData.value.password)
   
       // 로그인 성공
       showSuccess(data.message || '로그인 성공! 관리자 페이지로 이동합니다.')
@@ -181,15 +178,23 @@
         localStorage.setItem('adminEmail', formData.value.email)
       }
       
+      // 토큰 저장 (API 응답에 토큰이 포함된 경우 - 테스트 단계에서는 선택적)
+      if (data.token) {
+        localStorage.setItem('adminToken', data.token)
+      } else {
+        // 테스트 단계: 토큰이 없어도 로그인 성공으로 처리
+        console.log('테스트 모드: 토큰 없이 로그인 성공')
+      }
+      
       // 즉시 페이지 이동 (UX 개선)
       setTimeout(() => {
-        router.push('/dashboard-detail')
+        router.push('/main')
       }, 500)
       
     } catch (error) {
       console.error('로그인 오류:', error)
       
-      // axios 에러 처리
+      // 에러 처리
       if (error.response) {
         // 서버에서 에러 응답 (4xx, 5xx)
         const errorMessage = error.response.data?.message || '로그인에 실패했습니다.'
