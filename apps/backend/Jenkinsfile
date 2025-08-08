@@ -76,7 +76,7 @@ pipeline {
                 sh """
                 git config user.email "qmzo553@gmail.com"
                 git config user.name "박희준"
-                git add k8s/app/deployment.yaml
+                git add apps/backend/k8s/app/deployment.yaml
                 git commit -m "Update backend image to ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 git push origin feature/deploy
                 """
