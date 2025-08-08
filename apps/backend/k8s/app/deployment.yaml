@@ -31,7 +31,7 @@ spec:
         kubernetes.io/hostname: k8s-worker1
       containers:
         - name: linky-backend-1
-          image: parkheejun/linky-backend:1.0.0-20250808_141210
+          image: parkheejun/linky-backend:1.0.0-20250808_143123
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
