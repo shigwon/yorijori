@@ -13,59 +13,59 @@ const SurveyScreen = () => import('../components/11_SurveyScreen.vue')
 
 const routes = [
   {
-    path: '/',
-    redirect: '/welcome'
+    path: '/customer/',
+    redirect: '/customer/welcome'
   },
   {
-    path: '/welcome',
+    path: '/customer/welcome',
     name: 'Welcome',
     component: WelcomeScreen,
     meta: { progress: 0 }
   },
   {
-    path: '/how-to-use',
+    path: '/customer/how-to-use',
     name: 'HowToUse',
     component: HowToUseScreen,
     meta: { progress: 15 }
   },
   {
-    path: '/terms-agreement',
+    path: '/customer/terms-agreement',
     name: 'TermsAgreement',
     component: TermsAgreementScreen,
     meta: { progress: 30 }
   },
   {
-    path: '/photo-selection',
+    path: '/customer/photo-selection',
     name: 'PhotoSelection',
     component: PhotoSelectionScreen,
     meta: { progress: 45 }
   },
   {
-    path: '/camera-capture',
+    path: '/customer/camera-capture',
     name: 'CameraCapture',
     component: CameraCapture,
     meta: { progress: 60 }
   },
   {
-    path: '/location-setting',
+    path: '/customer/location-setting',
     name: 'LocationSetting',
     component: LocationSettingScreen,
     meta: { progress: 75 }
   },
   {
-    path: '/delivery-tracking',
+    path: '/customer/delivery-tracking',
     name: 'DeliveryTracking',
     component: DeliveryTrackingScreen,
     meta: { progress: 90 }
   },
   {
-    path: '/food-compartment',
+    path: '/customer/food-compartment',
     name: 'FoodCompartment',
     component: FoodCompartmentScreen,
     meta: { progress: 95 }
   },
   {
-    path: '/survey',
+    path: '/customer/survey',
     name: 'Survey',
     component: SurveyScreen,
     meta: { progress: 100 },
