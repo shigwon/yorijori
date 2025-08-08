@@ -1,3 +1,5 @@
+def CHANGED_FILES = ""
+
 pipeline {
     agent none
 
@@ -5,8 +7,10 @@ pipeline {
         GIT_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
         GIT_BRANCH = "test/jenkins-rider"
         GIT_CREDENTIALS_ID = "Gitlab"
-        DOCKER_IMAGE = "baejunyeong/linky-frontend-rider"
-        DOCKER_CONTAINER = "frontend-rider"
+        DOCKER_IMAGE_RIDER = "baejunyeong/linky-frontend-rider"
+        DOCKER_CONTAINER_RIDER = "frontend-rider"
+        DOCKER_IMAGE_CUSTOMER = "baejunyeong/linky-frontend-customer"
+        DOCKER_CONTAINER_CUSTOMER = "frontend-customer"
         IMAGE_TAG = "1.0.0"
     }
 
@@ -19,6 +23,14 @@ pipeline {
 
                 sh 'echo "Checked out branch ${GIT_BRANCH} from ${GIT_URL}"'
                 stash includes: '**/*', name: 'frontend-source-code'
+
+                script {
+                    CHANGED_FILES = sh(
+                        script: "git diff --name-only origin/${GIT_BRANCH} HEAD",
+                        returnStdout: true
+                    ).trim()
+                    sh "echo Changed files:\n${CHANGED_FILES}"
+                }
             }
         }
 
@@ -62,10 +74,10 @@ pipeline {
                     dir('apps/frontend/rider') {
                         sh "echo Current directory: ${pwd()}"
                         sh "echo Building Docker image..."
-                        sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                        sh "docker build -t ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ."
                     }
                     sh "echo Docker image built successfully."
-                    sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
+                    sh "docker tag ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ${DOCKER_IMAGE_RIDER}:latest"
                 }
             }
         }
@@ -79,9 +91,9 @@ pipeline {
             }
             steps {
                 sh "echo Deploying application..."
-                sh "docker stop ${DOCKER_CONTAINER} || true"
-                sh "docker rm ${DOCKER_CONTAINER} || true"
-                sh "docker run -d --name ${DOCKER_CONTAINER} --restart=unless-stopped -p 7080:7080 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker stop ${DOCKER_CONTAINER_RIDER} || true"
+                sh "docker rm ${DOCKER_CONTAINER_RIDER} || true"
+                sh "docker run -d --name ${DOCKER_CONTAINER_RIDER} --restart=unless-stopped -p 7080:7080 ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG}"
                 sh "echo Application deployed successfully."
             }
         }
