@@ -36,7 +36,7 @@ pipeline {
                 unstash 'frontend-source-code'
 
                 script {
-                    parallel {
+                    parallel(
                         riderBuild: {
                             dir('apps/frontend/rider') {
                                 sh "echo Current directory: ${pwd()}"
@@ -57,7 +57,7 @@ pipeline {
                             }
                             stash includes: 'apps/frontend/customer/dist/**/*', name: 'frontend-customer-build'
                         }
-                    }
+                    )
                 }
             }
         }
