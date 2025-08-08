@@ -15,7 +15,7 @@ spec:
       part-of: k8s-linky
       component: backend-server
       name: linky-backend
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
   template:
@@ -63,7 +63,6 @@ spec:
                   name: postgresql-secret
                   key: postgresql-password
 
-            # Redis 연결
             - name: REDIS_HOST
               value: redis-stack-service
             - name: REDIS_PORT
