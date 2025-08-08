@@ -18,7 +18,7 @@ spec:
         app: mysql
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k8s-worker1  # PV와 동일한 노드
+        kubernetes.io/hostname: k8s-worker1
       containers:
       - name: mysql
         image: mysql:8.0
@@ -71,14 +71,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - mysql
-            - -h
-            - localhost
-            - -u
-            - root
-            - -p$MYSQL_ROOT_PASSWORD
-            - -e
-            - "SELECT 1"
+              - sh
+              - -c
+              - mysql -h localhost -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1"
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
