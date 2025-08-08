@@ -12,8 +12,8 @@ import com.linky.api.robot.entity.RobotStatus;
 import com.linky.api.robot.exception.RobotLocationException;
 import com.linky.api.robot.mapper.RobotMapper;
 import com.linky.api.robot.repository.RobotRedisRepository;
-import com.linky.api.robot.repository.RobotRepository;
-import com.linky.api.robot.repository.RobotLocationHistoryRepository;
+import com.linky.api.robot.repository.mybatis.RobotRepository;
+import com.linky.api.robot.repository.jpa.RobotLocationHistoryRepository;
 import com.linky.api.robot.service.RobotService;
 import com.linky.config.exception.enums.ApiExceptionEnum;
 import lombok.RequiredArgsConstructor;
@@ -293,7 +293,7 @@ public class RobotServiceImpl implements RobotService {
     }
 
     @Scheduled(fixedRate = 1000) // 1초마다 실행
-    @Transactional
+    @Transactional("postgresTransactionManager")
     @Override
     public void saveLocationsToPostgreSQL() {
         try {
@@ -323,7 +323,7 @@ public class RobotServiceImpl implements RobotService {
     }
 
     @Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
-    @Transactional
+    @Transactional("postgresTransactionManager")
     @Override
     public void cleanupOldLocationData() {
         try {

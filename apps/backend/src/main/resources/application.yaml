@@ -20,9 +20,9 @@ spring:
 
     postgres:
       driver-class-name: org.postgresql.Driver
-      url: ${POSTGRES_DB_URL:jdbc:postgresql://localhost:5432/linky_location}
-      username: ${POSTGRES_DB_USERNAME:linky}
-      password: ${POSTGRES_DB_PASSWORD:linky1234}
+      url: ${POSTGRES_DB_URL}
+      username: ${POSTGRES_DB_USERNAME}
+      password: ${POSTGRES_DB_PASSWORD}
 
   jpa:
     properties:

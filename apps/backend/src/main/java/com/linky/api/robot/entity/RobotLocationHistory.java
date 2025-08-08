@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "robot_location_history")
+@Table(name = "robot_location_history", schema = "public")
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,10 +22,10 @@ public class RobotLocationHistory {
     @Column(name = "robot_id", nullable = false)
     private Integer robotId;
 
-    @Column(nullable = false, precision = 10, scale = 6)
+    @Column(nullable = false, precision = 10)
     private Double latitude;
 
-    @Column(nullable = false, precision = 10, scale = 6)
+    @Column(nullable = false, precision = 10)
     private Double longitude;
 
     @Column(name = "recorded_at", nullable = false)

@@ -1,4 +1,4 @@
-package com.linky.api.robot.repository;
+package com.linky.api.robot.repository.jpa;
 
 import com.linky.api.robot.entity.RobotLocationHistory;
 import org.springframework.data.domain.Page;

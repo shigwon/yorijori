@@ -1,4 +1,4 @@
-package com.linky.api.robot.repository;
+package com.linky.api.robot.repository.mybatis;
 
 import com.linky.api.robot.entity.Robot;
 import com.linky.api.robot.entity.RobotStatus;
