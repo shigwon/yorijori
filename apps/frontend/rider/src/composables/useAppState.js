@@ -13,48 +13,48 @@ export const useAppState = () => {
   }
 
   const goToHowToUse = () => {
-    router.push('/how-to-use')
+    router.push('/rider/how-to-use')
     console.log('화면 전환: how-to-use')
   }
 
   const goToScanOption = () => {
-    router.push('/scan-option')
+    router.push('/rider/scan-option')
     console.log('화면 전환: scan-option')
   }
 
   const goToReceiptScan = () => {
-    router.push('/receipt-scan')
+    router.push('/rider/receipt-scan')
     console.log('화면 전환: receipt-scan')
   }
 
   const goToManualInput = () => {
-    router.push('/manual-input')
+    router.push('/rider/manual-input')
     console.log('화면 전환: manual-input')
   }
 
   const goToManualConfirm = (orderNumber, safeNumber) => {
     orderData.value = { orderNumber, safeNumber }
-    router.push('/manual-confirm')
+    router.push('/rider/manual-confirm')
     console.log('화면 전환: manual-confirm')
   }
 
   const goToLocationRequest = () => {
-    router.push('/location-request')
+    router.push('/rider/location-request')
     console.log('화면 전환: location-request')
   }
 
   const goToPhotoCapture = () => {
-    router.push('/photo-capture')
+    router.push('/rider/photo-capture')
     console.log('화면 전환: photo-capture')
   }
 
   const goToComplete = () => {
-    router.push('/complete')
+    router.push('/rider/complete')
     console.log('화면 전환: complete')
   }
 
   const goToOnboarding = () => {
-    router.push('/how-to-use')
+    router.push('/rider/how-to-use')
     console.log('화면 전환: onboarding -> how-to-use')
   }
 

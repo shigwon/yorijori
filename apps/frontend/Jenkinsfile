@@ -1,0 +1,124 @@
+pipeline {
+    agent none
+
+    environment {
+        GIT_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
+        GIT_BRANCH = "test/jenkins-rider"
+        GIT_CREDENTIALS_ID = "Gitlab"
+        DOCKER_IMAGE_RIDER = "baejunyeong/linky-frontend-rider"
+        DOCKER_CONTAINER_RIDER = "frontend-rider"
+        DOCKER_IMAGE_CUSTOMER = "baejunyeong/linky-frontend-customer"
+        DOCKER_CONTAINER_CUSTOMER = "frontend-customer"
+        IMAGE_TAG = "1.0.0"
+    }
+
+    stages {
+        stage('Checkout branch') {
+            agent any
+            steps {
+                git credentialsId: "${GIT_CREDENTIALS_ID}",
+                    url: "${GIT_URL}"
+
+                sh 'echo "Checked out branch ${GIT_BRANCH} from ${GIT_URL}"'
+                stash includes: '**/*', name: 'frontend-source-code'
+            }
+        }
+
+        stage('Install Dependencies & build') {
+            agent {
+                docker {
+                    image 'node:lts-alpine'
+                    args '-u root'
+                    reuseNode true
+                }
+            }
+            steps {
+                unstash 'frontend-source-code'
+
+                script {
+                    parallel(
+                        riderBuild: {
+                            dir('apps/frontend/rider') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Installing dependencies and building the application..."
+                                sh "npm install"
+                                sh "echo Building the application..."
+                                sh 'npm run build'
+                            }
+                            stash includes: 'apps/frontend/rider/dist/**/*', name: 'frontend-rider-build'
+                        },
+                        customerBuild: {
+                            dir('apps/frontend/customer') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Installing dependencies and building the application..."
+                                sh "npm install"
+                                sh "echo Building the application..."
+                                sh 'npm run build'
+                            }
+                            stash includes: 'apps/frontend/customer/dist/**/*', name: 'frontend-customer-build'
+                        }
+                    )
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            agent {
+                docker {
+                    image 'docker:28.3.3'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                unstash 'frontend-source-code'
+                script {
+                    parallel(
+                        riderBuild: {
+                            unstash 'frontend-rider-build'
+                            dir('apps/frontend/rider') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Building Docker image..."
+                                sh "docker build -t ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ."
+                                sh "docker tag ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG} ${DOCKER_IMAGE_RIDER}:latest"
+                                sh "echo Docker image for rider built successfully."
+                            }
+                        },
+                        customerBuild: {
+                            unstash 'frontend-customer-build'
+                            dir('apps/frontend/customer') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Building Docker image for customer..."
+                                sh "docker build -t ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ."
+                                sh "docker tag ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ${DOCKER_IMAGE_CUSTOMER}:latest"
+                                sh "echo Docker image for customer built successfully."
+                            }
+                        }
+                    )
+                }
+                sh "echo Docker images built successfully for both rider and customer applications."
+            }
+        }
+
+        stage('Docker Deploy') {
+            agent {
+                docker {
+                    image 'docker:28.3.3'
+                    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+                }   
+            }
+            steps {
+                sh "echo Deploying rider application..."
+                sh "docker stop ${DOCKER_CONTAINER_RIDER} || true"
+                sh "docker rm ${DOCKER_CONTAINER_RIDER} || true"
+                sh "docker run -d --name ${DOCKER_CONTAINER_RIDER} --restart=unless-stopped -p 7080:7080 ${DOCKER_IMAGE_RIDER}:${IMAGE_TAG}"
+                sh "echo Application deployed successfully."
+
+                sh "echo Deploying customer application..."
+                sh "docker stop ${DOCKER_CONTAINER_CUSTOMER} || true"
+                sh "docker rm ${DOCKER_CONTAINER_CUSTOMER} || true"
+                sh "docker run -d --name ${DOCKER_CONTAINER_CUSTOMER} --restart=unless-stopped -p 7081:7081 ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG}"
+                sh "echo Customer application deployed successfully."
+            }
+        }
+    }
+}

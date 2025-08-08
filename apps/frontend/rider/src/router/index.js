@@ -13,53 +13,53 @@ const CompleteScreen = () => import('../components/08_CompleteScreen.vue')
 
 const routes = [
   {
-    path: '/',
-    redirect: '/how-to-use'
+    path: '/rider/',
+    redirect: '/rider/how-to-use'
   },
   {
-    path: '/how-to-use',
+    path: '/rider/how-to-use',
     name: 'HowToUse',
     component: HowToUseScreen,
     meta: { progress: 10 }
   },
   {
-    path: '/scan-option',
+    path: '/rider/scan-option',
     name: 'ScanOption',
     component: ScanOptionScreen,
     meta: { progress: 20 }
   },
   {
-    path: '/receipt-scan',
+    path: '/rider/receipt-scan',
     name: 'ReceiptScan',
     component: ReceiptScanScreen,
     meta: { progress: 30 }
   },
   {
-    path: '/manual-input',
+    path: '/rider/manual-input',
     name: 'ManualInput',
     component: ManualInputScreen,
     meta: { progress: 40 }
   },
   {
-    path: '/manual-confirm',
+    path: '/rider/manual-confirm',
     name: 'ManualConfirm',
     component: ManualConfirmScreen,
     meta: { progress: 50 }
   },
   {
-    path: '/location-request',
+    path: '/rider/location-request',
     name: 'LocationRequest',
     component: LocationRequestScreen,
     meta: { progress: 70 }
   },
   {
-    path: '/photo-capture',
+    path: '/rider/photo-capture',
     name: 'PhotoCapture',
     component: PhotoCaptureScreen,
     meta: { progress: 80 }
   },
   {
-    path: '/complete',
+    path: '/rider/complete',
     name: 'Complete',
     component: CompleteScreen,
     meta: { progress: 100 }
