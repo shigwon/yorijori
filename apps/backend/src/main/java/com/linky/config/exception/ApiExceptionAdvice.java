@@ -1,5 +1,6 @@
 package com.linky.config.exception;
 
+import com.linky.api.robot.exception.RobotLocationException;
 import com.linky.config.exception.enums.ApiExceptionEnum;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -80,6 +81,21 @@ public class ApiExceptionAdvice {
                 .body(ApiExceptionEntity.builder()
                         .errorCode(ApiExceptionEnum.INTERNAL_SERVER_ERROR.getCode())
                         .errorMsg(e.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler({RobotLocationException.class})
+    public ResponseEntity<ApiExceptionEntity> exceptionHandler(HttpServletRequest req, final RobotLocationException e) {
+        log.warn("[ApiExceptionAdvice] robot location exception :: {}", e.getApiExceptionEnum().getMessage());
+
+        String errorMessage = e.getCustomMessage() != null ?
+                e.getCustomMessage() : e.getApiExceptionEnum().getMessage();
+
+        return ResponseEntity
+                .status(e.getApiExceptionEnum().getStatus())
+                .body(ApiExceptionEntity.builder()
+                        .errorCode(e.getApiExceptionEnum().getCode())
+                        .errorMsg(errorMessage)
                         .build());
     }
 }
