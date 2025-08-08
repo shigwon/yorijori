@@ -36,29 +36,29 @@ pipeline {
                 unstash 'frontend-source-code'
 
                 script {
-                    dir('apps/frontend/rider') {
-                        sh "echo Current directory: ${pwd()}"
-                        sh "echo Installing dependencies and building the application..."
-                        sh "npm install"
-                        sh "echo Building the application..."
-                        sh 'npm run build'
+                    parallel {
+                        riderBuild: {
+                            dir('apps/frontend/rider') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Installing dependencies and building the application..."
+                                sh "npm install"
+                                sh "echo Building the application..."
+                                sh 'npm run build'
+                            }
+                            stash includes: 'apps/frontend/rider/dist/**/*', name: 'frontend-rider-build'
+                        },
+                        customerBuild: {
+                            dir('apps/frontend/customer') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Installing dependencies and building the application..."
+                                sh "npm install"
+                                sh "echo Building the application..."
+                                sh 'npm run build'
+                            }
+                            stash includes: 'apps/frontend/customer/dist/**/*', name: 'frontend-customer-build'
+                        }
                     }
-                    
                 }
-
-                stash includes: 'apps/frontend/rider/dist/**/*', name: 'frontend-rider-build'
-                
-                script {
-                    dir('apps/frontend/customer') {
-                        sh "echo Current directory: ${pwd()}"
-                        sh "echo Installing dependencies and building the application..."
-                        sh "npm install"
-                        sh "echo Building the application..."
-                        sh 'npm run build'
-                    }
-                }
-
-                stash includes: 'apps/frontend/rider/dist/**/*', name: 'frontend-customer-build'
             }
         }
 
