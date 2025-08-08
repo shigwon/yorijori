@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-stack
+  namespace: linky
+  labels:
+    app: redis-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-stack
+  template:
+    metadata:
+      labels:
+        app: redis-stack
+    spec:
+      containers:
+        - name: redis-stack
+          image: redis/redis-stack-server:latest
+          ports:
+            - containerPort: 6379   # Redis 서버 포트
+              name: redis
+            - containerPort: 8001   # RedisInsight UI 포트
+              name: redis-ui
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-stack-secret
+                  key: redis-password
+          command:
+            - redis-stack-server
+            - "--requirepass"
+            - "$(REDIS_PASSWORD)"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
