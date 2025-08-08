@@ -88,4 +88,10 @@
             code = #{code}
     </update>
 
+    <select id="findByCode" parameterType="string" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE code = #{code}
+    </select>
+
 </mapper>
