@@ -30,15 +30,54 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: k8s-worker1
       containers:
-        - name: api-tester-2214-2
+        - name: linky-backend-1
           image: parkheejun/linky-backend:1.0.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
+          env:
+            - name: DB_URL
+              value: jdbc:mysql://mysql-service:3306/linky
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+
+            - name: POSTGRES_URL
+              value: jdbc:postgresql://postgresql-service:5432/postgres
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: postgresql-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: postgresql-password
+
+            # Redis 연결
+            - name: REDIS_HOST
+              value: redis-stack-service
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-stack-secret
+                  key: redis-password
           envFrom:
             - configMapRef:
                 name: linky-backend-properties
+            - secretRef:
+                name: linky-backend-secret
           startupProbe:
             httpGet:
               path: "/startup"
