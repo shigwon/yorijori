@@ -29,7 +29,7 @@ pipeline {
                         script: "git diff --name-only ${GIT_BRANCH} HEAD",
                         returnStdout: true
                     ).trim()
-                    sh "echo Changed files:\n${CHANGED_FILES}"
+                    sh "echo Changed files:${CHANGED_FILES}"
                 }
             }
         }
