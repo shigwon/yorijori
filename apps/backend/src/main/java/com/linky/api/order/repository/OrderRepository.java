@@ -20,4 +20,5 @@ public interface OrderRepository {
     int searchOrderUpdateCount(int robotId);
     int searchOrderCreateActivate(int robotId);
     void updateOrderStatusByorderId(List<OrderSummary> orderList);
+    Order findByCode(String code);
 }
