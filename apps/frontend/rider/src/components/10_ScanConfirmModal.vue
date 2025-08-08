@@ -43,7 +43,7 @@ import { useAppState } from '../composables/useAppState'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const { goToLocationRequest, goToScanOption, receiptData } = useAppState()
+const { goToScanOption, receiptData } = useAppState()
 const router = useRouter()
 
 // URL에서 robotId 파라미터 가져오기
@@ -67,45 +67,71 @@ onMounted(() => {
   }
 })
 
-const handleNext = async () => {
+const handleNext = () => {
+  console.log('다음 버튼 클릭됨 - handleNext 시작')
+  
   // 수정된 데이터를 receiptData에 저장
   receiptData.value = {
     id: editedReceiptData.value.id,
     tel: editedReceiptData.value.tel
   }
-  try {
-    console.log('주문정보 API 요청 시작...')
-    const response = await fetch('/api/v1/orders/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        robotId: getRobotId(),
-        code: editedReceiptData.value.id,
-        tel: editedReceiptData.value.tel
-      })
+  
+  console.log('receiptData 저장 완료:', receiptData.value)
+  
+  // API 호출은 하되 기다리지 않음 (백그라운드에서 실행)
+  fetch('/api/v1/orders/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      robotId: getRobotId(),
+      code: editedReceiptData.value.id,
+      tel: editedReceiptData.value.tel
     })
+  })
+  .then(response => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    const result = await response.json()
+    return response.json()
+  })
+  .then(result => {
     console.log('주문정보 API 응답:', result)
-  } catch (error) {
+  })
+  .catch(error => {
     console.error('주문정보 API 호출 실패:', error)
-  } finally {
-    // 모달 닫기
-    window.closeScanConfirmModal()
-    // 성공/실패 관계없이 항상 이동
-    goToLocationRequest()
+  })
+  
+  console.log('모달 닫기 시작')
+  // 모달 닫기
+  window.closeScanConfirmModal()
+  
+  // 로딩 모달도 강제로 닫기
+  if (window.closeLoadingModal) {
+    window.closeLoadingModal()
   }
+  
+  console.log('라우터 네비게이션 시작')
+  // 바로 LocationRequest 화면으로 이동 (강제 이동)
+  window.location.href = '/rider/location-request'
+  
+  console.log('handleNext 완료')
 }
 
 const handleProblemClick = () => {
+  console.log('주문정보 문제 클릭됨 - handleProblemClick 시작')
+  
   // 모달 닫기
   window.closeScanConfirmModal()
+  
+  // 로딩 모달도 강제로 닫기
+  if (window.closeLoadingModal) {
+    window.closeLoadingModal()
+  }
+  
   // 스캔 옵션 화면으로 강제 이동
-  window.location.href = '/scan-option'
+  window.location.href = '/rider/scan-option'
   console.log('스캔 옵션 화면으로 강제 이동')
 }
 </script>
