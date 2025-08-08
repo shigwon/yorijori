@@ -5,6 +5,8 @@ pipeline {
         GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = "parkheejun/linky-backend"
+
+        VERSION = "1.0.0"
         DATE_TAG = "${new Date().format('yyyyMMdd_HHmmss')}"
         IMAGE_TAG = "${VERSION}-${DATE_TAG}"
         GIT_CREDENTIALS = 'gitlab-credentials'
@@ -68,7 +70,7 @@ pipeline {
                     url: "${GITLAB_URL}"
 
                 sh """
-                sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' k8s/app/deployment.yaml
+                sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' apps/backend/k8s/app/deployment.yaml
                 """
 
                 sh """
