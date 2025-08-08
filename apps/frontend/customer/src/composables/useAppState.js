@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 const capturedImage = ref('')
 const deliveryLocation = ref(null)
 const deliveryAddress = ref('')
+const orderCode = ref('') // 주문번호 저장
 
 export const useAppState = () => {
   const router = useRouter()
@@ -97,6 +98,7 @@ export const useAppState = () => {
     capturedImage,
     deliveryLocation,
     deliveryAddress,
+    orderCode, // 주문번호 추가
     goToWelcome,
     goToHowToUse,
     goToTermsAgreement,

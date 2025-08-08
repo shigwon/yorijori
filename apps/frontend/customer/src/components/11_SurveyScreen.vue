@@ -128,8 +128,15 @@ const toggleOption = (option) => {
 
 // URL에서 주문번호 가져오기
 const getOrderCode = () => {
+  // Pinia 스토어에서 주문번호 가져오기
+  const { orderCode } = useAppState()
+  
+  if (orderCode.value) {
+    return orderCode.value
+  }
+  
+  // 스토어에 없으면 URL에서 가져오기 (fallback)
   const urlParams = new URLSearchParams(window.location.search)
-  // code 파라미터가 주문번호 (예: code=0N063)
   return urlParams.get('code') || 'default'
 }
 

@@ -53,13 +53,29 @@
  </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal } = useAppState()
+const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode } = useAppState()
 const showChatMessage = ref(true)
 const showChatbot = ref(false)
+
+// URL에서 주문번호 가져와서 저장
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const code = urlParams.get('code')
+  const robotId = urlParams.get('robotId')
+  
+  if (code) {
+    orderCode.value = code
+    console.log('주문번호 저장:', code)
+  }
+  
+  if (robotId) {
+    console.log('로봇 ID:', robotId)
+  }
+})
 
 const handleStart = () => {
   goToHowToUse()

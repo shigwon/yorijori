@@ -8,6 +8,7 @@ import com.linky.api.order.dto.request.RunImageToOcrRequestDto;
 import com.linky.api.order.dto.request.UpdateLocationRequestDto;
 import com.linky.api.order.dto.response.RunImageToOcrResponseDto;
 import com.linky.api.order.entity.Order;
+import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;

@@ -68,12 +68,13 @@ const routes = [
     path: '/survey',
     name: 'Survey',
     component: SurveyScreen,
-    meta: { progress: 100 }
+    meta: { progress: 100 },
+    props: (route) => ({ orderCode: route.query.code })
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory('/customer/'),
+  history: createWebHistory(),
   routes
 })
 

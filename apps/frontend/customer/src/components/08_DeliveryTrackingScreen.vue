@@ -65,13 +65,14 @@ import { onMounted, ref } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
-const { openFoodCompartment, deliveryLocation, deliveryAddress } = useAppState()
+const { openFoodCompartment, deliveryLocation, deliveryAddress, capturedImage } = useAppState()
 const showDeliveryCompleteModal = ref(false)
 
 onMounted(() => {
   console.log('DeliveryTrackingScreen 마운트됨')
   console.log('useAppState 배달 위치:', deliveryLocation.value)
   console.log('useAppState 배달 주소:', deliveryAddress.value)
+  console.log('useAppState 사용자 사진:', capturedImage.value ? '있음' : '없음')
   
   // 카카오맵 초기화 함수
   const initDeliveryMap = () => {
@@ -105,7 +106,8 @@ onMounted(() => {
       // 목적지 마커 (사용자가 설정한 위치)
       const destPosition = new window.kakao.maps.LatLng(deliveryLat, deliveryLng)
       
-      // 커스텀 마커 HTML 생성
+      // 커스텀 마커 HTML 생성 (사용자 사진 포함)
+      const userImage = capturedImage.value || ''
       const markerContent = `
         <div style="position: relative; display: inline-block;">
           <div style="
@@ -121,7 +123,10 @@ onMounted(() => {
             justify-content: center;
             z-index: 2;
           ">
-            <span style="font-size: 12px; color: white;">👤</span>
+            ${userImage ? 
+              `<img src="${userImage}" alt="사용자" style="width: 100%; height: 100%; object-fit: cover;" />` : 
+              '<span style="font-size: 12px; color: white;">👤</span>'
+            }
           </div>
           <!-- 만날 위치 텍스트 -->
           <div style="

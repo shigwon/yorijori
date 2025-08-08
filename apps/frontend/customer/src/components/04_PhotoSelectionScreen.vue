@@ -87,15 +87,46 @@
       </button>
     </div>
   </div>
+
+  <!-- 얼굴 인식 모달 -->
+  <div v-if="showFaceRecognitionModal" class="modal-overlay" @click="closeFaceRecognitionModal">
+    <div class="modal-content" @click.stop>
+      <!-- 로딩 상태 -->
+      <div v-if="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <h2 class="loading-text">인식중입니다</h2>
+      </div>
+
+      <!-- 완료 상태 -->
+      <div v-else class="completion-state">
+        <div class="captured-image-container">
+          <img v-if="capturedImage" :src="capturedImage" alt="촬영된 사진" class="captured-image" />
+          <div v-else class="dog-emoji">🐕</div>
+        </div>
+        <h2 class="completion-text">얼굴 인식이 완료되었어요!</h2>
+        
+        <div class="button-container">
+          <button class="prev-button" @click="closeFaceRecognitionModal">
+            이전
+          </button>
+          <button class="next-button" @click="handleNext">
+            다음
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const { goToCameraCapture, openFaceRecognitionModal } = useAppState()
+const { goToCameraCapture, goToLocationSetting, capturedImage } = useAppState()
 
 const fileInput = ref(null)
+const showFaceRecognitionModal = ref(false)
+const isLoading = ref(true)
 
 const selectFromAlbum = () => {
   console.log('앨범에서 선택하기 클릭됨')
@@ -120,21 +151,36 @@ const handleFileSelect = async (event) => {
         console.warn('백엔드 전송 실패, 계속 진행:', uploadError)
       }
       
-      // 부모 컴포넌트에 선택된 이미지 전달
-      emit('photo-selected', {
-        file: file,
-        url: `data:${file.type};base64,${base64Image}`,
-        base64: base64Image
-      })
+      // 얼굴 인식 모달 표시 (즉시)
+      console.log('앨범 선택 후 얼굴 인식 모달 표시')
       
-      // 얼굴 인식 모달 표시 (약간의 지연 후)
+      // useAppState에 선택한 사진 저장
+      capturedImage.value = `data:image/jpeg;base64,${base64Image}`
+      console.log('useAppState에 앨범 사진 저장 완료')
+      
+      // 직접 모달 표시
+      showFaceRecognitionModal.value = true
+      isLoading.value = true
+      
+      console.log('얼굴 인식 모달 표시 완료')
+      
+      // 5초 후 로딩 완료
       setTimeout(() => {
-        console.log('앨범 선택 후 얼굴 인식 모달 표시 이벤트 발생')
-        openFaceRecognitionModal(base64Image)
-      }, 100)
+        console.log('로딩 완료, 완료 상태로 변경')
+        isLoading.value = false
+      }, 5000)
       
     } catch (error) {
       console.error('파일 처리 오류:', error)
+      // 오류 발생 시에도 모달 표시 시도
+      setTimeout(() => {
+        console.log('파일 처리 오류로 인한 얼굴 인식 모달 표시')
+        if (window.openFaceRecognitionModal) {
+          window.openFaceRecognitionModal('')
+        } else {
+          openFaceRecognitionModal('')
+        }
+      }, 100)
     }
   }
 }
@@ -172,7 +218,6 @@ const sendImageToBackend = async (base64Image, fileName) => {
     if (response.ok) {
       const result = await response.json()
       console.log('앨범 이미지 전송 성공:', result)
-      emit('photo-uploaded', result)
     } else {
       console.error('앨범 이미지 전송 실패:', response.status)
       // 에러를 throw하지 않고 로그만 출력
@@ -187,6 +232,17 @@ const sendImageToBackend = async (base64Image, fileName) => {
 const takeSelfie = () => {
   console.log('셀카 찍기 클릭됨')
   goToCameraCapture()
+}
+
+const closeFaceRecognitionModal = () => {
+  showFaceRecognitionModal.value = false
+  console.log('얼굴 인식 모달 닫기')
+}
+
+const handleNext = () => {
+  closeFaceRecognitionModal()
+  console.log('다음 버튼 클릭 - 위치 설정 화면으로 이동')
+  goToLocationSetting()
 }
 </script>
 
@@ -393,5 +449,131 @@ const takeSelfie = () => {
   .action-button span {
     font-size: 12px;
   }
+}
+
+/* 얼굴 인식 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 32px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* 로딩 상태 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #7C3AED;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+}
+
+/* 완료 상태 */
+.completion-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.captured-image-container {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.captured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dog-emoji {
+  font-size: 60px;
+}
+
+.completion-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.button-container {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.prev-button, .next-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prev-button {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.prev-button:hover {
+  background: #e5e7eb;
+}
+
+.next-button {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: white;
+}
+
+.next-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 60, 237, 0.4);
 }
 </style> 

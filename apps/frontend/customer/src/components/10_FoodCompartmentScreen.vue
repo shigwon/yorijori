@@ -33,7 +33,7 @@
 <script setup>
 import { useAppState } from '../composables/useAppState'
 
-const { closeFoodCompartment, openSurveyScreen } = useAppState()
+const { closeFoodCompartment, goToSurvey } = useAppState()
 
 const handleConfirm = () => {
   closeFoodCompartment()
@@ -43,7 +43,7 @@ const handleConfirm = () => {
 
 const handleSurvey = () => {
   closeFoodCompartment()
-  openSurveyScreen()
+  goToSurvey()
 }
 </script>
 

@@ -50,13 +50,21 @@ const capturedFaceImage = ref('') // 촬영된 얼굴 이미지
 // URL에서 주문번호 가져오기
 const getOrderId = () => {
   const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('orderId') || 'default'
+  const orderId = urlParams.get('orderId')
+  
+  // orderId가 없으면 테스트용 ID 사용
+  if (!orderId || orderId === 'default') {
+    console.log('orderId가 없어서 테스트용 ID 사용')
+    return '1' // 테스트용 주문 ID
+  }
+  
+  return orderId
 }
 
 const confirmLocation = async () => {
   console.log('위치 설정 완료')
   console.log('현재 위치:', currentLocation.value)
-  console.log('현재 주소:', currentAddress.value)
+  console.log('현재 주소:', currentAddress.value) 
   
   // useAppState에 위치 정보 저장
   deliveryLocation.value = currentLocation.value
@@ -71,12 +79,13 @@ const confirmLocation = async () => {
     console.log('주문번호:', orderId)
     
     const response = await fetch(`/api/v1/orders/${orderId}/location`, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        robotId: 1, 
+        orderId: parseInt(orderId), 
+        robotId: 1,
         customerLatitude: currentLocation.value.latitude,
         customerLongitude: currentLocation.value.longitude
       })

@@ -58,7 +58,7 @@ const closeChatbot = () => {
   showChatbot.value = false
 }
 
-// 전역으로 모달 함수들을 제공
+// 전역으로 모달 함수들과 상태를 제공
 window.openFaceRecognitionModal = openFaceRecognitionModal
 window.closeFaceRecognitionModal = closeFaceRecognitionModal
 window.openFoodCompartment = openFoodCompartment
@@ -68,10 +68,39 @@ window.closeSurveyScreen = closeSurveyScreen
 window.openChatbot = openChatbot
 window.closeChatbot = closeChatbot
 
+// 전역 상태 노출
+window.showFaceRecognitionModal = showFaceRecognitionModal
+window.capturedImage = capturedImage
+
 // 디버깅용 로그
 console.log('App.vue에서 전역 함수 등록 완료')
 console.log('window.openFaceRecognitionModal:', typeof window.openFaceRecognitionModal)
 console.log('window.openFaceRecognitionModal 함수 내용:', window.openFaceRecognitionModal.toString())
+
+// onMounted에서도 전역 함수 등록 확인
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  console.log('App.vue 마운트됨 - 전역 함수 재등록')
+  
+  // 전역 함수 재등록
+  window.openFaceRecognitionModal = openFaceRecognitionModal
+  window.closeFaceRecognitionModal = closeFaceRecognitionModal
+  window.openFoodCompartment = openFoodCompartment
+  window.closeFoodCompartment = closeFoodCompartment
+  window.openSurveyScreen = openSurveyScreen
+  window.closeSurveyScreen = closeSurveyScreen
+  window.openChatbot = openChatbot
+  window.closeChatbot = closeChatbot
+  
+  // 전역 상태 재등록
+  window.showFaceRecognitionModal = showFaceRecognitionModal
+  window.capturedImage = capturedImage
+  
+  console.log('전역 함수 및 상태 재등록 완료')
+  console.log('window.openFaceRecognitionModal 재확인:', typeof window.openFaceRecognitionModal)
+  console.log('window.showFaceRecognitionModal 재확인:', typeof window.showFaceRecognitionModal)
+})
 </script>
 
 <template>

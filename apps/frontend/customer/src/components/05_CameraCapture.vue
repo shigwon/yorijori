@@ -179,10 +179,11 @@ const toggleCameraMode = async () => {
   await startCamera()
 }
 
-const captureImage = () => {
+const captureImage = async () => {
   console.log('버튼 클릭! 카메라 사진 촬영 후 모달 열기')
   
   // 카메라에서 실제 사진 촬영
+  let base64Image = ''
   if (videoElement.value && videoElement.value.videoWidth && videoElement.value.videoHeight) {
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
@@ -194,13 +195,14 @@ const captureImage = () => {
     context.drawImage(videoElement.value, 0, 0, canvas.width, canvas.height)
     
     // 캔버스를 base64 이미지로 변환
-    const base64Image = canvas.toDataURL('image/jpeg', 0.8)
+    base64Image = canvas.toDataURL('image/jpeg', 0.8)
     capturedImage.value = base64Image
     
     console.log('실제 카메라 사진 촬영 완료')
   } else {
     console.log('카메라가 준비되지 않음, 기본 이미지 사용')
-    capturedImage.value = 'data:image/jpeg;base64,test-image-data'
+    base64Image = 'data:image/jpeg;base64,test-image-data'
+    capturedImage.value = base64Image
   }
   
   // 얼굴 인식 모달 열기
@@ -208,6 +210,14 @@ const captureImage = () => {
   isLoading.value = true
   
   console.log('얼굴 인식 모달 열기 완료')
+  
+  // 백엔드로 이미지 전송
+  try {
+    await sendImageToBackend(base64Image)
+    console.log('백엔드 전송 완료')
+  } catch (error) {
+    console.error('백엔드 전송 실패:', error)
+  }
   
   // 5초 후 로딩 완료
   setTimeout(() => {
@@ -231,8 +241,8 @@ const sendImageToBackend = async (base64Image) => {
   try {
     console.log('백엔드로 이미지 전송 중...')
     
-    // base64 → Blob 변환
-    const blob = await (await fetch(`data:image/jpeg;base64,${base64Image}`)).blob()
+    // base64 → Blob 변환 (base64Image는 이미 data:image/jpeg;base64, 형식)
+    const blob = await (await fetch(base64Image)).blob()
     
     // FormData 생성
     const formData = new FormData()
