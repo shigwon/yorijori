@@ -5,7 +5,9 @@ pipeline {
         GITLAB_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = "parkheejun/linky-backend"
-        IMAGE_TAG = "1.0.0"
+        DATE_TAG = "${new Date().format('yyyyMMdd_HHmmss')}"
+        IMAGE_TAG = "${VERSION}-${DATE_TAG}"
+        GIT_CREDENTIALS = 'gitlab-credentials'
     }
 
     stages {
@@ -28,12 +30,8 @@ pipeline {
             agent any
             steps {
                 git branch: 'feature/deploy',
-                    credentialsId: 'gitlab-credentials',
+                    credentialsId: "${GIT_CREDENTIALS}",
                     url: "${GITLAB_URL}"
-
-                // 프로젝트 구조 확인
-                sh 'echo "프로젝트 구조:"'
-                sh 'find . -name "settings.gradle*" -o -name "build.gradle*" | head -10'
 
                 stash includes: '**/*', name: 'source-code'
             }
@@ -47,15 +45,10 @@ pipeline {
             }
             steps {
                 unstash 'source-code'
-
-                script {
-                    // apps/backend 디렉토리로 이동해서 빌드
-                    dir('apps/backend') {
-                        sh "chmod +x ./gradlew"
-                        sh "./gradlew clean build --no-daemon"
-                    }
+                dir('apps/backend') {
+                    sh "chmod +x ./gradlew"
+                    sh "./gradlew clean build --no-daemon"
                 }
-
                 stash includes: 'apps/backend/build/**/*', name: 'build-artifacts'
             }
         }
@@ -67,22 +60,40 @@ pipeline {
                     args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
-             steps {
-                            unstash 'source-code'
-                            unstash 'build-artifacts'
+            steps {
+                unstash 'source-code'
+                unstash 'build-artifacts'
 
-                            script {
-                                dir('apps/backend') {
-                                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
-                                }
+                dir('apps/backend') {
+                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                }
+                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
 
-                                sh "docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest"
-                            }
+                sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${DOCKER_IMAGE}:latest"
+            }
+        }
 
-                            sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
-                            sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                            sh "docker push ${DOCKER_IMAGE}:latest"
-                        }
+        stage('배포 매니페스트 업데이트') {
+            agent any
+            steps {
+                git branch: 'feature/deploy',
+                    credentialsId: "${GIT_CREDENTIALS}",
+                    url: "${GITLAB_URL}"
+
+                sh """
+                sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' k8s/app/deployment.yaml
+                """
+
+                sh """
+                git config user.email "qmzo553@gmail.com"
+                git config user.name "박희준"
+                git add k8s/app/deployment.yaml
+                git commit -m "Update backend image to ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                git push origin feature/deploy
+                """
+            }
         }
     }
 }
