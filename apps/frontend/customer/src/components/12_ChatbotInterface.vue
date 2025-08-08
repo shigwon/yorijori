@@ -32,12 +32,12 @@
               <!-- 상담 옵션 -->
         <div class="consultation-options">
           <div class="options-row">
-            <button class="option-button" @click="selectOption('수유/이유식')">수유/이유식</button>
-            <button class="option-button" @click="selectOption('수면')">수면</button>
-            <button class="option-button" @click="selectOption('생활습관/스케줄')">생활습관/스케줄</button>
-            <button class="option-button" @click="selectOption('성장/발달')">성장/발달</button>
-            <button class="option-button" @click="selectOption('놀이/행동/울음')">놀이/행동/울음</button>
-            <button class="option-button" @click="selectOption('기타')">기타</button>
+            <button class="option-button" @click="selectOption('메롱')">메롱</button>
+            <button class="option-button" @click="selectOption('개못해')">개못해</button>
+            <button class="option-button" @click="selectOption('그것도 못하냐')">그것도 못하냐</button>
+            <button class="option-button" @click="selectOption('알아서 잘해라')">알아서 잘해라</button>
+            <button class="option-button" @click="selectOption('ㅋㅋㅋㅋ')">ㅋㅋㅋㅋ</button>
+            <button class="option-button" @click="selectOption('싸우자')">싸우자</button>
           </div>
         </div>
 
@@ -83,7 +83,7 @@ import { useAppState } from '../composables/useAppState'
 import { useWebSocket } from '../composables/useWebSocket'
 import { useAiChat } from '../composables/useAiChat'
 
-const { closeChatbot } = useAppState()
+const { closeChatbot, goToWelcome } = useAppState()
 const { connected, messages, sendMessage: sendWebSocketMessage, setOrderCode } = useWebSocket()
 const { sendMessage: sendAiMessage, isLoading, error } = useAiChat()
 
@@ -160,6 +160,7 @@ const scrollToBottom = () => {
 
 const closeChat = () => {
   closeChatbot()
+  goToWelcome()
 }
 
 onMounted(() => {

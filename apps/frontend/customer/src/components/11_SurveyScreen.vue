@@ -50,7 +50,7 @@
         <textarea 
           v-model="additionalFeedback"
           class="feedback-textarea"
-          placeholder="불편하셨던 사항을 자유롭게 남겨주세요."
+          placeholder="의견을 자유롭게 남겨주세요."
         ></textarea>
       </div>
     
@@ -65,7 +65,7 @@
 import { ref, computed } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const selectedRating = ref(1)
+const selectedRating = ref(5)
 const selectedOptions = ref([])
 const additionalFeedback = ref('')
 
@@ -77,8 +77,10 @@ const row1Options = computed(() => {
     return ['위치 정확도 개선', '얼굴 인식 정확도', '앱 안정성 개선']
   } else if (selectedRating.value === 3) {
     return ['위치 서비스 개선', '얼굴 인식 서비스', '앱 사용성 개선']
+  } else if (selectedRating.value === 4) {
+    return ['위치가 정확함', '얼굴 인식이 빠름', '앱이 안정적임']
   } else {
-    return ['위치가 틀림', '얼굴 인식 실패', '앱 접속 오류']
+    return ['위치가 매우 정확함', '얼굴 인식이 완벽함', '앱이 매우 안정적임']
   }
 })
 
@@ -89,8 +91,10 @@ const row2Options = computed(() => {
     return ['위치 표시 개선', '속도 개선', '로봇 인식 정확도']
   } else if (selectedRating.value === 3) {
     return ['위치 확인 개선', '반응 속도 개선', '로봇 서비스 개선']
+  } else if (selectedRating.value === 4) {
+    return ['내 위치가 잘 보임', '속도가 빠름', '로봇이 똑똑함']
   } else {
-    return ['내 위치가 안 보임', '너무 느림', '로봇이 바보같음']
+    return ['내 위치가 완벽하게 보임', '속도가 매우 빠름', '로봇이 매우 똑똑함']
   }
 })
 

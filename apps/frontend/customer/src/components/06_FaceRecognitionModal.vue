@@ -39,7 +39,7 @@ const props = defineProps({
   }
 })
 
-const { closeFaceRecognitionModal, goToLocationSetting } = useAppState()
+const { closeFaceRecognitionModal, goToLocationSetting, capturedImage } = useAppState()
 
 const isLoading = ref(true)
 
@@ -54,6 +54,12 @@ const handlePrevious = () => {
 }
 
 const handleNext = () => {
+  // 모달에 표시된 이미지를 useAppState에 저장
+  if (props.capturedImage) {
+    capturedImage.value = props.capturedImage
+    console.log('얼굴 인식 모달에서 이미지 저장:', props.capturedImage ? '있음' : '없음')
+  }
+  
   closeFaceRecognitionModal()
   goToLocationSetting()
 }
@@ -62,12 +68,12 @@ onMounted(() => {
   console.log('FaceRecognitionModal 마운트됨')
   console.log('받은 이미지:', props.capturedImage ? '있음' : '없음')
   
-  // 5초간 로딩 표시 후 완료 상태로 변경
+  // 2초간 로딩 표시 후 완료 상태로 변경
   setTimeout(() => {
     console.log('로딩 완료, 완료 상태로 변경')
     console.log('완료 상태에서 이미지:', props.capturedImage ? '있음' : '없음')
     isLoading.value = false
-  }, 5000)
+  }, 2000)
 })
 </script>
 

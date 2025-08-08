@@ -30,7 +30,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const { goToDeliveryTracking, deliveryLocation, deliveryAddress } = useAppState()
+const { goToDeliveryTracking, deliveryLocation, deliveryAddress, capturedImage } = useAppState()
 
 // props로 얼굴 이미지 받기
 const props = defineProps({
@@ -73,36 +73,41 @@ const confirmLocation = async () => {
   console.log('useAppState에 저장된 위치:', deliveryLocation.value)
   console.log('useAppState에 저장된 주소:', deliveryAddress.value)
   
-  // 백엔드로 위치 정보 전송
-  try {
-    const orderId = getOrderId() // URL에서 가져온 주문번호
-    console.log('주문번호:', orderId)
-    
-    const response = await fetch(`/api/v1/orders/${orderId}/location`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        orderId: parseInt(orderId), 
-        robotId: 1,
-        customerLatitude: currentLocation.value.latitude,
-        customerLongitude: currentLocation.value.longitude
-      })
+  // 즉시 다음 화면으로 이동 (백엔드 전송 기다리지 않음)
+  console.log('즉시 배송진행 화면으로 이동')
+  goToDeliveryTracking()
+  
+  // 백엔드로 위치 정보 전송 (백그라운드에서)
+  const orderId = getOrderId() // URL에서 가져온 주문번호
+  console.log('백그라운드에서 주문번호:', orderId)
+  
+  fetch(`/api/v1/orders/${orderId}/location`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      orderId: parseInt(orderId), 
+      robotId: 1,
+      customerLatitude: currentLocation.value.latitude,
+      customerLongitude: currentLocation.value.longitude
     })
-    
+  })
+  .then(response => {
     if (response.ok) {
-      const result = await response.json()
-      console.log('위치 정보 전송 성공:', result)
+      return response.json()
     } else {
       console.error('위치 정보 전송 실패:', response.status)
     }
-  } catch (error) {
-    console.error('위치 정보 전송 오류:', error)
-  }
-  
-  // 라우터로 다음 화면으로 이동
-  goToDeliveryTracking()
+  })
+  .then(result => {
+    if (result) {
+      console.log('백그라운드 위치 정보 전송 성공:', result)
+    }
+  })
+  .catch(error => {
+    console.error('백그라운드 위치 정보 전송 오류:', error)
+  })
 }
 
 const getCurrentLocation = () => {
@@ -178,6 +183,9 @@ const updateLocationAndAddress = async (latitude, longitude) => {
 const updateCustomMarker = (position) => {
   if (!customOverlay.value) return
   
+  console.log('updateCustomMarker 호출됨')
+  console.log('현재 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
+  
   // 얼굴 이미지와 내 위치 텍스트 업데이트
   const faceContent = `
     <div style="position: relative;">
@@ -229,9 +237,26 @@ const updateCustomMarker = (position) => {
 }
 
 // 얼굴 이미지가 변경될 때 마커 업데이트
+watch(() => capturedImage.value, (newImage) => {
+  console.log('capturedImage 변경 감지:', newImage ? '있음' : '없음')
+  if (newImage) {
+    capturedFaceImage.value = newImage
+    console.log('얼굴 이미지 업데이트 완료:', newImage ? '있음' : '없음')
+    // 현재 마커 위치에서 업데이트
+    if (customOverlay.value) {
+      const position = customOverlay.value.getPosition()
+      updateCustomMarker(position)
+    } else {
+      console.log('customOverlay가 아직 생성되지 않음')
+    }
+  }
+}, { immediate: true })
+
+// props로 받은 이미지도 감지
 watch(() => props.faceImage, (newImage) => {
   if (newImage) {
     capturedFaceImage.value = newImage
+    console.log('props 얼굴 이미지 업데이트:', newImage ? '있음' : '없음')
     // 현재 마커 위치에서 업데이트
     if (customOverlay.value) {
       const position = customOverlay.value.getPosition()
@@ -241,6 +266,21 @@ watch(() => props.faceImage, (newImage) => {
 }, { immediate: true })
 
 onMounted(async () => {
+  // 얼굴 이미지 초기화
+  console.log('LocationSettingScreen 마운트됨')
+  console.log('useAppState capturedImage:', capturedImage.value ? '있음' : '없음')
+  console.log('props faceImage:', props.faceImage ? '있음' : '없음')
+  
+  if (capturedImage.value) {
+    capturedFaceImage.value = capturedImage.value
+    console.log('초기 얼굴 이미지 설정 완료:', capturedImage.value ? '있음' : '없음')
+  } else if (props.faceImage) {
+    capturedFaceImage.value = props.faceImage
+    console.log('props에서 얼굴 이미지 설정 완료:', props.faceImage ? '있음' : '없음')
+  }
+  
+  console.log('최종 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
+  
   // 현재 위치 가져오기
   try {
     console.log('현재 위치 가져오기 시작...')
@@ -282,6 +322,7 @@ onMounted(async () => {
           const markerPosition = new window.kakao.maps.LatLng(lat, lng)
           
           // 커스텀 마커 HTML 생성 (핀 이미지 + 실제 얼굴 이미지 + LiNKY 텍스트)
+          console.log('지도 초기화 시 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
           const markerContent = `
             <div style="position: relative; display: inline-block; cursor: grab; user-select: none;" 
                  onmousedown="this.style.cursor='grabbing'" 
@@ -364,6 +405,7 @@ onMounted(async () => {
           })
           
                                                                                        // 커스텀 오버레이로 얼굴 이미지와 내 위치 텍스트 표시
+             console.log('커스텀 오버레이 생성 시 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
              const overlayInstance = new window.kakao.maps.CustomOverlay({
                position: markerPosition,
                content: `
@@ -415,6 +457,15 @@ onMounted(async () => {
              })
           
           customOverlay.value = overlayInstance
+          
+          // 지도 초기화 후 얼굴 이미지 다시 설정
+          if (capturedFaceImage.value) {
+            console.log('지도 초기화 후 얼굴 이미지 재설정')
+            setTimeout(() => {
+              const position = overlayInstance.getPosition()
+              updateCustomMarker(position)
+            }, 100)
+          }
          
                    // 지도 클릭 이벤트 리스너 (마커를 클릭한 위치로 이동)
           window.kakao.maps.event.addListener(mapInstance, 'click', function(mouseEvent) {
