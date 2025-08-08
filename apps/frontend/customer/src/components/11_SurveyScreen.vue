@@ -128,8 +128,15 @@ const toggleOption = (option) => {
 
 // URL에서 주문번호 가져오기
 const getOrderCode = () => {
+  // Pinia 스토어에서 주문번호 가져오기
+  const { orderCode } = useAppState()
+  
+  if (orderCode.value) {
+    return orderCode.value
+  }
+  
+  // 스토어에 없으면 URL에서 가져오기 (fallback)
   const urlParams = new URLSearchParams(window.location.search)
-  // code 파라미터가 주문번호 (예: code=0N063)
   return urlParams.get('code') || 'default'
 }
 
@@ -157,6 +164,8 @@ const submitSurvey = async () => {
       console.log('평가 제출 성공!')
       // 성공 시 처리 (예: 완료 화면으로 이동)
       alert('평가가 성공적으로 제출되었습니다!')
+      // 페이지 나가기
+      window.close()
     } else {
       console.error('평가 제출 실패:', response.status)
       alert('평가 제출에 실패했습니다. 다시 시도해주세요.')

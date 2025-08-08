@@ -66,16 +66,17 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useAppState } from '../composables/useAppState'
+
+const { goToTermsAgreement } = useAppState()
 
 onMounted(() => {
   console.log('How to Use Screen mounted')
 })
 
-const emit = defineEmits(['next'])
-
 const handleNext = () => {
   console.log('다음 버튼 클릭됨')
-  emit('next')
+  goToTermsAgreement()
 }
 </script>
 

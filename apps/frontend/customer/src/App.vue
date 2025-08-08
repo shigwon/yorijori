@@ -1,19 +1,11 @@
 <script setup>
-// 고객 앱 상태 관리
-import { ref, computed } from 'vue'
-import WelcomeScreen from './components/01_WelcomeScreen.vue'
-import HowToUseScreen from './components/02_HowToUseScreen.vue'
-import TermsAgreementScreen from './components/03_TermsAgreementScreen.vue'
-import PhotoSelectionScreen from './components/04_PhotoSelectionScreen.vue'
-import CameraCapture from './components/05_CameraCapture.vue'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import FaceRecognitionModal from './components/06_FaceRecognitionModal.vue'
-import LocationSettingScreen from './components/07_LocationSettingScreen.vue'
-import DeliveryTrackingScreen from './components/08_DeliveryTrackingScreen.vue'
-import DeliveryCompleteModal from './components/09_DeliveryCompleteModal.vue'
-import FoodCompartmentScreen from './components/10_FoodCompartmentScreen.vue'
-import SurveyScreen from './components/11_SurveyScreen.vue'
 
-const currentScreen = ref('welcome')
+const route = useRoute()
+
+// 모달 상태 관리
 const showFaceRecognitionModal = ref(false)
 const capturedImage = ref('')
 const deliveryLocation = ref(null)
@@ -22,64 +14,93 @@ const showFoodCompartment = ref(false)
 const showSurveyScreen = ref(false)
 const showChatbot = ref(false)
 
+// 현재 라우트의 progress 메타데이터를 기반으로 진행률 계산
 const progressPercent = computed(() => {
-  switch (currentScreen.value) {
-    case 'welcome':
-      return 0
-    case 'how-to-use':
-      return 15
-    case 'terms-agreement':
-      return 30
-    case 'photo-selection':
-      return 45
-    case 'camera-capture':
-      return 60
-    case 'location-setting':
-      return 75
-    case 'delivery-tracking':
-      return 90
-    default:
-      return 0
-  }
+  return route.meta.progress || 0
 })
 
-const handlePhotoCaptured = (base64Image) => {
-  console.log('사진 촬영 완료')
-}
-
-const handleShowFaceRecognition = (imageData) => {
+// 모달 표시 함수들
+const openFaceRecognitionModal = (imageData) => {
   console.log('얼굴 인식 모달 표시 함수 호출됨')
+  console.log('받은 이미지 데이터:', imageData ? '있음' : '없음')
   if (imageData) {
     capturedImage.value = `data:image/jpeg;base64,${imageData}`
   }
-  setTimeout(() => {
-    showFaceRecognitionModal.value = true
-  }, 50)
+  showFaceRecognitionModal.value = true
+  console.log('showFaceRecognitionModal.value = true 설정 완료')
 }
 
-const handleLocationConfirmed = (locationData) => {
-  console.log('위치 설정 완료:', locationData)
-  deliveryLocation.value = locationData.location
-  deliveryAddress.value = locationData.address
-  currentScreen.value = 'delivery-tracking'
+const closeFaceRecognitionModal = () => {
+  showFaceRecognitionModal.value = false
 }
 
-const handleCompartmentConfirm = () => {
-  console.log('확인 버튼 클릭')
+const openFoodCompartment = () => {
+  showFoodCompartment.value = true
+}
+
+const closeFoodCompartment = () => {
   showFoodCompartment.value = false
-  // 페이지 나가기
-  window.close()
 }
 
-const handleSurvey = () => {
-  console.log('고객만족도 평가 클릭')
-  showFoodCompartment.value = false
+const openSurveyScreen = () => {
   showSurveyScreen.value = true
 }
 
-const handleChatbotToggle = (isOpen) => {
-  showChatbot.value = isOpen
+const closeSurveyScreen = () => {
+  showSurveyScreen.value = false
 }
+
+const openChatbot = () => {
+  showChatbot.value = true
+}
+
+const closeChatbot = () => {
+  showChatbot.value = false
+}
+
+// 전역으로 모달 함수들과 상태를 제공
+window.openFaceRecognitionModal = openFaceRecognitionModal
+window.closeFaceRecognitionModal = closeFaceRecognitionModal
+window.openFoodCompartment = openFoodCompartment
+window.closeFoodCompartment = closeFoodCompartment
+window.openSurveyScreen = openSurveyScreen
+window.closeSurveyScreen = closeSurveyScreen
+window.openChatbot = openChatbot
+window.closeChatbot = closeChatbot
+
+// 전역 상태 노출
+window.showFaceRecognitionModal = showFaceRecognitionModal
+window.capturedImage = capturedImage
+
+// 디버깅용 로그
+console.log('App.vue에서 전역 함수 등록 완료')
+console.log('window.openFaceRecognitionModal:', typeof window.openFaceRecognitionModal)
+console.log('window.openFaceRecognitionModal 함수 내용:', window.openFaceRecognitionModal.toString())
+
+// onMounted에서도 전역 함수 등록 확인
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  console.log('App.vue 마운트됨 - 전역 함수 재등록')
+  
+  // 전역 함수 재등록
+  window.openFaceRecognitionModal = openFaceRecognitionModal
+  window.closeFaceRecognitionModal = closeFaceRecognitionModal
+  window.openFoodCompartment = openFoodCompartment
+  window.closeFoodCompartment = closeFoodCompartment
+  window.openSurveyScreen = openSurveyScreen
+  window.closeSurveyScreen = closeSurveyScreen
+  window.openChatbot = openChatbot
+  window.closeChatbot = closeChatbot
+  
+  // 전역 상태 재등록
+  window.showFaceRecognitionModal = showFaceRecognitionModal
+  window.capturedImage = capturedImage
+  
+  console.log('전역 함수 및 상태 재등록 완료')
+  console.log('window.openFaceRecognitionModal 재확인:', typeof window.openFaceRecognitionModal)
+  console.log('window.showFaceRecognitionModal 재확인:', typeof window.showFaceRecognitionModal)
+})
 </script>
 
 <template>
@@ -91,48 +112,16 @@ const handleChatbotToggle = (isOpen) => {
   </div>
   
   <div class="app-modal">
-    <!-- 현재 화면 값에 따른 동적 화면들 -->
-    <WelcomeScreen v-if="currentScreen === 'welcome'" @start="currentScreen = 'how-to-use'" @chatbot-toggle="handleChatbotToggle" />
-    <HowToUseScreen v-if="currentScreen === 'how-to-use'" @next="currentScreen = 'terms-agreement'" />
-    <TermsAgreementScreen v-if="currentScreen === 'terms-agreement'" @next="currentScreen = 'photo-selection'" />
-    <PhotoSelectionScreen v-if="currentScreen === 'photo-selection'" @take-selfie="currentScreen = 'camera-capture'" @show-face-recognition="handleShowFaceRecognition" />
-    <CameraCapture v-if="currentScreen === 'camera-capture'" @image-captured="handlePhotoCaptured" @show-face-recognition="handleShowFaceRecognition" />
-    
-    <!-- 얼굴 인식 모달 -->
-    <FaceRecognitionModal 
-      v-if="showFaceRecognitionModal" 
-      :captured-image="capturedImage"
-      @previous="showFaceRecognitionModal = false"
-      @next="currentScreen = 'location-setting'; showFaceRecognitionModal = false"
-    />
-    
-    <LocationSettingScreen 
-      v-if="currentScreen === 'location-setting'" 
-      :face-image="capturedImage"
-      @location-confirmed="handleLocationConfirmed" 
-    />
-    
-    <DeliveryTrackingScreen 
-      v-if="currentScreen === 'delivery-tracking'" 
-      :delivery-location="deliveryLocation"
-      :delivery-address="deliveryAddress"
-      :face-image="capturedImage"
-      @delivery-completed="currentScreen = 'photo-selection'"
-      @show-compartment="showFoodCompartment = true"
-    />
-    
-    <!-- 음식함 화면 -->
-    <FoodCompartmentScreen 
-      v-if="showFoodCompartment" 
-      @confirm="handleCompartmentConfirm"
-      @survey="handleSurvey"
-    />
-    
-    <!-- 설문조사 화면 -->
-    <SurveyScreen 
-      v-if="showSurveyScreen" 
-    />
+    <router-view />
   </div>
+
+  <!-- 모달들 -->
+  <FaceRecognitionModal 
+    v-if="showFaceRecognitionModal" 
+    :captured-image="capturedImage"
+    @previous="closeFaceRecognitionModal"
+    @next="closeFaceRecognitionModal"
+  />
 </template>
 
 <style>

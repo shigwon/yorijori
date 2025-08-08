@@ -21,21 +21,21 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useAppState } from '../composables/useAppState'
 
-const emit = defineEmits(['close', 'show-compartment'])
+const { goToFoodCompartment } = useAppState()
 
 const closeModal = () => {
-  emit('close')
+  // 모달 닫기 로직 (필요시 구현)
 }
 
 onMounted(() => {
   console.log('배달 완료 모달 마운트됨')
   
-  // 4초 후 음식 칸 화면으로 전환하고 모달 닫기
+  // 4초 후 음식 칸 화면으로 전환
   setTimeout(() => {
-    console.log('음식 칸 화면으로 전환')
-    emit('show-compartment')
-    emit('close') // 모달도 함께 닫기
+    console.log('4초 후 자동으로 음식 칸 화면으로 전환')
+    goToFoodCompartment()
   }, 4000)
 })
 </script>

@@ -1,74 +1,74 @@
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const progressPercent = ref(0)
-
-function setProgressPercent(percent) {
-  progressPercent.value = percent
-}
-
-const currentScreen = ref('how-to-use')
 const receiptData = ref({ id: '', tel: '' })
 const orderData = ref({ orderNumber: '', safeNumber: '' })
 
-const goToScanOption = () => {
-  currentScreen.value = 'scan-option'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToReceiptScan = () => {
-  currentScreen.value = 'receipt-scan'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToManualInput = () => {
-  currentScreen.value = 'manual-input'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToManualConfirm = (orderNumber, safeNumber) => {
-  orderData.value = { orderNumber, safeNumber }
-  currentScreen.value = 'manual-confirm'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToLocationRequest = () => {
-  currentScreen.value = 'location-request'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToPhotoCapture = () => {
-  currentScreen.value = 'photo-capture'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToComplete = () => {
-  currentScreen.value = 'complete'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToOnboarding = () => {
-  currentScreen.value = 'onboarding'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToLoadingModal = () => {
-  currentScreen.value = 'loading-modal'
-  console.log('화면 전환:', currentScreen.value)
-}
-
-const goToScanConfirmModal = () => {
-  currentScreen.value = 'scan-confirm-modal'
-  console.log('화면 전환:', currentScreen.value)
-}
-
 export const useAppState = () => {
+  const router = useRouter()
+
+  function setProgressPercent(percent) {
+    progressPercent.value = percent
+  }
+
   const goToHowToUse = () => {
-    currentScreen.value = 'how-to-use'
-    console.log('화면 전환:', currentScreen.value)
+    router.push('/how-to-use')
+    console.log('화면 전환: how-to-use')
+  }
+
+  const goToScanOption = () => {
+    router.push('/scan-option')
+    console.log('화면 전환: scan-option')
+  }
+
+  const goToReceiptScan = () => {
+    router.push('/receipt-scan')
+    console.log('화면 전환: receipt-scan')
+  }
+
+  const goToManualInput = () => {
+    router.push('/manual-input')
+    console.log('화면 전환: manual-input')
+  }
+
+  const goToManualConfirm = (orderNumber, safeNumber) => {
+    orderData.value = { orderNumber, safeNumber }
+    router.push('/manual-confirm')
+    console.log('화면 전환: manual-confirm')
+  }
+
+  const goToLocationRequest = () => {
+    router.push('/location-request')
+    console.log('화면 전환: location-request')
+  }
+
+  const goToPhotoCapture = () => {
+    router.push('/photo-capture')
+    console.log('화면 전환: photo-capture')
+  }
+
+  const goToComplete = () => {
+    router.push('/complete')
+    console.log('화면 전환: complete')
+  }
+
+  const goToOnboarding = () => {
+    router.push('/how-to-use')
+    console.log('화면 전환: onboarding -> how-to-use')
+  }
+
+  const goToLoadingModal = () => {
+    window.openLoadingModal()
+    console.log('로딩 모달 표시')
+  }
+
+  const goToScanConfirmModal = () => {
+    window.openScanConfirmModal()
+    console.log('스캔 확인 모달 표시')
   }
 
   return {
-    currentScreen,
     receiptData,
     orderData,
     goToHowToUse,

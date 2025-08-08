@@ -59,12 +59,40 @@
 
     <canvas ref="canvas" style="display: none;"></canvas>
   </div>
+
+  <!-- 얼굴 인식 모달 -->
+  <div v-if="showFaceRecognitionModal" class="modal-overlay" @click="closeFaceRecognitionModal">
+    <div class="modal-content" @click.stop>
+      <!-- 로딩 상태 -->
+      <div v-if="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <h2 class="loading-text">인식중입니다</h2>
+      </div>
+
+      <!-- 완료 상태 -->
+      <div v-else class="completion-state">
+        <div class="captured-image-container">
+          <img v-if="capturedImage" :src="capturedImage" alt="촬영된 사진" class="captured-image" />
+          <div v-else class="dog-emoji">🐕</div>
+        </div>
+        <h2 class="completion-text">얼굴 인식이 완료되었어요!</h2>
+        
+        <div class="button-container">
+          <button class="prev-button" @click="closeFaceRecognitionModal">
+            이전
+          </button>
+          <button class="next-button" @click="handleNext">
+            다음
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-
-const emit = defineEmits(['image-captured', 'image-uploaded', 'show-face-recognition'])
+import { useAppState } from '../composables/useAppState'
 
 const videoElement = ref(null)
 const canvas = ref(null)
@@ -72,6 +100,11 @@ const cameraError = ref(false)
 const cameraStatus = ref('카메라 로딩 중...')
 const isCapturing = ref(false)
 const isFrontCamera = ref(true) // true: 전면 카메라, false: 후면 카메라
+const { goToLocationSetting } = useAppState()
+
+const showFaceRecognitionModal = ref(false)
+const isLoading = ref(true)
+const capturedImage = ref('')
 let stream = null
 
 const startCamera = async () => {
@@ -147,77 +180,69 @@ const toggleCameraMode = async () => {
 }
 
 const captureImage = async () => {
-  if (isCapturing.value) return
+  console.log('버튼 클릭! 카메라 사진 촬영 후 모달 열기')
   
-  console.log('사진 촬영 시작...')
-  isCapturing.value = true
-  
-  try {
-    // 모바일에서 비디오 요소가 준비되었는지 확인
-    if (!videoElement.value) {
-      console.error('비디오 요소가 없음')
-      return
-    }
-    
-    // 비디오가 로드되었는지 확인
-    if (videoElement.value.readyState < 2) {
-      console.log('비디오가 아직 로드되지 않음, 잠시 대기...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-    
-    if (!videoElement.value.videoWidth || !videoElement.value.videoHeight) {
-      console.error('비디오 크기가 설정되지 않음')
-      return
-    }
-    
-    console.log('비디오 크기:', videoElement.value.videoWidth, 'x', videoElement.value.videoHeight)
-    
+  // 카메라에서 실제 사진 촬영
+  let base64Image = ''
+  if (videoElement.value && videoElement.value.videoWidth && videoElement.value.videoHeight) {
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
     
-    // 모바일에서 적절한 크기로 설정
     canvas.width = videoElement.value.videoWidth
     canvas.height = videoElement.value.videoHeight
     
-    // 이미지 그리기
+    // 비디오 프레임을 캔버스에 그리기
     context.drawImage(videoElement.value, 0, 0, canvas.width, canvas.height)
     
-    // 모바일에서 품질 조정
-    const base64Image = canvas.toDataURL('image/jpeg', 0.8)
-    const base64Only = base64Image.split(',')[1]
+    // 캔버스를 base64 이미지로 변환
+    base64Image = canvas.toDataURL('image/jpeg', 0.8)
+    capturedImage.value = base64Image
     
-    console.log('사진 촬영 완료, 크기:', base64Only.length)
-    
-    // 백엔드로 이미지 전송 (에러가 있어도 계속 진행)
-    try {
-      await sendImageToBackend(base64Only)
-    } catch (uploadError) {
-      console.warn('백엔드 전송 실패, 계속 진행:', uploadError)
-    }
-    
-    // 부모 컴포넌트에 전달
-    emit('image-captured', base64Only)
-    
-    // 얼굴 인식 모달 표시 (약간의 지연 후)
-    setTimeout(() => {
-      console.log('얼굴 인식 모달 표시 이벤트 발생')
-      console.log('전달할 이미지 크기:', base64Only.length)
-      emit('show-face-recognition', base64Only)
-    }, 100)
-    
-  } catch (error) {
-    console.error('사진 촬영 오류:', error)
-  } finally {
-    isCapturing.value = false
+    console.log('실제 카메라 사진 촬영 완료')
+  } else {
+    console.log('카메라가 준비되지 않음, 기본 이미지 사용')
+    base64Image = 'data:image/jpeg;base64,test-image-data'
+    capturedImage.value = base64Image
   }
+  
+  // 얼굴 인식 모달 열기
+  showFaceRecognitionModal.value = true
+  isLoading.value = true
+  
+  console.log('얼굴 인식 모달 열기 완료')
+  
+  // 백엔드로 이미지 전송
+  try {
+    await sendImageToBackend(base64Image)
+    console.log('백엔드 전송 완료')
+  } catch (error) {
+    console.error('백엔드 전송 실패:', error)
+  }
+  
+  // 5초 후 로딩 완료
+  setTimeout(() => {
+    console.log('로딩 완료, 완료 상태로 변경')
+    isLoading.value = false
+  }, 5000)
+}
+
+const closeFaceRecognitionModal = () => {
+  showFaceRecognitionModal.value = false
+  console.log('얼굴 인식 모달 닫기')
+}
+
+const handleNext = () => {
+  closeFaceRecognitionModal()
+  console.log('다음 버튼 클릭 - 위치 설정 화면으로 이동')
+  goToLocationSetting()
 }
 
 const sendImageToBackend = async (base64Image) => {
   try {
     console.log('백엔드로 이미지 전송 중...')
     
-    // base64 → Blob 변환
-    const blob = await (await fetch(`data:image/jpeg;base64,${base64Image}`)).blob()
+    // base64 → Blob 변환 (base64Image는 이미 data:image/jpeg;base64, 형식)
+    const blob = await (await fetch(base64Image)).blob()
     
     // FormData 생성
     const formData = new FormData()
@@ -241,15 +266,14 @@ const sendImageToBackend = async (base64Image) => {
     if (response.ok) {
       const result = await response.json()
       console.log('이미지 전송 성공:', result)
-      emit('image-uploaded', result)
     } else {
       console.error('이미지 전송 실패:', response.status)
-      throw new Error(`HTTP error! status: ${response.status}`)
+      // 에러를 throw하지 않고 로그만 출력
     }
     
   } catch (error) {
     console.error('백엔드 전송 오류:', error)
-    throw error
+    // 에러를 throw하지 않고 로그만 출력
   }
 }
 
@@ -559,8 +583,134 @@ onUnmounted(() => {
   transform: none;
 }
 
-.capture-button:disabled .capture-button-inner {
-  background: #D1D5DB;
+  .capture-button:disabled .capture-button-inner {
+    background: #D1D5DB;
+  }
+
+/* 얼굴 인식 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 32px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* 로딩 상태 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #7C3AED;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+}
+
+/* 완료 상태 */
+.completion-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.captured-image-container {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.captured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dog-emoji {
+  font-size: 60px;
+}
+
+.completion-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.button-container {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.prev-button, .next-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prev-button {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.prev-button:hover {
+  background: #e5e7eb;
+}
+
+.next-button {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: white;
+}
+
+.next-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 60, 237, 0.4);
 }
 
 /* 모바일 비율 최적화 */

@@ -31,16 +31,19 @@
 </template>
 
 <script setup>
+import { useAppState } from '../composables/useAppState'
 
-
-const emit = defineEmits(['confirm', 'survey'])
+const { closeFoodCompartment, goToSurvey } = useAppState()
 
 const handleConfirm = () => {
-  emit('confirm')
+  closeFoodCompartment()
+  // 페이지 나가기
+  window.close()
 }
 
 const handleSurvey = () => {
-  emit('survey')
+  closeFoodCompartment()
+  goToSurvey()
 }
 </script>
 
