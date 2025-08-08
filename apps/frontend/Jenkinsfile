@@ -26,7 +26,7 @@ pipeline {
 
                 script {
                     CHANGED_FILES = sh(
-                        script: "git diff --name-only ${GIT_BRANCH} HEAD",
+                        script: "git diff --name-only ${env.gitlabBeforeCommit} ${env.gitlabAfterCommit}",                        
                         returnStdout: true
                     ).trim()
                     sh "echo \"Changed files:\\n${CHANGED_FILES}\""
