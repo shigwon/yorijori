@@ -1,3 +1,97 @@
+"""
+==============================================
+ MQTT ↔ ROS2 프로토콜 요약
+==============================================
+
+[환경 정보]
+- MQTT 브로커: 192.168.100.83:1883
+- 로봇 ID: "1"
+- 서버 ID: "0"
+- 데이터 형식: JSON (UTF-8)
+
+[토픽 네이밍 규칙]
+- 서버 → 로봇: linky/robot/{ROBOT_ID}/...
+- 로봇 → 서버: linky/robot/{SERVER_ID}/...
+
+------------------------------------------------
+ 1. MQTT → ROS2 (서버 → 로봇)
+------------------------------------------------
+1) linky/robot/{ROBOT_ID}/closeSection
+   - 특정 구역(section) 폐쇄 요청
+   - ROS2 변환: /robot/close_section
+   - 데이터 예시:
+     {
+       "sectionNum": 3,
+       "sectionStatus": "CLOSED"
+     }
+   - ROS2 메시지 예시: "section=3,status=CLOSED"
+
+2) linky/robot/{ROBOT_ID}/result
+   - 작업 결과 전송
+   - ROS2 변환: /server/request_result
+   - 데이터 예시:
+     {
+       "result": "SUCCESS"
+     }
+
+3) linky/robot/{ROBOT_ID}/orderList
+   - 주문 목록 전송
+   - 처리 방식: 콘솔 로그 출력 (상위 3개만)
+   - 데이터 예시:
+     [
+       {
+         "orderId": "A100",
+         "code": "X123",
+         "tel": "010-0000-0000",
+         "customerLatitude": 37.123,
+         "customerLongitude": 127.456,
+         "spaceNum": 5,
+         "faceImageUrl": "http://..."
+       },
+       ...
+     ]
+
+------------------------------------------------
+ 2. ROS2 → MQTT (로봇 → 서버)
+------------------------------------------------
+1) /slam/position (geometry_msgs/Point)
+   - SLAM 위치 정보
+   - MQTT 변환: linky/robot/{SERVER_ID}/updateLocation
+   - 데이터 예시:
+     {
+       "robotId": "1",
+       "latitude": 37.123,
+       "longitude": 127.456
+     }
+
+2) /robot/delivery_state (std_msgs/String)
+   - 배송 상태 업데이트
+   - MQTT 변환: linky/robot/{SERVER_ID}/updateDeliveryState
+   - 데이터 예시:
+     {
+       "orderId": "1",
+       "robotId": "1",
+       "state": "DELIVERED"
+     }
+
+3) /robot/status (std_msgs/String)
+   - 로봇 상태 업데이트
+   - MQTT 변환: linky/robot/{SERVER_ID}/updateRobotStatus
+   - 데이터 예시:
+     {
+       "robotId": "1",
+       "status": "IDLE"
+     }
+
+------------------------------------------------
+ 3. 주의사항
+------------------------------------------------
+- 모든 MQTT 메시지는 JSON 직렬화 후 발행.
+- 토픽 경로, robotId 값은 서버-로봇 간 사전 합의 필요.
+- 네트워크 장애 대비 → MQTT 연결 재시도 로직(connect_loop) 사용.
+"""
+
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -127,7 +221,6 @@ class MQTTBridgeNode(Node):
     def ros2_ice_cb(self, msg):
         self.get_logger().info(f"Publishing ICE candidate to MQTT: {msg.data}")
         self.mqtt_client.publish("/ros2/ice", msg.data)
-
 
     # Offer를 MQTT로 발행하는 콜백 함수
     def ros2_offer_cb(self, msg):

@@ -23,3 +23,5 @@ sudo apt install \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav
+
+sudo pip3 install --upgrade Jetson.GPIO

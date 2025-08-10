@@ -9,16 +9,29 @@ from launch_ros.substitutions import FindPackageShare
 import os
 
 def generate_launch_description():
+    parameters=[{
+          'frame_id':'camera_link',
+          'subscribe_depth':True,
+          'subscribe_odom_info':True,
+          'approx_sync':False,
+          'wait_imu_to_init':True}]
+
+    remappings=[
+          ('imu', '/imu/data'),
+          ('rgb/image', '/camera/infra1/image_rect_raw'),
+          ('rgb/camera_info', '/camera/infra1/camera_info'),
+          ('depth/image', '/camera/depth/image_rect_raw')]
+    
     return LaunchDescription([
-        included_launch = IncludeLaunchDescription(
+        IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution([
-                    FindPackageShare('realsense2_camera'),
+                    FindPackageShare('realsense2_linky'),
                     'launch',
-                    'rs_launch.py'
+                    'realsense2_linky.py'
                 ])
             )
-        )
+        ),
 
         Node(
             package='face_recognition_pkg',
