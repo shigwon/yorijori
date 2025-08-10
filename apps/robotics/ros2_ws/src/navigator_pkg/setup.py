@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'slam_pkg'
+package_name = 'navigator_pkg'
 
 setup(
     name=package_name,
@@ -20,7 +20,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'slam_node = slam_pkg.slam:main'
         ],
     },
 )

@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'face_recognition_client_node = face_recognition_pkg.face_recognition_client:main',
-            'face_recognition_server_node = face_recognition_pkg.face_recognition_server:main'
+            'face_db_matcher_node = face_recognition_pkg.face_recognition_server:main'
         ],
     },
 )
