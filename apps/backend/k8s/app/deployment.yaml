@@ -97,11 +97,11 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              memory: "3Gi"
-              cpu: "500m"
-            limits:
-              memory: "3Gi"
+              memory: "1Gi"
               cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "3000m"
           volumeMounts:
             - name: secret-datasource
               mountPath: /usr/src/myapp/datasource
