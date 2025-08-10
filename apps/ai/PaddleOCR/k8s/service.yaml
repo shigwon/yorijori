@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: linky
+  name: linky-ai-ocr-1
+  labels:
+    part-of: k8s-linky
+    component: ai-ocr-server
+    name: linky-ai-ocr
+    version: 1.0.0
+    managed-by: kubectl
+spec:
+  selector:
+    part-of: k8s-linky
+    component: ai-ocr-server
+    name: linky-ai-ocr
+    blue-green-no: "1"
+  ports:
+    - port: 80
+      targetPort: 8000
+      nodePort: 32215
+  type: NodePort

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: linky
+  name: linky-ai-ocr-1
+  labels:
+    part-of: k8s-linky
+    component: ai-ocr-server
+    name: linky-ai-ocr
+    version: 1.0.0
+    managed-by: kubectl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      part-of: k8s-linky
+      component: ai-ocr-server
+      name: linky-ai-ocr
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        part-of: k8s-linky
+        component: ai-ocr-server
+        name: linky-ai-ocr
+        version: 1.0.0
+        blue-green-no: "1"
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      containers:
+        - name: linky-ai-ocr
+          image: parkheejun/linky-ai-ocr:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+              nvidia.com/gpu: "1"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              nvidia.com/gpu: "1"
