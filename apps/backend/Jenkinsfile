@@ -13,21 +13,6 @@ pipeline {
     }
 
     stages {
-        stage('Debug Environment') {
-                    steps {
-                        sh 'echo "Current container/environment:"'
-                        sh 'hostname'
-                        sh 'whoami'
-                        sh 'pwd'
-                        sh 'echo "JAVA_HOME: $JAVA_HOME"'
-                        sh 'echo "Available Java installations:"'
-                        sh 'ls -la /usr/lib/jvm/ || echo "No /usr/lib/jvm directory"'
-                        sh 'ls -la /opt/java/ || echo "No /opt/java directory"'
-                        sh 'which java'
-                        sh 'java -version'
-                    }
-                }
-
         stage('릴리즈파일 체크아웃') {
             agent any
             steps {

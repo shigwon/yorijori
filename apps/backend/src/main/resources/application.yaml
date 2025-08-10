@@ -12,27 +12,10 @@ spring:
     name: linky
 
   datasource:
-    mysql:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: ${DB_URL}
-      username: ${DB_USERNAME}
-      password: ${DB_PASSWORD}
-
-    postgres:
-      driver-class-name: org.postgresql.Driver
-      url: ${POSTGRES_DB_URL}
-      username: ${POSTGRES_DB_USERNAME}
-      password: ${POSTGRES_DB_PASSWORD}
-
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        hbm2ddl:
-          auto: update
-        show_sql: true
-        format_sql: true
-    open-in-view: false
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   hikari:
     minimum-idle: 5
@@ -66,12 +49,6 @@ spring:
           max-tokens: 4096
       api-key: ${GMS_API_KEY}
       base-url: ${GMS_API_URL}
-
-  task:
-    scheduling:
-      enabled: true
-      pool:
-        size: 5
 
 mybatis:
   mapper-locations: classpath:/mappers/**/*.xml
