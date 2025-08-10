@@ -7,7 +7,7 @@ import cv2
 import os
 
 VIDEO_PATH = '/home/c102/S13P11C102/apps/robotics/media/video.mp4'
-IMAGE_TOPIC_NAME = 'video_demo/image'
+IMAGE_TOPIC_NAME = '/camera/image_raw/demo'
 
 class DemoVideoPublisherNode(Node):
     def __init__(self):

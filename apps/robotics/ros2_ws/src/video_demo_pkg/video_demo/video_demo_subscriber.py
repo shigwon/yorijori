@@ -6,7 +6,7 @@ from cv_bridge import CvBridge
 import cv2
 
 # 이미지 토픽 이름은 발행하는 노드와 동일해야 합니다.
-IMAGE_TOPIC_NAME = 'video_demo/image'
+IMAGE_TOPIC_NAME = '/camera/image_raw/demo'
 
 class DemoVideoSubscriber(Node):
     def __init__(self):

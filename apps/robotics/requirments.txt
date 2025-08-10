@@ -10,4 +10,18 @@ pip install \
     av==10.0.0 \
     PyYAML==6.0.1
 
-sudo apt install ros-humble-cv-bridge python3-smbus i2c-tools
+sudo apt install  \
+    ros-humble-cv-bridge \
+    python3-smbus  \
+    i2c-tools
+
+# gstreamer libraries
+sudo apt install \
+    libgstreamer1.0-dev \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav
+
+sudo pip3 install --upgrade Jetson.GPIO
