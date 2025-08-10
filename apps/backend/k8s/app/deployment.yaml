@@ -102,9 +102,6 @@ spec:
             limits:
               memory: "3Gi"
               cpu: "1000m"
-          volumeMounts:
-            - name: secret-datasource
-              mountPath: /usr/src/myapp/datasource
       volumes:
         - name: secret-datasource
           secret:
