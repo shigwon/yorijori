@@ -511,6 +511,9 @@ const processImageAsync = async (base64Image) => {
   justify-content: center;
   align-items: center;
   padding: 0 24px;
+  position: relative;
+  top: -30px;
+  margin-top: 50px;
 }
 
 .capture-button {
