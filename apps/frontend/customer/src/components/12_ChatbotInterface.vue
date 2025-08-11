@@ -221,7 +221,10 @@ const scrollToBottom = () => {
 
 const closeChat = () => {
   closeChatbot()
-  goToWelcome()
+  
+  // 강제로 welcome 화면으로 이동
+  console.log('welcome 화면으로 강제 이동 시작')
+  window.location.href = '/customer/welcome'
 }
 
 onMounted(() => {
