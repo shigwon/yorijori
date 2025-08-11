@@ -296,31 +296,31 @@ public class RobotServiceImpl implements RobotService {
     @Transactional("postgresTransactionManager")
     @Override
     public void saveLocationsToPostgreSQL() {
-        try {
-            log.debug("Redis → PostgreSQL 위치 데이터 배치 저장 시작");
-
-            // 1. Redis에서 모든 로봇 위치 조회
-            Iterable<RobotLocation> redisLocations = robotRedisRepository.findAll();
-            System.out.println(redisLocations.toString());
-
-            // 2. PostgreSQL에 저장
-            List<RobotLocationHistory> historyList = StreamSupport.stream(redisLocations.spliterator(), false)
-                    .map(redisLocation -> RobotLocationHistory.builder()
-                            .robotId(redisLocation.getRobotId())
-                            .latitude(redisLocation.getLatitude())
-                            .longitude(redisLocation.getLongitude())
-                            .recordedAt(LocalDateTime.now())
-                            .build())
-                    .toList();
-
-            if (!historyList.isEmpty()) {
-                locationHistoryRepository.saveAll(historyList);
-                log.debug("위치 데이터 {}건 PostgreSQL에 저장 완료", historyList.size());
-            }
-
-        } catch (Exception e) {
-            log.error("Redis → PostgreSQL 위치 데이터 배치 저장 실패", e);
-        }
+//        try {
+//            log.debug("Redis → PostgreSQL 위치 데이터 배치 저장 시작");
+//
+//            // 1. Redis에서 모든 로봇 위치 조회
+//            Iterable<RobotLocation> redisLocations = robotRedisRepository.findAll();
+//            System.out.println(redisLocations.toString());
+//
+//            // 2. PostgreSQL에 저장
+//            List<RobotLocationHistory> historyList = StreamSupport.stream(redisLocations.spliterator(), false)
+//                    .map(redisLocation -> RobotLocationHistory.builder()
+//                            .robotId(redisLocation.getRobotId())
+//                            .latitude(redisLocation.getLatitude())
+//                            .longitude(redisLocation.getLongitude())
+//                            .recordedAt(LocalDateTime.now())
+//                            .build())
+//                    .toList();
+//
+//            if (!historyList.isEmpty()) {
+//                locationHistoryRepository.saveAll(historyList);
+//                log.debug("위치 데이터 {}건 PostgreSQL에 저장 완료", historyList.size());
+//            }
+//
+//        } catch (Exception e) {
+//            log.error("Redis → PostgreSQL 위치 데이터 배치 저장 실패", e);
+//        }
     }
 
     @Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행

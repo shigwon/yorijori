@@ -42,7 +42,14 @@ public class DeliveryServiceImpl implements DeliveryService {
     public void resetTimer(int robotId) {
         String msg = "robot:" + robotId;
         delayedQueue.remove(msg);
+        log.info("robot {}의 타이머 3분 설정", robotId);
         delayedQueue.offer(msg, 3, TimeUnit.MINUTES);
+    }
+
+    public void removeTimer(int robotId) {
+        String msg = "robot:" + robotId;
+        log.info("robot {}의 타이머 삭제", robotId);
+        delayedQueue.remove(msg);
     }
 
     public void interruptTimer(int robotId) {

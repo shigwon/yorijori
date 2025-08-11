@@ -64,7 +64,10 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.searchOrderUpdateCount(robotId);
     }
 
-
+    @Override
+    public int searchCapacity(int robotId) {
+        return orderRepository.searchCapacity(robotId);
+    }
 
 
 
