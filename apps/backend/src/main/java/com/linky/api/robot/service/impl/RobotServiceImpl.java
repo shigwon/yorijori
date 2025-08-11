@@ -301,6 +301,7 @@ public class RobotServiceImpl implements RobotService {
 
             // 1. Redis에서 모든 로봇 위치 조회
             Iterable<RobotLocation> redisLocations = robotRedisRepository.findAll();
+            System.out.println(redisLocations.toString());
 
             // 2. PostgreSQL에 저장
             List<RobotLocationHistory> historyList = StreamSupport.stream(redisLocations.spliterator(), false)

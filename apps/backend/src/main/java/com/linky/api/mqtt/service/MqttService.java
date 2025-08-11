@@ -10,10 +10,8 @@ import com.linky.api.robot.dto.RobotRequestResultDto;
 import com.linky.api.robot.dto.UpdateRobotStatusDto;
 import com.linky.api.robot.entity.Section;
 import com.linky.api.robot.service.RobotService;
-import com.linky.api.stream.entity.JoinRequest;
-import com.linky.api.stream.entity.JoinResponse;
-import com.linky.api.stream.mapper.StreamMapper;
-import com.linky.api.stream.service.StreamService;
+import com.linky.api.streaming.controller.StreamingController;
+import com.linky.api.streaming.dto.StreamingImage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -35,9 +33,7 @@ public class MqttService {
     private final MessageChannel mqttOutboundChannel;
     private final OrderService orderService;
     private final RobotService robotService;
-    private final StreamService streamService;
     private final ObjectMapper objectMapper;
-    private final StreamMapper streamMapper;
 
     public void sendPayload(int robotId, String topicSuffix, Object payloadObj) {
         String topic = "linky/robot/" + robotId + "/" + topicSuffix;
@@ -58,10 +54,6 @@ public class MqttService {
 
     public void sendResult(int robotId, RobotRequestResultDto result) {
         sendPayload(robotId, "result", result);
-    }
-
-    public void sendResult(int robotId, JoinResponse joinResponse) {
-        sendPayload(robotId, "responseWebRTC", joinResponse);
     }
 
     public void sendOrderList(int robotId, List<OrderSummary> orderList) {
@@ -106,11 +98,9 @@ public class MqttService {
 
         try {
             switch (command) {
-                case "requestWebRTC":
-                    JoinRequest joinRequest = objectMapper.readValue(payload, JoinRequest.class);
-                    String data = streamService.joinSession(joinRequest);
-                    JoinResponse joinResponse = streamMapper.toEntity(data != null, data);
-                    sendResult(joinRequest.getRobotId(), joinResponse);
+                case "sendStreamingImage":
+                    StreamingImage streamingImage = objectMapper.readValue(payload, StreamingImage.class);
+                    StreamingController.broadcastImage(streamingImage.getRobotId(),  streamingImage.getImage());
                     break;
                 case "updateRobotStatus":
                     UpdateRobotStatusDto updateRobotStatusDto = objectMapper.readValue(payload, UpdateRobotStatusDto.class);
