@@ -27,8 +27,6 @@ spec:
         version: 1.0.0
         blue-green-no: "1"
     spec:
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
       containers:
         - name: linky-ai-ocr
           image: parkheejun/linky-ai-ocr:1.0.0
