@@ -145,6 +145,10 @@ const handleNext = () => {
   
   console.log('receiptData 저장 완료:', receiptData.value)
   
+  // localStorage에 저장하여 페이지 이동 시에도 데이터 유지
+  localStorage.setItem('receiptData', JSON.stringify(receiptData.value))
+  console.log('localStorage에 receiptData 저장 완료')
+  
   // API 호출은 하되 기다리지 않음 (백그라운드에서 실행)
   fetch('/api/v1/orders/create', {
     method: 'POST',

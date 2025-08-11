@@ -107,6 +107,23 @@ const isLoading = ref(true)
 const capturedImage = ref('')
 let stream = null
 
+// useAppState에서 URL 파라미터 값 가져오기
+const { orderCode, robotId, orderId, sectionNum } = useAppState()
+
+// URL 파라미터 파싱 함수 (백업용)
+const getUrlParameters = () => {
+  const searchParams = new URLSearchParams(window.location.search)
+  return {
+    orderId: searchParams.get('orderId') || '',
+    robotId: searchParams.get('robotId') || '',
+    code: searchParams.get('code') || '',
+    sectionNum: searchParams.get('sectionNum') || ''
+  }
+}
+
+// useAppState에서 저장된 값 사용
+console.log('useAppState에서 가져온 값:', { orderCode: orderCode.value, robotId: robotId.value, orderId: orderId.value, sectionNum: sectionNum.value })
+
 const startCamera = async () => {
   console.log('카메라 시작...')
   cameraError.value = false
@@ -252,17 +269,38 @@ const sendImageToBackend = async (base64Image) => {
   try {
     console.log('백엔드로 이미지 전송 중...')
     
+    // useAppState에서 저장된 값 사용
+    const currentOrderCode = orderCode.value
+    const currentRobotId = robotId.value
+    const currentSectionNum = sectionNum.value
+    
+    console.log('useAppState에서 가져온 값:', { 
+      orderCode: currentOrderCode, 
+      robotId: currentRobotId, 
+      sectionNum: currentSectionNum 
+    })
+    
+    // 필수 파라미터 검증
+    if (!currentOrderCode) {
+      console.error('주문코드(code)가 useAppState에 없습니다')
+      console.error('전체 URL:', window.location.href)
+      console.error('검색 파라미터:', window.location.search)
+      return
+    }
+    
+    console.log('사용할 파라미터:', { currentOrderCode, currentRobotId, currentSectionNum })
+    
     // base64 → Blob 변환 (base64Image는 이미 data:image/jpeg;base64, 형식)
     const blob = await (await fetch(base64Image)).blob()
     
     // FormData 생성
     const formData = new FormData()
-    formData.append('orderCode', 'example') // 실제 주문코드로 변경 필요
+    formData.append('orderCode', currentOrderCode) // 실제 주문코드 사용
     formData.append('fileCategory', 'FACE') // 얼굴 사진
     formData.append('file', blob, 'face.jpg')
     
     console.log('FormData 생성 완료:', {
-      orderCode: 'example',
+      orderCode: currentOrderCode,
       fileCategory: 'FACE',
       fileName: 'face.jpg',
       fileSize: blob.size
@@ -289,6 +327,16 @@ const sendImageToBackend = async (base64Image) => {
 }
 
 onMounted(() => {
+  // URL 파라미터 확인
+  console.log('CameraCapture onMounted - 현재 URL:', window.location.href)
+  console.log('CameraCapture onMounted - 검색 파라미터:', window.location.search)
+  console.log('CameraCapture onMounted - useAppState 값:', { 
+    orderCode: orderCode.value, 
+    robotId: robotId.value, 
+    orderId: orderId.value, 
+    sectionNum: sectionNum.value 
+  })
+  
   startCamera()
 })
 
