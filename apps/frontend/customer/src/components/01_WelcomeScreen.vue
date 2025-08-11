@@ -12,6 +12,9 @@
           <span class="brand-subtitle">편하고 빠른 배달부터 배달 정보까지</span>
           <span class="brand-description">지금 내 위치를 설정하고 배송을 받아보세요!</span>
         </h1>
+        
+
+
       </div>
     
     
@@ -57,32 +60,18 @@ import { ref, onMounted } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode } = useAppState()
+const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode, robotId, orderId, sectionNum, parseUrlParameters } = useAppState()
 const showChatMessage = ref(true)
 const showChatbot = ref(false)
 
-// URL에서 주문번호 가져와서 저장
+// URL에서 모든 파라미터 파싱
 onMounted(() => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const code = urlParams.get('code')
-  const robotId = urlParams.get('robotId')
-  
-  if (code) {
-    orderCode.value = code
-    console.log('주문번호 저장:', code)
-  }
-  
-  if (robotId) {
-    console.log('로봇 ID:', robotId)
-  }
+  const parsedInfo = parseUrlParameters()
+  console.log('파싱된 정보:', parsedInfo)
 })
 
 const handleStart = () => {
   goToHowToUse()
-}
-
-const toggleChatMessage = () => {
-  showChatMessage.value = !showChatMessage.value
 }
 
 const hideChatMessage = () => {
@@ -177,6 +166,7 @@ const closeChatbot = () => {
   line-height: 1.4;
   text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
 }
+
 
 
 

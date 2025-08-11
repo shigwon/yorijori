@@ -25,6 +25,22 @@
               <div>안녕하세요.</div>
               <div>링키 챗봇 AI 상담서비스입니다.</div>
               <div>어떤 문제로 상담이 필요하신가요?</div>
+              
+              <!-- 배달 정보 표시 -->
+              <div v-if="robotId || sectionNum || orderCode" class="delivery-info-message">
+                <div class="delivery-info-title">📦 현재 배달 정보</div>
+                <div v-if="robotId" class="delivery-info-item">🤖 {{ robotId }}번 로봇이 배달 중</div>
+                <div v-if="sectionNum" class="delivery-info-item">📦 {{ sectionNum }}번 음식함으로 이동</div>
+                <div v-if="orderCode" class="delivery-info-item">📋 주문번호: {{ orderCode }}</div>
+              </div>
+              
+              <div class="help-text">
+                <div>다음과 같은 질문을 할 수 있습니다:</div>
+                <div>• "몇 번 로봇이 배달하나요?"</div>
+                <div>• "음식은 어디에 있나요?"</div>
+                <div>• "주문번호가 뭔가요?"</div>
+                <div>• "배달 상황이 어때요?"</div>
+              </div>
             </div>
           </div>
         </div>
@@ -32,12 +48,12 @@
               <!-- 상담 옵션 -->
         <div class="consultation-options">
           <div class="options-row">
-            <button class="option-button" @click="selectOption('메롱')">메롱</button>
-            <button class="option-button" @click="selectOption('개못해')">개못해</button>
-            <button class="option-button" @click="selectOption('그것도 못하냐')">그것도 못하냐</button>
-            <button class="option-button" @click="selectOption('알아서 잘해라')">알아서 잘해라</button>
-            <button class="option-button" @click="selectOption('ㅋㅋㅋㅋ')">ㅋㅋㅋㅋ</button>
-            <button class="option-button" @click="selectOption('싸우자')">싸우자</button>
+            <button class="option-button" @click="selectOption('로봇 정보')">로봇 정보</button>
+            <button class="option-button" @click="selectOption('음식함 위치')">음식함 위치</button>
+            <button class="option-button" @click="selectOption('주문 확인')">주문 확인</button>
+            <button class="option-button" @click="selectOption('배달 상황')">배달 상황</button>
+            <button class="option-button" @click="selectOption('도움말')">도움말</button>
+            <button class="option-button" @click="selectOption('기타 문의')">기타 문의</button>
           </div>
         </div>
 
@@ -83,12 +99,41 @@ import { useAppState } from '../composables/useAppState'
 import { useWebSocket } from '../composables/useWebSocket'
 import { useAiChat } from '../composables/useAiChat'
 
-const { closeChatbot, goToWelcome } = useAppState()
+const { closeChatbot, goToWelcome, robotId, sectionNum, orderCode } = useAppState()
 const { connected, messages, sendMessage: sendWebSocketMessage, setOrderCode } = useWebSocket()
 const { sendMessage: sendAiMessage, isLoading, error } = useAiChat()
 
 const userInput = ref('')
 const chatArea = ref(null)
+
+// 스마트 답변을 위한 키워드 매핑
+const smartResponses = {
+  '로봇': () => robotId.value ? `${robotId.value}번 로봇이 배달하고 있습니다.` : '로봇 정보를 확인할 수 없습니다.',
+  '음식함': () => sectionNum.value ? `${sectionNum.value}번 음식함에 음식이 담겨있습니다.` : '음식함 번호를 확인할 수 없습니다.',
+  '주문번호': () => orderCode.value ? `주문번호는 ${orderCode.value}입니다.` : '주문번호를 확인할 수 없습니다.',
+  '배달': () => {
+    let response = '현재 배달 진행 상황입니다.\n'
+    if (robotId.value) response += `• ${robotId.value}번 로봇이 배달 중\n`
+    if (sectionNum.value) response += `• ${sectionNum.value}번 음식함으로 이동 중\n`
+    if (orderCode.value) response += `• 주문번호: ${orderCode.value}`
+    return response
+  }
+}
+
+// 스마트 답변 생성 함수
+const generateSmartResponse = (userQuestion) => {
+  const question = userQuestion.toLowerCase()
+  
+  // 키워드 매칭
+  for (const [keyword, responseFunc] of Object.entries(smartResponses)) {
+    if (question.includes(keyword)) {
+      return responseFunc()
+    }
+  }
+  
+  // 기본 답변
+  return null
+}
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -113,13 +158,21 @@ const selectOption = async (option) => {
    // WebSocket을 통해 사용자 선택 메시지 전송
    sendWebSocketMessage('user', `[${option}] ${option}`)
 
-   // AI API 호출
-   try {
-     const aiResponse = await sendAiMessage(`${option}에 대한 상담을 받고 싶습니다.`)
-     sendWebSocketMessage('bot', aiResponse)
-   } catch (err) {
-     console.error('AI 응답 실패:', err)
-     sendWebSocketMessage('bot', `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`)
+   // 스마트 답변 시도
+   const smartResponse = generateSmartResponse(option)
+   
+   if (smartResponse) {
+     // 스마트 답변이 있으면 즉시 응답
+     sendWebSocketMessage('bot', smartResponse)
+   } else {
+     // 스마트 답변이 없으면 AI API 호출
+     try {
+       const aiResponse = await sendAiMessage(`${option}에 대한 상담을 받고 싶습니다.`)
+       sendWebSocketMessage('bot', aiResponse)
+     } catch (err) {
+       console.error('AI 응답 실패:', err)
+       sendWebSocketMessage('bot', `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`)
+     }
    }
    
    scrollToBottom()
@@ -136,13 +189,21 @@ const selectOption = async (option) => {
   
   userInput.value = ''
 
-  // AI API 호출
-  try {
-    const aiResponse = await sendAiMessage(userQuestion)
-    sendWebSocketMessage('bot', aiResponse)
-  } catch (err) {
-    console.error('AI 응답 실패:', err)
-    sendWebSocketMessage('bot', '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다.')
+  // 먼저 스마트 답변 시도
+  const smartResponse = generateSmartResponse(userQuestion)
+  
+  if (smartResponse) {
+    // 스마트 답변이 있으면 즉시 응답
+    sendWebSocketMessage('bot', smartResponse)
+  } else {
+    // 스마트 답변이 없으면 AI API 호출
+    try {
+      const aiResponse = await sendAiMessage(userQuestion)
+      sendWebSocketMessage('bot', aiResponse)
+    } catch (err) {
+      console.error('AI 응답 실패:', err)
+      sendWebSocketMessage('bot', '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다.')
+    }
   }
   
   scrollToBottom()
@@ -354,9 +415,61 @@ onMounted(() => {
  }
 
  .message-text {
-   font-size: 12px;
-   line-height: 1.3;
+   background: white;
+   padding: 12px 16px;
+   border-radius: 12px;
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+   line-height: 1.5;
+   color: #333;
+   font-size: 14px;
  }
+
+/* 배달 정보 메시지 스타일 */
+.delivery-info-message {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  border-radius: 12px;
+  border: 1px solid #D1D5DB;
+}
+
+.delivery-info-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.delivery-info-item {
+  font-size: 14px;
+  color: #4B5563;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.delivery-info-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 도움말 텍스트 스타일 */
+.help-text {
+  margin-top: 16px;
+  padding: 12px;
+  background: #FEF3C7;
+  border-radius: 8px;
+  border-left: 4px solid #F59E0B;
+}
+
+.help-text > div {
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #92400E;
+}
+
+.help-text > div:last-child {
+  margin-bottom: 0;
+}
 
  .message-text div {
    margin-bottom: 4px;

@@ -136,7 +136,7 @@ const handleBack = () => {
 }
 
 .manual-card {
-  background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%);
 }
 
 .card-header {
@@ -205,7 +205,7 @@ const handleBack = () => {
 }
 
 .manual-card .card-title {
-  color: white;
+  color: #1F2937;
 }
 
 .card-benefit {
@@ -220,7 +220,7 @@ const handleBack = () => {
 }
 
 .manual-card .card-benefit {
-  color: rgba(255, 255, 255, 0.9);
+  color: #6B7280;
 }
 
 .card-button {
@@ -245,12 +245,12 @@ const handleBack = () => {
 }
 
 .manual-card .card-button {
-  background: #581C87;
+  background: #8B5CF6;
   color: white;
 }
 
 .manual-card .card-button:hover {
-  background: #4C1D95;
+  background: #7C3AED;
 }
 
 /* 반응형 디자인 */

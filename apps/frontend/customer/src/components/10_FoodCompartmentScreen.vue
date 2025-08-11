@@ -2,17 +2,19 @@
   <div class="food-compartment-container">
     <!-- 메인 콘텐츠 -->
     <div class="main-content">
-              <!-- 제목 텍스트 -->
+      <!-- 제목 텍스트 -->
       <div class="title-text">
         <span class="text-part">음식이 </span>
-        <span class="number-part">3</span>
+        <span class="number-part">{{ sectionNum || '?' }}</span>
         <span class="text-part">번째 칸에 있어요</span>
       </div>
       
-             <!-- 로봇 캐릭터 -->
-       <div class="robot-character">
-         <img src="../assets/babo.png" alt="Babo Robot" class="babo-image" />
-       </div>
+
+      
+      <!-- 로봇 캐릭터 -->
+      <div class="robot-character">
+        <img src="../assets/babo.png" alt="Babo Robot" class="babo-image" />
+      </div>
     </div>
     
             <!-- 하단 섹션 -->
@@ -33,7 +35,7 @@
 <script setup>
 import { useAppState } from '../composables/useAppState'
 
-const { closeFoodCompartment, goToSurvey } = useAppState()
+const { closeFoodCompartment, goToSurvey, robotId, sectionNum, orderCode } = useAppState()
 
 const handleConfirm = () => {
   closeFoodCompartment()
@@ -91,6 +93,14 @@ const handleSurvey = () => {
   color: white;
   margin: 0 4px;
 }
+
+/* 로봇 정보 스타일 */
+.robot-info {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+
 
 /* Robot Character */
 .robot-character {
