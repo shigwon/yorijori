@@ -12,6 +12,25 @@
           <span class="brand-subtitle">편하고 빠른 배달부터 배달 정보까지</span>
           <span class="brand-description">지금 내 위치를 설정하고 배송을 받아보세요!</span>
         </h1>
+        
+        <!-- 로봇 정보 표시 섹션 -->
+        <div v-if="robotId || sectionNum" class="robot-info-section">
+          <div class="robot-info-card">
+            <div class="robot-info-title">📦 배달 정보</div>
+            <div v-if="robotId" class="robot-info-item">
+              <span class="info-label">로봇 번호:</span>
+              <span class="info-value">{{ robotId }}번 로봇</span>
+            </div>
+            <div v-if="sectionNum" class="robot-info-item">
+              <span class="info-label">음식함 번호:</span>
+              <span class="info-value">{{ sectionNum }}번 음식함</span>
+            </div>
+            <div v-if="orderCode" class="robot-info-item">
+              <span class="info-label">주문번호:</span>
+              <span class="info-value">{{ orderCode }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     
     
@@ -57,24 +76,14 @@ import { ref, onMounted } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode } = useAppState()
+const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode, robotId, orderId, sectionNum, parseUrlParameters } = useAppState()
 const showChatMessage = ref(true)
 const showChatbot = ref(false)
 
-// URL에서 주문번호 가져와서 저장
+// URL에서 모든 파라미터 파싱
 onMounted(() => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const code = urlParams.get('code')
-  const robotId = urlParams.get('robotId')
-  
-  if (code) {
-    orderCode.value = code
-    console.log('주문번호 저장:', code)
-  }
-  
-  if (robotId) {
-    console.log('로봇 ID:', robotId)
-  }
+  const parsedInfo = parseUrlParameters()
+  console.log('파싱된 정보:', parsedInfo)
 })
 
 const handleStart = () => {
@@ -178,6 +187,61 @@ const closeChatbot = () => {
   text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
 }
 
+/* 로봇 정보 섹션 스타일 */
+.robot-info-section {
+  margin-top: 24px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.robot-info-card {
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  border: 2px solid #D1D5DB;
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.robot-info-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #D1D5DB;
+}
+
+.robot-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.robot-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.info-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1F2937;
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
 
 /* Bottom Section */

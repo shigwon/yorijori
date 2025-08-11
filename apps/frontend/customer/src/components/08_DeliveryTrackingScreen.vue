@@ -18,6 +18,35 @@
           <div class="time-value">5분</div>
         </div>
       </div>
+      
+      <!-- 배달 정보 섹션 -->
+      <div v-if="robotId || sectionNum || orderCode" class="delivery-info-section">
+        <div class="delivery-info-grid">
+          <div v-if="robotId" class="delivery-info-item">
+            <div class="info-icon">🤖</div>
+            <div class="info-content">
+              <div class="info-label">배달 로봇</div>
+              <div class="info-value">{{ robotId }}번 로봇</div>
+            </div>
+          </div>
+          
+          <div v-if="sectionNum" class="delivery-info-item">
+            <div class="info-icon">📦</div>
+            <div class="info-content">
+              <div class="info-label">음식함 번호</div>
+              <div class="info-value">{{ sectionNum }}번 음식함</div>
+            </div>
+          </div>
+          
+          <div v-if="orderCode" class="delivery-info-item">
+            <div class="info-icon">📋</div>
+            <div class="info-content">
+              <div class="info-label">주문번호</div>
+              <div class="info-value">{{ orderCode }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     
       <!-- 로봇 마스코트 -->
       <div class="robot-mascot">
@@ -65,7 +94,7 @@ import { onMounted, ref } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
-const { openFoodCompartment, deliveryLocation, deliveryAddress, capturedImage } = useAppState()
+const { openFoodCompartment, deliveryLocation, deliveryAddress, capturedImage, robotId, sectionNum, orderCode } = useAppState()
 const showDeliveryCompleteModal = ref(false)
 
 onMounted(() => {
@@ -334,6 +363,51 @@ onMounted(() => {
   font-weight: 700;
 }
 
+/* 배달 정보 섹션 */
+.delivery-info-section {
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #E5E7EB;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.delivery-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  justify-items: center;
+}
+
+.delivery-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4B5563;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-icon {
+  font-size: 20px;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
 /* 로봇 마스코트 */
 .robot-mascot {
   display: flex;
@@ -467,6 +541,31 @@ onMounted(() => {
   
   .marker-label {
     font-size: 11px;
+  }
+  
+  .delivery-info-section {
+    margin-top: 16px;
+    padding: 12px 0;
+  }
+  
+  .delivery-info-grid {
+    gap: 8px;
+  }
+  
+  .delivery-info-item {
+    font-size: 12px;
+  }
+  
+  .info-icon {
+    font-size: 18px;
+  }
+  
+  .info-label {
+    font-size: 9px;
+  }
+  
+  .info-value {
+    font-size: 12px;
   }
 }
 </style>

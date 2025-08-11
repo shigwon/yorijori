@@ -6,8 +6,53 @@ const deliveryLocation = ref(null)
 const deliveryAddress = ref('')
 const orderCode = ref('') // 주문번호 저장
 
+// 새로운 상태 변수들 추가
+const robotId = ref('')      // 로봇 ID
+const orderId = ref('')      // 주문 ID
+const sectionNum = ref('')   // 음식함 번호
+
 export const useAppState = () => {
   const router = useRouter()
+
+  // URL에서 모든 파라미터 파싱하는 함수
+  const parseUrlParameters = () => {
+    const urlParams = new URLSearchParams(window.location.search)
+    
+    // 각 파라미터 추출
+    const code = urlParams.get('code')
+    const robotIdParam = urlParams.get('robotId')
+    const orderIdParam = urlParams.get('orderId')
+    const sectionNumParam = urlParams.get('sectionNum')
+    
+    // 상태에 저장
+    if (code) {
+      orderCode.value = code
+      console.log('주문번호 저장:', code)
+    }
+    
+    if (robotIdParam) {
+      robotId.value = robotIdParam
+      console.log('로봇 ID 저장:', robotIdParam)
+    }
+    
+    if (orderIdParam) {
+      orderId.value = orderIdParam
+      console.log('주문 ID 저장:', orderIdParam)
+    }
+    
+    if (sectionNumParam) {
+      sectionNum.value = sectionNumParam
+      console.log('음식함 번호 저장:', sectionNumParam)
+    }
+    
+    // 파싱된 정보 반환
+    return {
+      code: orderCode.value,
+      robotId: robotId.value,
+      orderId: orderId.value,
+      sectionNum: sectionNum.value
+    }
+  }
 
   const goToWelcome = () => {
     router.push('/customer/welcome')
@@ -101,6 +146,10 @@ export const useAppState = () => {
     deliveryLocation,
     deliveryAddress,
     orderCode, // 주문번호 추가
+    robotId,
+    orderId,
+    sectionNum,
+    parseUrlParameters,
     goToWelcome,
     goToHowToUse,
     goToTermsAgreement,
