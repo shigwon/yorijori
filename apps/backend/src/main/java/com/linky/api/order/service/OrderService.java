@@ -10,4 +10,5 @@ public interface OrderService {
     int searchOrderUpdateCount(int robotId);
     boolean updateDeliveryState(int orderId, String state);
     int searchOrderCreateActivate(int robotId);
+    int searchCapacity(int robotId);
 }
