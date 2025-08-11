@@ -9,19 +9,7 @@
         <span class="text-part">번째 칸에 있어요</span>
       </div>
       
-      <!-- 로봇 정보 표시 -->
-      <div v-if="robotId" class="robot-info">
-        <div class="robot-info-text">
-          <span class="robot-number">{{ robotId }}번</span> 로봇이 배달했습니다
-        </div>
-      </div>
-      
-      <!-- 주문 정보 표시 -->
-      <div v-if="orderCode" class="order-info">
-        <div class="order-info-text">
-          주문번호: <span class="order-code">{{ orderCode }}</span>
-        </div>
-      </div>
+
       
       <!-- 로봇 캐릭터 -->
       <div class="robot-character">
@@ -112,39 +100,7 @@ const handleSurvey = () => {
   text-align: center;
 }
 
-.robot-info-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-  line-height: 1.4;
-}
 
-.robot-number {
-  font-size: 20px;
-  font-weight: 800;
-  color: #FCD34D;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* 주문 정보 스타일 */
-.order-info {
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.order-info-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: white;
-  line-height: 1.4;
-}
-
-.order-code {
-  font-size: 18px;
-  font-weight: 700;
-  color: #FCD34D;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
 
 /* Robot Character */
 .robot-character {
