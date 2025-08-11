@@ -19,9 +19,9 @@ spec:
         - name: redis-stack
           image: redis/redis-stack-server:latest
           ports:
-            - containerPort: 6379   # Redis 서버 포트
+            - containerPort: 6379
               name: redis
-            - containerPort: 8001   # RedisInsight UI 포트
+            - containerPort: 8001
               name: redis-ui
           env:
             - name: REDIS_PASSWORD
