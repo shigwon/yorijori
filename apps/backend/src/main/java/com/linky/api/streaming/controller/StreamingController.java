@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class StreamingController {
 
     private static final Map<Integer, List<SseEmitter>> robotSubscribers = new ConcurrentHashMap<>();
+    private static final Map<Integer, List<SseEmitter>> locationSubscribers = new ConcurrentHashMap<>();
 
     @GetMapping(value="/subscribe/{robotId}", produces= MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable("robotId") int  robotId) {
@@ -41,8 +42,28 @@ public class StreamingController {
         return emitter;
     }
 
+    @GetMapping(value="/location/subscribe/{robotId}", produces= MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeLocation(@PathVariable("robotId") int robotId) {
+        SseEmitter emitter = new SseEmitter(0L);
+        locationSubscribers
+                .computeIfAbsent(robotId, k -> new CopyOnWriteArrayList<>()).add(emitter);
+
+        emitter.onCompletion(() -> removeLocationEmitter(robotId, emitter));
+        emitter.onTimeout(() -> removeLocationEmitter(robotId, emitter));
+        emitter.onError((e) -> removeLocationEmitter(robotId, emitter));
+
+        return emitter;
+    }
+
     public void removeEmitter(int robotId, SseEmitter emitter) {
         List<SseEmitter> list = robotSubscribers.get(robotId);
+        if(list != null) {
+            list.remove(emitter);
+        }
+    }
+
+    public void removeLocationEmitter(int robotId, SseEmitter emitter) {
+        List<SseEmitter> list = locationSubscribers.get(robotId);
         if(list != null) {
             list.remove(emitter);
         }
@@ -61,6 +82,31 @@ public class StreamingController {
                 list.remove(emitter);
                 // 에러 로그
                 log.warn("Emitter send failed for robotId {}: {}", robotId, e.getMessage());
+            }
+        }
+    }
+
+    public static void broadcastLocation(int robotId, double latitude, double longitude) {
+        List<SseEmitter> list = locationSubscribers.get(robotId);
+        if (list == null) {
+            return;
+        }
+
+        // 위치 정보를 JSON 형태로 전송
+        Map<String, Object> locationData = Map.of(
+                "robotId", robotId,
+                "latitude", latitude,
+                "longitude", longitude,
+                "timestamp", System.currentTimeMillis()
+        );
+
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("robotLocation")
+                        .data(locationData));
+            } catch(IOException e) {
+                list.remove(emitter);
             }
         }
     }
