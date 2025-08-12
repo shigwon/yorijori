@@ -3,6 +3,7 @@ package com.linky.api.streaming.controller;
 import com.linky.api.common.response.entity.ApiResponseEntity;
 import com.linky.api.streaming.dto.StreamingImage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("api/v1/streaming")
@@ -29,7 +31,13 @@ public class StreamingController {
 
         emitter.onCompletion(() -> removeEmitter(robotId, emitter));
         emitter.onTimeout(() -> removeEmitter(robotId, emitter));
-        emitter.onError((e) -> removeEmitter(robotId, emitter));
+        emitter.onError((e)
+                -> {
+                    removeEmitter(robotId, emitter);
+                    log.warn("Emitter error for robotId {}: {}", robotId, e.getMessage());
+                }
+
+        );
         return emitter;
     }
 
@@ -51,7 +59,10 @@ public class StreamingController {
                 emitter.send(SseEmitter.event().name("robotStreamingImage").data(image));
             } catch(IOException e) {
                 list.remove(emitter);
+                // 에러 로그
+                log.warn("Emitter send failed for robotId {}: {}", robotId, e.getMessage());
             }
         }
     }
+
 }
