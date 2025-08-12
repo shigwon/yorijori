@@ -26,13 +26,7 @@
               <div>링키 챗봇 AI 상담서비스입니다.</div>
               <div>어떤 문제로 상담이 필요하신가요?</div>
               
-              <!-- 배달 정보 표시 -->
-              <div v-if="robotId || sectionNum || orderCode" class="delivery-info-message">
-                <div class="delivery-info-title">📦 현재 배달 정보</div>
-                <div v-if="robotId" class="delivery-info-item">🤖 {{ robotId }}번 로봇이 배달 중</div>
-                <div v-if="sectionNum" class="delivery-info-item">📦 {{ sectionNum }}번 음식함으로 이동</div>
-                <div v-if="orderCode" class="delivery-info-item">📋 주문번호: {{ orderCode }}</div>
-              </div>
+
               
               <div class="help-text">
                 <div>다음과 같은 질문을 할 수 있습니다:</div>
@@ -155,6 +149,14 @@ const getCurrentTime = () => {
 const selectOption = async (option) => {
    const time = getCurrentTime()
    
+   // 사용자 선택 메시지를 즉시 로컬에 추가하여 표시
+   const userMessage = {
+     sender: 'user',
+     content: `[${option}] ${option}`,
+     timestamp: time
+   }
+   messages.value.push(userMessage)
+   
    // WebSocket을 통해 사용자 선택 메시지 전송
    sendWebSocketMessage('user', `[${option}] ${option}`)
 
@@ -184,6 +186,14 @@ const selectOption = async (option) => {
   const time = getCurrentTime()
   const userQuestion = userInput.value
   
+  // 사용자 메시지를 즉시 로컬에 추가하여 표시
+  const userMessage = {
+    sender: 'user',
+    content: userQuestion,
+    timestamp: time
+  }
+  messages.value.push(userMessage)
+  
   // WebSocket을 통해 사용자 메시지 전송
   sendWebSocketMessage('user', userQuestion)
   
@@ -207,7 +217,7 @@ const selectOption = async (option) => {
   }
   
   scrollToBottom()
-}
+ }
 
 
 
@@ -415,45 +425,23 @@ onMounted(() => {
  .user-message .message-content {
    background: #7C3AED;
    color: white;
+   border-radius: 18px;
+   padding: 8px 12px;
+ }
+
+ .user-message .message-text {
+   color: white;
  }
 
  .message-text {
-   background: white;
    padding: 12px 16px;
-   border-radius: 12px;
-   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+   border-radius: 18px;
    line-height: 1.5;
    color: #333;
    font-size: 14px;
  }
 
-/* 배달 정보 메시지 스타일 */
-.delivery-info-message {
-  margin-top: 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
-  border-radius: 12px;
-  border: 1px solid #D1D5DB;
-}
 
-.delivery-info-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #374151;
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-.delivery-info-item {
-  font-size: 14px;
-  color: #4B5563;
-  margin-bottom: 8px;
-  padding: 4px 0;
-}
-
-.delivery-info-item:last-child {
-  margin-bottom: 0;
-}
 
 /* 도움말 텍스트 스타일 */
 .help-text {

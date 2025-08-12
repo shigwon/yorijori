@@ -530,11 +530,11 @@ onMounted(() => {
   checkAndInitMap()
   
 
-  // 5초 후 자동으로 배달완료 모달 표시 (테스트용 - 주석 처리)
-  // setTimeout(() => {
-  //   console.log('배달 완료 모달 표시')
-  //   showDeliveryCompleteModal.value = true
-  // }, 5000)
+  // 5초 후 자동으로 배달완료 모달 표시
+  setTimeout(() => {
+    console.log('배달 완료 모달 표시')
+    showDeliveryCompleteModal.value = true
+  }, 5000)
 })
 
 // 컴포넌트 언마운트 시 정리
