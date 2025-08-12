@@ -21,12 +21,14 @@
               <!-- 초기 봇 메시지 -->
         <div class="message bot-message">
           <div class="message-content">
+            <div class="message-header">
+              <img src="../assets/robot.png" alt="robot" class="message-robot-icon" />
+              <span class="message-bot-name">링키 챗봇</span>
+            </div>
             <div class="message-text">
               <div>안녕하세요.</div>
               <div>링키 챗봇 AI 상담서비스입니다.</div>
               <div>어떤 문제로 상담이 필요하신가요?</div>
-              
-
               
               <div class="help-text">
                 <div>다음과 같은 질문을 할 수 있습니다:</div>
@@ -46,6 +48,8 @@
             <button class="option-button" @click="selectOption('음식함 위치')">음식함 위치</button>
             <button class="option-button" @click="selectOption('주문 확인')">주문 확인</button>
             <button class="option-button" @click="selectOption('배달 상황')">배달 상황</button>
+          </div>
+          <div class="options-row">
             <button class="option-button" @click="selectOption('도움말')">도움말</button>
             <button class="option-button" @click="selectOption('기타 문의')">기타 문의</button>
           </div>
@@ -260,7 +264,7 @@ onMounted(() => {
    display: flex;
    justify-content: space-between;
    align-items: center;
-   padding: 16px 20px;
+   padding: 12px 16px;
    background: white;
    border-bottom: 1px solid #e0e0e0;
  }
@@ -268,12 +272,12 @@ onMounted(() => {
  .header-left {
    display: flex;
    align-items: center;
-   gap: 12px;
+   gap: 10px;
  }
 
  .bot-icon {
-   width: 32px;
-   height: 32px;
+   width: 28px;
+   height: 28px;
    border-radius: 50%;
    background: white;
    display: flex;
@@ -284,13 +288,13 @@ onMounted(() => {
  }
 
  .bot-icon-image {
-   width: 24px;
-   height: 24px;
+   width: 20px;
+   height: 20px;
    object-fit: contain;
  }
 
  .bot-name {
-   font-size: 16px;
+   font-size: 14px;
    font-weight: 600;
    color: #333;
  }
@@ -298,13 +302,13 @@ onMounted(() => {
  .close-button {
    background: none;
    border: none;
-   font-size: 24px;
+   font-size: 20px;
    color: #666;
    cursor: pointer;
    padding: 4px;
    border-radius: 50%;
-   width: 32px;
-   height: 32px;
+   width: 28px;
+   height: 28px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -318,9 +322,9 @@ onMounted(() => {
  /* 날짜 */
  .date-info {
    text-align: center;
-   padding: 8px;
+   padding: 6px;
    color: #999;
-   font-size: 12px;
+   font-size: 11px;
    background: #f5f5f5;
    position: relative;
  }
@@ -338,13 +342,13 @@ onMounted(() => {
  /* 채팅 영역 */
  .chat-area {
    flex: 1;
-   padding: 16px;
+   padding: 12px;
    overflow-y: auto;
    background: #f5f5f5;
  }
 
  .message {
-   margin-bottom: 16px;
+   margin-bottom: 12px;
    max-width: 80%;
    display: flex;
    flex-direction: column;
@@ -384,8 +388,8 @@ onMounted(() => {
  }
 
  .message-content {
-   padding: 8px 12px;
-   border-radius: 16px;
+   padding: 4px 8px;
+   border-radius: 12px;
    position: relative;
    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
    display: inline-block;
@@ -406,18 +410,18 @@ onMounted(() => {
  .message-header {
    display: flex;
    align-items: center;
-   gap: 8px;
-   margin-bottom: 8px;
+   gap: 5px;
+   margin-bottom: 4px;
  }
 
  .message-robot-icon {
-   width: 16px;
-   height: 16px;
+   width: 12px;
+   height: 12px;
    object-fit: contain;
  }
 
  .message-bot-name {
-   font-size: 11px;
+   font-size: 9px;
    font-weight: 600;
    color: #7C3AED;
  }
@@ -425,8 +429,8 @@ onMounted(() => {
  .user-message .message-content {
    background: #7C3AED;
    color: white;
-   border-radius: 18px;
-   padding: 8px 12px;
+   border-radius: 14px;
+   padding: 4px 8px;
  }
 
  .user-message .message-text {
@@ -434,27 +438,27 @@ onMounted(() => {
  }
 
  .message-text {
-   padding: 12px 16px;
-   border-radius: 18px;
-   line-height: 1.5;
+   padding: 6px 10px;
+   border-radius: 14px;
+   line-height: 1.3;
    color: #333;
-   font-size: 14px;
+   font-size: 12px;
  }
 
 
 
 /* 도움말 텍스트 스타일 */
 .help-text {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 12px;
+  padding: 10px;
   background: #FEF3C7;
-  border-radius: 8px;
-  border-left: 4px solid #F59E0B;
+  border-radius: 6px;
+  border-left: 3px solid #F59E0B;
 }
 
 .help-text > div {
-  margin-bottom: 4px;
-  font-size: 13px;
+  margin-bottom: 3px;
+  font-size: 12px;
   color: #92400E;
 }
 
@@ -463,7 +467,7 @@ onMounted(() => {
 }
 
  .message-text div {
-   margin-bottom: 4px;
+   margin-bottom: 2px;
  }
 
  .message-text div:last-child {
@@ -471,12 +475,12 @@ onMounted(() => {
  }
 
  .message-time {
-   font-size: 11px;
+   font-size: 9px;
    color: #999;
-   margin-top: 4px;
+   margin-top: 2px;
    text-align: right;
    white-space: nowrap;
-   padding-right: 4px;
+   padding-right: 2px;
    align-self: flex-end;
    max-width: fit-content;
    width: fit-content;
@@ -485,27 +489,27 @@ onMounted(() => {
 
  /* 상담 옵션 */
  .consultation-options {
-   margin: 16px 0;
+   margin: 12px 0;
  }
 
  .options-row {
    display: flex;
-   gap: 8px;
-   margin-bottom: 8px;
+   gap: 6px;
+   margin-bottom: 6px;
  }
 
  .option-button {
    flex: 0 0 auto;
-   padding: 8px 12px;
+   padding: 6px 10px;
    background: white;
    border: 1px solid #e0e0e0;
-   border-radius: 12px;
+   border-radius: 10px;
    color: #7C3AED;
-   font-size: 12px;
+   font-size: 11px;
    cursor: pointer;
    transition: all 0.2s;
-   margin-right: 8px;
-   margin-bottom: 8px;
+   margin-right: 6px;
+   margin-bottom: 6px;
    white-space: nowrap;
  }
 
@@ -524,8 +528,8 @@ onMounted(() => {
  .input-area {
    display: flex;
    align-items: center;
-   gap: 12px;
-   padding: 12px 20px;
+   gap: 10px;
+   padding: 10px 16px;
    background: white;
    border-top: 1px solid #e0e0e0;
  }
@@ -533,13 +537,13 @@ onMounted(() => {
  .attach-button {
    background: none;
    border: none;
-   font-size: 20px;
+   font-size: 18px;
    color: #666;
    cursor: pointer;
-   padding: 8px;
+   padding: 6px;
    border-radius: 50%;
-   width: 36px;
-   height: 36px;
+   width: 32px;
+   height: 32px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -552,10 +556,10 @@ onMounted(() => {
 
  .message-input {
    flex: 1;
-   padding: 10px 16px;
+   padding: 8px 14px;
    border: 1px solid #e0e0e0;
-   border-radius: 20px;
-   font-size: 14px;
+   border-radius: 18px;
+   font-size: 13px;
    outline: none;
    transition: border-color 0.2s;
    background: white;
@@ -573,8 +577,8 @@ onMounted(() => {
    background: #7C3AED;
    border: none;
    border-radius: 50%;
-   width: 36px;
-   height: 36px;
+   width: 32px;
+   height: 32px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -593,8 +597,8 @@ onMounted(() => {
  }
 
  .loading-spinner {
-   width: 16px;
-   height: 16px;
+   width: 14px;
+   height: 14px;
    border: 2px solid #ffffff;
    border-top: 2px solid transparent;
    border-radius: 50%;
@@ -614,15 +618,15 @@ onMounted(() => {
    
    .options-row {
      flex-wrap: wrap;
-     gap: 6px;
+     gap: 5px;
    }
    
    .option-button {
      flex: 0 0 auto;
-     padding: 6px 10px;
-     font-size: 11px;
-     margin-right: 6px;
-     margin-bottom: 6px;
+     padding: 5px 8px;
+     font-size: 10px;
+     margin-right: 5px;
+     margin-bottom: 5px;
    }
  }
 </style> 
