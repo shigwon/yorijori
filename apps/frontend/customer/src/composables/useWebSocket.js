@@ -66,10 +66,15 @@ export const useWebSocket = () => {
       return
     }
 
+    const now = new Date()
+    const hours = now.getHours().toString().padStart(2, '0')
+    const minutes = now.getMinutes().toString().padStart(2, '0')
+    const timeString = `${hours}:${minutes}`
+
     const message = {
       sender: sender,
       content: content,
-      timestamp: new Date().toISOString() // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss.sssZ)
+      timestamp: timeString
     }
 
     console.log('메시지 전송:', message)
@@ -80,8 +85,8 @@ export const useWebSocket = () => {
       body: JSON.stringify(message)
     })
     
-    // 로컬 메시지 목록에 추가
-    messages.value.push(message)
+    // 로컬 메시지 목록에 추가하지 않음 - 서버로부터 받은 메시지만 표시
+    // messages.value.push(message)
   }
 
   const setOrderCode = (code) => {

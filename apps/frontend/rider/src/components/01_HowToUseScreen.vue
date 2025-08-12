@@ -68,12 +68,23 @@
 
 <script setup>
 import { useAppState } from '../composables/useAppState'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const { goToScanOption, setProgressPercent } = useAppState()
+const route = useRoute()
+
+const robotId = ref('')
 
 onMounted(() => {
   setProgressPercent(5)
+  
+  // URL 파라미터에서 robotId 추출
+  const robotIdParam = route.query.robotId
+  if (robotIdParam) {
+    robotId.value = robotIdParam
+    console.log('QR 코드에서 전달된 로봇 ID:', robotId.value)
+  }
 })
 
 const handleNext = () => {
@@ -154,9 +165,8 @@ const handleScanClick = () => {
 .subtitle {
   font-size: 16px;
   color: #6B7280;
+  margin: 0;
   line-height: 1.5;
-  margin-bottom: 0;
-  margin-top: 10px;
 }
 
 /* 단계 섹션 */

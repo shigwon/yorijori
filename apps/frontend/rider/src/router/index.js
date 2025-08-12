@@ -9,7 +9,7 @@ const ManualConfirmScreen = () => import('../components/05_ManualConfirmScreen.v
 const LocationRequestScreen = () => import('../components/06_LocationRequestScreen.vue')
 const PhotoCaptureScreen = () => import('../components/07_PhotoCaptureScreen.vue')
 const CompleteScreen = () => import('../components/08_CompleteScreen.vue')
-
+const QRCodeGenerator = () => import('../components/QRCodeGenerator.vue')
 
 const routes = [
   {
@@ -64,7 +64,12 @@ const routes = [
     component: CompleteScreen,
     meta: { progress: 100 }
   },
-
+  {
+    path: '/rider/qr-generator',
+    name: 'QRCodeGenerator',
+    component: QRCodeGenerator,
+    meta: { progress: 0 }
+  },
 ]
 
 const router = createRouter({

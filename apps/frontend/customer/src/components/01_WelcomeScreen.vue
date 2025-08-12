@@ -57,17 +57,23 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAppState } from '../composables/useAppState'
+import { useAppState, parseUrlParameters } from '../composables/useAppState'
 import ChatbotInterface from './12_ChatbotInterface.vue'
 
-const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode, robotId, orderId, sectionNum, parseUrlParameters } = useAppState()
+const { goToHowToUse, openChatbot: openChatbotGlobal, closeChatbot: closeChatbotGlobal, orderCode, robotId, orderId, sectionNum } = useAppState()
 const showChatMessage = ref(true)
 const showChatbot = ref(false)
 
 // URL에서 모든 파라미터 파싱
 onMounted(() => {
   const parsedInfo = parseUrlParameters()
-  console.log('파싱된 정보:', parsedInfo)
+  console.log('Welcome 화면에서 파싱된 정보:', parsedInfo)
+  console.log('useAppState 상태:', { 
+    orderCode: orderCode.value, 
+    robotId: robotId.value, 
+    orderId: orderId.value, 
+    sectionNum: sectionNum.value 
+  })
 })
 
 const handleStart = () => {

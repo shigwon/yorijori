@@ -1,7 +1,7 @@
 <template>
   <div class="survey-container">
     <!-- 질문 -->
-    <div class="question">{{ questionText }}</div>
+    <div class="question">어떤 점이 만족스러웠나요?</div>
     
     <!-- 별점 평가 -->
     <div class="star-rating">
@@ -16,7 +16,7 @@
       </div>
     </div>
     
-    <!-- 불편한 점 선택 옵션들 -->
+    <!-- 만족스러운 점 선택 옵션들 -->
     <div class="feedback-options">
       <div class="option-row">
         <button 
@@ -40,19 +40,16 @@
           {{ option }}
         </button>
       </div>
-      
     </div>
     
-
-    
-                   <!-- 추가 피드백 입력 -->
-      <div class="feedback-input-section">
-        <textarea 
-          v-model="additionalFeedback"
-          class="feedback-textarea"
-          placeholder="의견을 자유롭게 남겨주세요."
-        ></textarea>
-      </div>
+    <!-- 추가 피드백 입력 -->
+    <div class="feedback-input-section">
+      <textarea 
+        v-model="additionalFeedback"
+        class="feedback-textarea"
+        placeholder="의견을 자유롭게 남겨주세요."
+      ></textarea>
+    </div>
     
     <!-- 평가 보내기 버튼 -->
     <button class="submit-button" @click="submitSurvey">
@@ -69,33 +66,13 @@ const selectedRating = ref(5)
 const selectedOptions = ref([])
 const additionalFeedback = ref('')
 
-// 별점에 따른 옵션 텍스트 변경
+// 만족스러운 점 옵션들 (5점 기준)
 const row1Options = computed(() => {
-  if (selectedRating.value <= 1) {
-    return ['위치가 틀림', '얼굴 인식 실패', '앱 접속 오류']
-  } else if (selectedRating.value === 2) {
-    return ['위치 정확도 개선', '얼굴 인식 정확도', '앱 안정성 개선']
-  } else if (selectedRating.value === 3) {
-    return ['위치 서비스 개선', '얼굴 인식 서비스', '앱 사용성 개선']
-  } else if (selectedRating.value === 4) {
-    return ['위치가 정확함', '얼굴 인식이 빠름', '앱이 안정적임']
-  } else {
-    return ['위치가 매우 정확함', '얼굴 인식이 완벽함', '앱이 매우 안정적임']
-  }
+  return ['위치가 매우 정확함', '얼굴 인식이 완벽함']
 })
 
 const row2Options = computed(() => {
-  if (selectedRating.value <= 1) {
-    return ['내 위치가 안 보임', '너무 느림', '로봇이 바보같음']
-  } else if (selectedRating.value === 2) {
-    return ['위치 표시 개선', '속도 개선', '로봇 인식 정확도']
-  } else if (selectedRating.value === 3) {
-    return ['위치 확인 개선', '반응 속도 개선', '로봇 서비스 개선']
-  } else if (selectedRating.value === 4) {
-    return ['내 위치가 잘 보임', '속도가 빠름', '로봇이 똑똑함']
-  } else {
-    return ['내 위치가 완벽하게 보임', '속도가 매우 빠름', '로봇이 매우 똑똑함']
-  }
+  return ['내 위치가 완벽하게 보임', '속도가 매우 빠름']
 })
 
 // 별점에 따른 질문 텍스트 변경
@@ -212,26 +189,29 @@ const submitSurvey = async () => {
   bottom: 0;
   overflow-y: auto;
   z-index: 9999;
-  padding: 40px 20px;
+  padding: 60px 20px 40px 20px;
 }
 
 .question {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 40px;
   text-align: center;
+  line-height: 1.3;
+  margin-top: 0;
 }
 
 /* 별점 평가 */
 .star-rating {
   display: flex;
-  gap: 8px;
-  margin-bottom: 30px;
+  gap: 12px;
+  margin-bottom: 40px;
+  justify-content: center;
 }
 
 .star {
-  font-size: 24px;
+  font-size: 32px;
   color: #ddd;
   cursor: pointer;
   transition: color 0.2s ease;
@@ -241,32 +221,33 @@ const submitSurvey = async () => {
   color: #7C3AED;
 }
 
-/* 불편한 점 선택 옵션들 */
+/* 만족스러운 점 선택 옵션들 */
 .feedback-options {
   width: 100%;
-  max-width: 400px;
-  margin-bottom: 30px;
+  max-width: 500px;
+  margin-bottom: 40px;
 }
 
 .option-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .option-button {
   flex: 1;
-  padding: 12px 8px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 20px;
-  font-size: 12px;
-  color: #495057;
+  padding: 14px 12px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 25px;
+  font-size: 14px;
+  color: #6B7280;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .option-button.selected {
@@ -276,11 +257,8 @@ const submitSurvey = async () => {
 }
 
 .option-button:hover {
-  background: #e9ecef;
-}
-
-.option-button.selected:hover {
-  background: #6D28D9;
+  background: #F3F4F6;
+  border-color: #7C3AED;
 }
 
 
@@ -288,21 +266,20 @@ const submitSurvey = async () => {
 /* 피드백 입력 섹션 */
 .feedback-input-section {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   margin-bottom: 30px;
 }
 
-
-
 .feedback-textarea {
   width: 100%;
-  height: 100px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  height: 150px;
+  padding: 20px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
   font-size: 14px;
   resize: none;
   font-family: inherit;
+  background: white;
 }
 
 .feedback-textarea::placeholder {
@@ -318,11 +295,11 @@ const submitSurvey = async () => {
 /* 제출 버튼 */
 .submit-button {
   width: 100%;
-  max-width: 400px;
-  padding: 16px;
+  max-width: 500px;
+  padding: 18px;
   background: #7C3AED;
   border: none;
-  border-radius: 12px;
+  border-radius: 25px;
   font-size: 16px;
   font-weight: 600;
   color: white;
@@ -345,25 +322,26 @@ const submitSurvey = async () => {
 /* 반응형 디자인 */
 @media (max-width: 480px) {
   .survey-container {
-    padding: 20px 15px;
+    padding: 50px 20px 30px 20px;
   }
   
   .question {
-    font-size: 16px;
-    margin-bottom: 15px;
+    font-size: 22px;
+    margin-bottom: 35px;
+    margin-top: 0;
   }
   
   .star {
-    font-size: 20px;
+    font-size: 28px;
   }
   
   .option-button {
-    padding: 10px 6px;
-    font-size: 11px;
+    padding: 12px 10px;
+    font-size: 13px;
   }
   
   .feedback-textarea {
-    height: 80px;
+    height: 180px;
   }
 }
 </style> 

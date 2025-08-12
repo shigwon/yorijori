@@ -27,17 +27,31 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import { useAppState } from '../composables/useAppState'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useAppState, parseUrlParameters } from '../composables/useAppState'
 
 const { goToDeliveryTracking, deliveryLocation, deliveryAddress, capturedImage } = useAppState()
 
-// props로 얼굴 이미지 받기
-const props = defineProps({
-  faceImage: {
-    type: String,
-    default: ''
+// useAppState에서 URL 파라미터 값 가져오기
+const { orderCode, robotId, orderId, sectionNum } = useAppState()
+
+// URL 파라미터 파싱 함수 (백업용)
+const getUrlParameters = () => {
+  const searchParams = new URLSearchParams(window.location.search)
+  return {
+    orderId: searchParams.get('orderId') || '',
+    robotId: searchParams.get('robotId') || '',
+    code: searchParams.get('code') || '',
+    sectionNum: searchParams.get('sectionNum') || ''
   }
+}
+
+// useAppState에서 저장된 값 사용
+console.log('LocationSetting useAppState 값:', { 
+  orderCode: orderCode.value, 
+  robotId: robotId.value, 
+  orderId: orderId.value, 
+  sectionNum: sectionNum.value 
 })
 
 const currentLocation = ref(null)
@@ -47,18 +61,15 @@ const marker = ref(null)
 const customOverlay = ref(null)
 const capturedFaceImage = ref('') // 촬영된 얼굴 이미지
 
-// URL에서 주문번호 가져오기
+// URL에서 파라미터 가져오기
 const getOrderId = () => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const orderId = urlParams.get('orderId')
-  
-  // orderId가 없으면 테스트용 ID 사용
-  if (!orderId || orderId === 'default') {
-    console.log('orderId가 없어서 테스트용 ID 사용')
-    return '1' // 테스트용 주문 ID
+  // orderId가 없으면 에러
+  if (!orderId.value) {
+    console.error('orderId가 useAppState에 없습니다')
+    throw new Error('orderId가 useAppState에 없습니다')
   }
   
-  return orderId
+  return orderId.value
 }
 
 const confirmLocation = async () => {
@@ -77,18 +88,27 @@ const confirmLocation = async () => {
   console.log('즉시 배송진행 화면으로 이동')
   goToDeliveryTracking()
   
-  // 백엔드로 위치 정보 전송 (백그라운드에서)
-  const orderId = getOrderId() // URL에서 가져온 주문번호
-  console.log('백그라운드에서 주문번호:', orderId)
+  // 백그라운드로 위치 정보 전송 (백그라운드에서)
+  const currentOrderId = getOrderId() // useAppState에서 가져온 주문번호
+  const currentRobotId = robotId.value // useAppState에서 가져온 로봇 ID
   
-  fetch(`/api/v1/orders/${orderId}/location`, {
+  // 필수 파라미터 검증
+  if (!currentRobotId) {
+    console.error('로봇 ID가 useAppState에 없습니다')
+    return
+  }
+  
+  console.log('백그라운드에서 주문번호:', currentOrderId)
+  console.log('백그라운드에서 로봇 ID:', currentRobotId)
+  
+  fetch(`/api/v1/orders/${currentOrderId}/location`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      orderId: parseInt(orderId), 
-      robotId: 1,
+      orderId: parseInt(currentOrderId), 
+      robotId: parseInt(currentRobotId), // 실제 로봇 ID 사용
       customerLatitude: currentLocation.value.latitude,
       customerLongitude: currentLocation.value.longitude
     })
@@ -252,31 +272,24 @@ watch(() => capturedImage.value, (newImage) => {
   }
 }, { immediate: true })
 
-// props로 받은 이미지도 감지
-watch(() => props.faceImage, (newImage) => {
-  if (newImage) {
-    capturedFaceImage.value = newImage
-    console.log('props 얼굴 이미지 업데이트:', newImage ? '있음' : '없음')
-    // 현재 마커 위치에서 업데이트
-    if (customOverlay.value) {
-      const position = customOverlay.value.getPosition()
-      updateCustomMarker(position)
-    }
-  }
-}, { immediate: true })
-
 onMounted(async () => {
+  // URL 파라미터 확인
+  console.log('LocationSetting onMounted - 현재 URL:', window.location.href)
+  console.log('LocationSetting onMounted - 검색 파라미터:', window.location.search)
+  console.log('LocationSetting onMounted - useAppState 값:', { 
+    orderCode: orderCode.value, 
+    robotId: robotId.value, 
+    orderId: orderId.value, 
+    sectionNum: sectionNum.value 
+  })
+  
   // 얼굴 이미지 초기화
   console.log('LocationSettingScreen 마운트됨')
   console.log('useAppState capturedImage:', capturedImage.value ? '있음' : '없음')
-  console.log('props faceImage:', props.faceImage ? '있음' : '없음')
   
   if (capturedImage.value) {
     capturedFaceImage.value = capturedImage.value
     console.log('초기 얼굴 이미지 설정 완료:', capturedImage.value ? '있음' : '없음')
-  } else if (props.faceImage) {
-    capturedFaceImage.value = props.faceImage
-    console.log('props에서 얼굴 이미지 설정 완료:', props.faceImage ? '있음' : '없음')
   }
   
   console.log('최종 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
@@ -335,7 +348,7 @@ onMounted(async () => {
                 z-index: 2;
                 filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
                              ">
-                 <img src="/src/assets/pin.png" alt="핀" style="width: 100%; height: 100%; object-fit: contain;" />
+                 <img src="${window.location.origin}/customer/image/pin.png" alt="핀" style="width: 100%; height: 100%; object-fit: contain;" />
                </div>
               <div style="
                 position: absolute;
@@ -386,7 +399,7 @@ onMounted(async () => {
             draggable: true,
             map: mapInstance,
             image: new window.kakao.maps.MarkerImage(
-              '/src/assets/pin.png',
+              `${window.location.origin}/customer/image/pin.png`,
               new window.kakao.maps.Size(40, 40)
             )
           })

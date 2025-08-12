@@ -51,7 +51,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const { goToLoadingModal, goToScanConfirmModal, receiptData, sendMessageToCustomer, robotId } = useAppState()
+const { goToLoadingModal, goToScanConfirmModal, receiptData, sendMessageToCustomer, robotId, setProgressPercent } = useAppState()
 
 const videoElement = ref(null)
 const canvas = ref(null)
