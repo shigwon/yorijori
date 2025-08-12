@@ -39,11 +39,4 @@ def generate_launch_description():
             name='drive_controller',
             output='screen'
         ),
-
-        Node(
-            package='slam_pkg',
-            executable='slam_node',
-            name='slam',
-            output='screen'
-        )
     ])

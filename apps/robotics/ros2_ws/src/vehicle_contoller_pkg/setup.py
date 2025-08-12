@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+from glob import glob
+import os
 
 package_name = 'vehicle_contoller_pkg'
 
@@ -10,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'),glob('launch/*.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -21,9 +24,8 @@ setup(
     entry_points={
         'console_scripts': [
             'drive_controller_node = vehicle_contoller_pkg.drive_controller:main',
-            'dc_motor_controller_node = vehicle_contoller_pkg.dc_motor_controller:main',
-            'servo_motor_controller_node = vehicle_contoller_pkg.servo_motor_controller:main',
-            'food_bay_controller_node = vehicle_contoller_pkg.food_bay_controller:main'
+            'food_bay_controller_node = vehicle_contoller_pkg.food_bay_controller:main',
+            'input_drive_teleop = vehicle_contoller_pkg.keyboard_controller:main'
         ]
     },
 )

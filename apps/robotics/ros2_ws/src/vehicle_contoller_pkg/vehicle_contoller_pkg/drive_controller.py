@@ -50,7 +50,7 @@ class Controller(Node):
 
         # ===== State =====
         self.hardware_ready = False
-        self.drive_enabled = False
+        self.drive_enabled = True
         self.enable_ts = 0.0  # epoch seconds when drive_enable became True
 
         # ===== HW Init =====
@@ -180,11 +180,14 @@ class Controller(Node):
         speed = max(-1.0, min(1.0, speed))
         pulse = int(0xFFFF * abs(speed))
         if speed > 0:
-            self.pca_throttle.channels[self.in1].duty_cycle = 0xFFFF
-            self.pca_throttle.channels[self.in2].duty_cycle = 0
-        elif speed < 0:
+            # 반대로: 전진 명령일 때 in1=0, in2=최대
             self.pca_throttle.channels[self.in1].duty_cycle = 0
             self.pca_throttle.channels[self.in2].duty_cycle = 0xFFFF
+        elif speed < 0:
+            # 반대로: 후진 명령일 때 in1=최대, in2=0
+            self.pca_throttle.channels[self.in1].duty_cycle = 0xFFFF
+            self.pca_throttle.channels[self.in2].duty_cycle = 0
+
         else:
             self.pca_throttle.channels[self.in1].duty_cycle = 0
             self.pca_throttle.channels[self.in2].duty_cycle = 0
@@ -218,3 +221,11 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+
+'''
+ros2 topic pub /vehicle_control std_msgs/Float32MultiArray "{data: [0,1]}"
+  
+
+  '''
