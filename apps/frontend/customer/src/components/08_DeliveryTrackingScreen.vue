@@ -501,8 +501,8 @@ const initDeliveryMap = () => {
     
     console.log('배달 지도 초기화 완료')
     
-    // 배달 시작 (타임라인 시작)
-    startDelivery()
+    // 배달 시작 (타임라인 시작) - startDelivery 함수가 정의되지 않아 주석 처리
+    // startDelivery()
     
   } catch (error) {
     console.error('배달 지도 초기화 실패:', error)
@@ -531,10 +531,10 @@ onMounted(() => {
   
 
   // 5초 후 자동으로 배달완료 모달 표시
-  setTimeout(() => {
-    console.log('배달 완료 모달 표시')
-    showDeliveryCompleteModal.value = true
-  }, 5000)
+  // setTimeout(() => {
+  //   console.log('배달 완료 모달 표시')
+  //   showDeliveryCompleteModal.value = true
+  // }, 5000)
 })
 
 // 컴포넌트 언마운트 시 정리
@@ -622,11 +622,9 @@ onUnmounted(() => {
 /* 스트리밍 섹션 */
 .streaming-section {
   flex: 1;
-  position: relative;
-  background: #000;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  background: #000;
   height: 100vh;
   width: 100vw;
 }
@@ -646,19 +644,26 @@ onUnmounted(() => {
 
 .streaming-image-container {
   width: 100%;
-  height: 100%;
-  background: #000;
+  height: calc(100vh - 300px);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
 }
 
 .streaming-image {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: calc(100vh - 300px);
+  object-fit: cover;
   background: #000;
+  max-width: none;
+  max-height: none;
+  object-position: center;
+  min-width: 100%;
+  min-height: calc(100vh - 300px);
+  position: relative;
 }
 
 .loading-container {

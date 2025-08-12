@@ -166,10 +166,14 @@ const closeModal = () => {
 }
 
 .accept-image {
-  width: 100px;
-  height: 100px;
+  width: 150px !important;
+  height: 150px !important;
   object-fit: contain;
   margin-top: 20px;
+  min-width: 150px !important;
+  min-height: 150px !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* Welcome Text */
@@ -192,7 +196,7 @@ const closeModal = () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  margin-top: 20px;
+  margin-top: -50px;
 }
 
 .term-item {
@@ -305,7 +309,7 @@ const closeModal = () => {
   margin-bottom: 80px;
   padding: 20px 24px;
   position: fixed;
-  top: 550px;
+  top: 540px;
   left: 0;
   right: 0;
   z-index: 1000;
