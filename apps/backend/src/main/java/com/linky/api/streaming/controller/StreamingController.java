@@ -48,7 +48,7 @@ public class StreamingController {
 
         for (SseEmitter emitter : list) {
             try {
-                emitter.send(SseEmitter.event().name("robotImage").data(image));
+                emitter.send(SseEmitter.event().name("robotStreamingImage").data(image));
             } catch(IOException e) {
                 list.remove(emitter);
             }
