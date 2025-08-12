@@ -644,7 +644,7 @@ onUnmounted(() => {
 
 .streaming-image-container {
   width: 100%;
-  height: calc(100vh - 300px);
+  height: calc(100vh - 400px);
   background: transparent;
   display: flex;
   align-items: center;
@@ -655,14 +655,14 @@ onUnmounted(() => {
 
 .streaming-image {
   width: 100%;
-  height: calc(100vh - 300px);
+  height: calc(100vh - 400px);
   object-fit: cover;
   background: #000;
   max-width: none;
   max-height: none;
   object-position: center;
   min-width: 100%;
-  min-height: calc(100vh - 300px);
+  min-height: calc(100vh - 400px);
   position: relative;
 }
 
@@ -859,10 +859,19 @@ onUnmounted(() => {
   padding: 24px 32px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
-  margin-top: -60px;
+  margin-top: -30px;
   position: relative;
   z-index: 10;
   min-height: 180px;
+}
+
+/* 스트리밍 화면에서만 배달 상태 카드 위치 조정 */
+.delivery-tracking-container .streaming-section .delivery-status-card {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: translateY(-100px) !important;
 }
 
 /* 상태 텍스트 */
