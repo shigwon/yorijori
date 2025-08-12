@@ -11,6 +11,13 @@
           <span class="streaming-text-floating">{{ showStreaming ? '지도로 돌아가기' : '실시간 스트리밍' }}</span>
         </button>
       </div>
+      
+      <!-- 테스트용 위치 추적 버튼 (개발 완료 후 제거) -->
+      <div class="floating-test-button">
+        <button @click="testLocationTracking" class="test-button-floating">
+          🧪 위치 테스트
+        </button>
+      </div>
     </div>
 
     <!-- 스트리밍 섹션 -->
@@ -134,6 +141,13 @@ const isConnected = ref(false)
 const currentImage = ref(null)
 const lastUpdateTime = ref('연결 대기 중...')
 const eventSource = ref(null)
+const robotMarker = ref(null) // 로봇 마커
+const robotPosition = ref({ latitude: 0, longitude: 0 }) // 로봇 현재 위치
+const pickupOverlay = ref(null) // 픽업존 오버레이
+const isPickupZoneSet = ref(false) // 픽업존이 설정되었는지 여부
+
+// 로봇 이미지 import
+import homerobotImage from '../assets/homerobot.png'
 
 // API 기본 URL (프록시 설정 활용)
 const API_BASE_URL = '' // 상대 경로 사용하여 프록시 활용
@@ -190,6 +204,170 @@ const checkBackendConnection = async () => {
     }
     return false
   }
+}
+
+
+
+// 로봇 마커 업데이트
+const updateRobotMarker = () => {
+  if (!window.deliveryMap || !robotPosition.value.latitude || !robotPosition.value.longitude) {
+    return
+  }
+  
+  try {
+    const newPosition = new window.kakao.maps.LatLng(
+      robotPosition.value.latitude, 
+      robotPosition.value.longitude
+    )
+    
+    // 기존 마커가 있으면 제거
+    if (robotMarker.value) {
+      robotMarker.value.setMap(null)
+    }
+    
+    // 새 로봇 마커 생성
+    robotMarker.value = new window.kakao.maps.Marker({
+      position: newPosition,
+      map: window.deliveryMap,
+      title: 'LiNKY 로봇',
+      image: new window.kakao.maps.MarkerImage(
+        homerobotImage,
+        new window.kakao.maps.Size(40, 40)
+      )
+    })
+    
+    console.log('로봇 마커 업데이트:', robotPosition.value)
+    
+    // 첫 번째 위치를 받았을 때 픽업존 설정
+    if (!isPickupZoneSet.value) {
+      createPickupZone(robotPosition.value.latitude, robotPosition.value.longitude)
+      isPickupZoneSet.value = true
+      console.log('픽업존 위치 설정 완료:', robotPosition.value)
+    }
+    
+  } catch (error) {
+    console.error('로봇 마커 업데이트 실패:', error)
+  }
+}
+
+// 픽업존 생성 함수
+const createPickupZone = (lat, lng) => {
+  if (!window.deliveryMap) {
+    return
+  }
+  
+  try {
+    // 기존 픽업존이 있으면 제거
+    if (pickupOverlay.value) {
+      pickupOverlay.value.setMap(null)
+    }
+    
+    const pickupPosition = new window.kakao.maps.LatLng(lat, lng)
+    
+    // 픽업존 마커 HTML 생성
+    const pickupMarkerContent = `
+      <div style="position: relative; display: inline-block;">
+        <div style="
+          width: 24px;
+          height: 24px;
+          position: relative;
+          z-index: 2;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        ">
+          <img src="${window.location.origin}/customer/image/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" />
+        </div>
+        <!-- 픽업존 텍스트 -->
+        <div style="
+          position: absolute;
+          top: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+          z-index: 3;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        ">
+          픽업존
+        </div>
+      </div>
+    `
+    
+    // 픽업존 커스텀 오버레이 생성
+    pickupOverlay.value = new window.kakao.maps.CustomOverlay({
+      position: pickupPosition,
+      content: pickupMarkerContent,
+      map: window.deliveryMap,
+      yAnchor: 0
+    })
+    
+    console.log('픽업존 생성 완료:', { latitude: lat, longitude: lng })
+    
+  } catch (error) {
+    console.error('픽업존 생성 실패:', error)
+  }
+}
+
+// 위치 추적 중지 (로봇 마커와 픽업존 제거)
+const stopLocationTracking = () => {
+  // 로봇 마커 제거
+  if (robotMarker.value) {
+    robotMarker.value.setMap(null)
+    robotMarker.value = null
+  }
+  
+  // 픽업존 제거
+  if (pickupOverlay.value) {
+    pickupOverlay.value.setMap(null)
+    pickupOverlay.value = null
+  }
+  
+  // 픽업존 설정 상태 초기화
+  isPickupZoneSet.value = false
+}
+
+// 테스트용 위치 추적 (개발 완료 후 제거)
+const testLocationTracking = () => {
+  if (!window.deliveryMap) {
+    console.warn('지도가 초기화되지 않았습니다.')
+    return
+  }
+  
+  console.log('🧪 위치 추적 테스트 시작...')
+  
+  // 현재 사용자 위치를 기준으로 테스트 (deliveryLocation 사용)
+  const baseLat = deliveryLocation.value?.latitude || 37.5665
+  const baseLng = deliveryLocation.value?.longitude || 126.9780
+  
+  console.log('🧪 테스트 기준 위치:', { latitude: baseLat, longitude: baseLng })
+  
+  // 1초마다 랜덤 위치로 이동하는 테스트
+  const testInterval = setInterval(() => {
+    // 랜덤 오프셋 생성 (-0.003 ~ +0.003 범위, 더 현실적인 이동 거리)
+    const randomLat = baseLat + (Math.random() - 0.5) * 0.006
+    const randomLng = baseLng + (Math.random() - 0.5) * 0.006
+    
+    // 로봇 위치 업데이트
+    robotPosition.value = {
+      latitude: randomLat,
+      longitude: randomLng
+    }
+    
+    // 지도에 마커 업데이트
+    updateRobotMarker()
+    
+    console.log('🧪 테스트 위치 업데이트:', robotPosition.value)
+  }, 1000)
+  
+  // 10초 후 테스트 중지
+  setTimeout(() => {
+    clearInterval(testInterval)
+    console.log('🧪 위치 추적 테스트 완료')
+  }, 10000)
 }
 
 // 스트리밍 시작
@@ -309,6 +487,27 @@ const startStreaming = async () => {
         isLoading.value = false
       }
     })
+
+    // 위치 데이터 이벤트 수신 (같은 SSE 연결에서)
+    eventSource.value.addEventListener('robotLocation', (event) => {
+      try {
+        const locationData = JSON.parse(event.data)
+        console.log('위치 데이터 수신:', locationData)
+        
+        if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+          // 로봇 위치 업데이트
+          robotPosition.value = {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+          }
+          
+          // 지도에 로봇 마커 업데이트
+          updateRobotMarker()
+        }
+      } catch (parseError) {
+        console.error('위치 데이터 파싱 실패:', parseError)
+      }
+    })
     
     // SSE 연결 에러
     eventSource.value.onerror = (error) => {
@@ -346,6 +545,8 @@ const goBackToMap = () => {
   showStreaming.value = false
   // 스트리밍 중지
   stopStreaming()
+  // 위치 추적 중지
+  stopLocationTracking()
 }
 
 // 이미지 로드 성공 핸들러
@@ -389,6 +590,9 @@ const initDeliveryMap = () => {
     }
     
     const map = new window.kakao.maps.Map(container, options)
+    
+    // 지도 인스턴스를 전역 변수에 저장 (위치 추적에서 사용)
+    window.deliveryMap = map
     
     // 목적지 마커 (사용자가 설정한 위치)
     const destPosition = new window.kakao.maps.LatLng(deliveryLat, deliveryLng)
@@ -445,54 +649,8 @@ const initDeliveryMap = () => {
       yAnchor: 0
     })
     
-    // 픽업존 마커 추가 (임의 위치)
-    const pickupLat = deliveryLat + 0.002 // 약간 북쪽으로
-    const pickupLng = deliveryLng - 0.001 // 약간 서쪽으로
-    const pickupPosition = new window.kakao.maps.LatLng(pickupLat, pickupLng)
-    
-    // 픽업존 마커 HTML 생성
-    const pickupMarkerContent = `
-      <div style="position: relative; display: inline-block;">
-        <div style="
-          width: 24px;
-          height: 24px;
-          position: relative;
-          z-index: 2;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-        ">
-          <img src="${window.location.origin}/customer/image/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" onload="console.log('픽업존 이미지 로드 성공')" onerror="console.error('픽업존 이미지 로드 실패')" />
-        </div>
-        <!-- 픽업존 텍스트 -->
-        <div style="
-          position: absolute;
-          top: 28px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          padding: 3px 6px;
-          border-radius: 4px;
-          font-size: 10px;
-          font-weight: 600;
-          white-space: nowrap;
-          z-index: 3;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        ">
-          픽업존
-        </div>
-      </div>
-    `
-    
-    console.log('픽업존 마커 HTML 생성:', pickupMarkerContent)
-    console.log('픽업존 이미지 경로:', `${window.location.origin}/customer/image/pickup.png`)
-    
-    // 픽업존 커스텀 오버레이
-    const pickupOverlay = new window.kakao.maps.CustomOverlay({
-      position: pickupPosition,
-      content: pickupMarkerContent,
-      map: map,
-      yAnchor: 0
-    })
+    // 픽업존은 백엔드에서 첫 번째 위치를 받았을 때 동적으로 생성됨
+    console.log('픽업존은 로봇의 첫 번째 위치에서 자동 생성됩니다.')
     
     // 지도 로드 완료 후 컨테이너 스타일 조정
     setTimeout(() => {
@@ -540,6 +698,7 @@ onMounted(() => {
 // 컴포넌트 언마운트 시 정리
 onUnmounted(() => {
   stopStreaming()
+  stopLocationTracking()
   if (currentImage.value) {
     URL.revokeObjectURL(currentImage.value)
   }
@@ -582,6 +741,38 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
+/* 테스트용 위치 추적 버튼 */
+.floating-test-button {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.streaming-button-floating {
+  background: rgba(124, 58, 237, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-button-floating {
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .streaming-button-floating {
   background: rgba(124, 58, 237, 0.95);
   color: white;
@@ -606,6 +797,12 @@ onUnmounted(() => {
   background: rgba(109, 40, 217, 0.95);
   transform: translateY(-2px);
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.test-button-floating:hover {
+  background: rgba(220, 38, 38, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .streaming-icon-floating {
