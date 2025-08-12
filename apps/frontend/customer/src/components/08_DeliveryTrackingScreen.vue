@@ -41,7 +41,10 @@
         <div v-else-if="error" class="error-container">
           <div class="error-icon">⚠️</div>
           <p class="error-text">{{ error }}</p>
-          <button @click="retryConnection" class="retry-button">다시 시도</button>
+          <div class="error-actions">
+            <button @click="retryConnection" class="retry-button" v-if="robotId && robotId !== ''">다시 시도</button>
+            <button @click="goBackToMap" class="back-button">지도로 돌아가기</button>
+          </div>
         </div>
         
         <!-- 스트리밍 화면 -->
@@ -52,13 +55,16 @@
               :src="currentImage" 
               alt="로봇 스트리밍" 
               class="streaming-image"
-              @load="console.log('🖼️ 이미지 로드 완료:', currentImage)"
-              @error="console.error('❌ 이미지 로드 실패:', currentImage)"
+              @load="handleImageLoad"
+              @error="handleImageError"
             />
             <div v-else class="no-image-placeholder">
               <span class="no-image-icon">📷</span>
               <p class="no-image-text">스트리밍 대기 중...</p>
               <p class="debug-info">디버그: currentImage = {{ currentImage ? '있음' : '없음' }}</p>
+              <p class="debug-info">연결 상태: {{ isConnected ? '연결됨' : '연결 안됨' }}</p>
+              <p class="debug-info">로딩 상태: {{ isLoading ? '로딩 중' : '로딩 완료' }}</p>
+              <p class="debug-info">에러: {{ error || '없음' }}</p>
             </div>
           </div>
           
@@ -194,15 +200,21 @@ const toggleStreaming = () => {
     stopStreaming()
     showStreaming.value = false
   } else {
-    // robotId가 없으면 스트리밍을 시작할 수 없음
-    if (!robotId.value || robotId.value === '') {
-      alert('로봇 ID가 설정되지 않았습니다. URL에 robotId 파라미터를 확인해주세요.')
-      console.error('robotId가 없음:', robotId.value)
-      return
-    }
-    // 스트리밍 시작
+    // 스트리밍 화면으로 이동 (robotId 체크 제거)
     showStreaming.value = true
-    startStreaming()
+    
+    // robotId가 있으면 스트리밍 시작, 없으면 연결 시도만
+    if (robotId.value && robotId.value !== '') {
+      startStreaming()
+    } else {
+      console.warn('⚠️ robotId가 설정되지 않음. 스트리밍 화면만 표시합니다.')
+      // 로딩 상태 해제하고 에러 메시지 표시
+      isLoading.value = false
+      error.value = '로봇 ID가 설정되지 않았습니다.\n\n' +
+                   'URL에 robotId 파라미터를 추가해주세요:\n' +
+                   '예시: ?robotId=5&sectionNum=3&orderCode=ABC123\n\n' +
+                   '이전 화면에서 사진 촬영이 완료되지 않았을 수 있습니다.'
+    }
   }
 }
 
@@ -317,7 +329,64 @@ const startStreaming = async () => {
           return
         }
         
-        // JSON 파싱 시도
+        // Base64 이미지 데이터 처리 (image/jpg;base64, 형식)
+        if (event.data.startsWith('image/jpg;base64,') || event.data.startsWith('image/jpeg;base64,')) {
+          console.log('🖼️ Base64 이미지 데이터 감지됨!')
+          
+          // Base64 데이터 추출 (헤더 제거)
+          const base64Data = event.data.replace(/^image\/[^;]+;base64,/, '')
+          console.log('Base64 데이터 길이:', base64Data.length)
+          
+          try {
+            // Base64 디코딩
+            const byteCharacters = atob(base64Data)
+            console.log('Base64 디코딩 완료, 바이트 수:', byteCharacters.length)
+            
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            console.log('바이트 배열 생성 완료:', byteArray.length)
+            
+            // JPEG Blob 생성
+            const blob = new Blob([byteArray], { type: 'image/jpeg' })
+            console.log('Blob 생성 완료:', blob)
+            console.log('Blob 크기:', blob.size)
+            console.log('Blob 타입:', blob.type)
+            
+            // 이전 이미지 URL 해제
+            if (currentImage.value) {
+              console.log('이전 이미지 URL 해제:', currentImage.value)
+              URL.revokeObjectURL(currentImage.value)
+            }
+            
+            // 새 이미지 URL 생성
+            const imageUrl = URL.createObjectURL(blob)
+            console.log('새 이미지 URL 생성:', imageUrl)
+            
+            // 이미지 설정
+            currentImage.value = imageUrl
+            console.log('새 이미지 설정 완료:', currentImage.value)
+            
+            // 상태 업데이트
+            lastUpdateTime.value = new Date().toLocaleTimeString('ko-KR')
+            isConnected.value = true
+            isLoading.value = false
+            error.value = null
+            
+            console.log('🎉 이미지 업데이트 완료:', lastUpdateTime.value)
+            console.log('현재 이미지 상태:', currentImage.value ? '있음' : '없음')
+            
+          } catch (decodeError) {
+            console.error('❌ Base64 디코딩 실패:', decodeError)
+            error.value = '이미지 디코딩에 실패했습니다: ' + decodeError.message
+            isLoading.value = false
+          }
+          return
+        }
+        
+        // JSON 파싱 시도 (기존 로직)
         let data
         try {
           data = JSON.parse(event.data)
@@ -332,7 +401,7 @@ const startStreaming = async () => {
         console.log('데이터 타입:', data.type)
         
         if (data.type === 'image') {
-          console.log('🖼️ 이미지 타입 확인됨, 처리 시작...')
+          console.log('🖼️ JSON 이미지 타입 확인됨, 처리 시작...')
           
           // Base64 이미지 데이터를 Blob으로 변환
           console.log('Base64 디코딩 시작...')
@@ -380,6 +449,7 @@ const startStreaming = async () => {
         console.error('원본 데이터:', event.data)
         console.error('에러 스택:', err.stack)
         error.value = '메시지 처리에 실패했습니다: ' + err.message
+        isLoading.value = false
       }
     })
     
@@ -446,6 +516,26 @@ const retryConnection = () => {
   startStreaming()
 }
 
+// 지도로 돌아가기
+const goBackToMap = () => {
+  showStreaming.value = false
+  // 스트리밍 중지
+  stopStreaming()
+}
+
+// 이미지 로드 성공 핸들러
+const handleImageLoad = () => {
+  console.log('🖼️ 이미지 로드 완료:', currentImage.value)
+}
+
+// 이미지 로드 실패 핸들러
+const handleImageError = (event) => {
+  console.error('❌ 이미지 로드 실패:', event.target.src)
+  error.value = '이미지를 불러올 수 없습니다.'
+  isLoading.value = false
+  isConnected.value = false
+}
+
 onMounted(() => {
   console.log('DeliveryTrackingScreen 마운트됨')
   console.log('useAppState 배달 위치:', deliveryLocation.value)
@@ -455,11 +545,40 @@ onMounted(() => {
   console.log('useAppState sectionNum:', sectionNum.value)
   console.log('useAppState orderCode:', orderCode.value)
   
+  // 실시간 스트리밍 버튼 디버깅
+  console.log('🔍 실시간 스트리밍 버튼 상태 확인:')
+  console.log('- showStreaming:', showStreaming.value)
+  console.log('- robotId 존재 여부:', !!robotId.value)
+  console.log('- robotId 값:', robotId.value)
+  
   // robotId가 없으면 경고
   if (!robotId.value || robotId.value === '') {
     console.warn('⚠️ robotId가 설정되지 않음. URL에 ?robotId=숫자 파라미터를 추가해주세요.')
     console.warn('예시: /customer/delivery-tracking?robotId=5&sectionNum=3&orderCode=ABC123')
   }
+  
+  // 실시간 스트리밍 버튼 요소 확인
+  setTimeout(() => {
+    const streamingButton = document.querySelector('.floating-streaming-button')
+    const streamingButtonInner = document.querySelector('.streaming-button-floating')
+    console.log('🔍 실시간 스트리밍 버튼 DOM 요소 확인:')
+    console.log('- .floating-streaming-button:', streamingButton)
+    console.log('- .streaming-button-floating:', streamingButtonInner)
+    
+    if (streamingButton) {
+      console.log('✅ 실시간 스트리밍 버튼 컨테이너 발견')
+      console.log('- computed styles:', window.getComputedStyle(streamingButton))
+    } else {
+      console.error('❌ 실시간 스트리밍 버튼 컨테이너를 찾을 수 없음')
+    }
+    
+    if (streamingButtonInner) {
+      console.log('✅ 실시간 스트리밍 버튼 내부 요소 발견')
+      console.log('- computed styles:', window.getComputedStyle(streamingButtonInner))
+    } else {
+      console.error('❌ 실시간 스트리밍 버튼 내부 요소를 찾을 수 없음')
+    }
+  }, 1000)
   
   // 카카오맵 초기화 함수
   const initDeliveryMap = () => {
@@ -655,7 +774,8 @@ onUnmounted(() => {
   flex: 1;
   position: relative;
   background: #F3F4F6;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 400px;
 }
 
 .map-container {
@@ -669,7 +789,8 @@ onUnmounted(() => {
   position: absolute;
   top: 20px;
   left: 20px;
-  z-index: 100;
+  z-index: 1000;
+  pointer-events: auto;
 }
 
 .streaming-button-floating {
@@ -688,6 +809,8 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 140px;
+  justify-content: center;
 }
 
 .streaming-button-floating:hover {
@@ -836,7 +959,13 @@ onUnmounted(() => {
   text-align: center;
 }
 
-.retry-button {
+.error-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.retry-button,
+.back-button {
   background: #7C3AED;
   color: white;
   padding: 10px 20px;
@@ -845,12 +974,20 @@ onUnmounted(() => {
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease;
 }
 
-.retry-button:hover {
+.retry-button:hover,
+.back-button:hover {
   background: #6D28D9;
+}
+
+.back-button {
+  background: #6B7280;
+}
+
+.back-button:hover {
+  background: #4B5563;
 }
 
 .streaming-display {
@@ -876,12 +1013,25 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .streaming-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  background: #000;
+  border-radius: 8px;
+  /* 이미지 로딩 상태 개선 */
+  transition: opacity 0.3s ease;
+}
+
+.streaming-image:not([src]) {
+  opacity: 0;
+}
+
+.streaming-image[src] {
+  opacity: 1;
 }
 
 .no-image-placeholder {
@@ -1097,6 +1247,7 @@ onUnmounted(() => {
   height: 2px;
   background: #E5E7EB;
   margin: 20px 0;
+  transform: translateY(17px);
 }
 
 .timeline-progress {
@@ -1105,7 +1256,7 @@ onUnmounted(() => {
   left: 0;
   height: 100%;
   background: #7C3AED;
-  width: 66%;
+  width: 51%;
   transition: width 0.3s ease;
 }
 
@@ -1307,7 +1458,8 @@ onUnmounted(() => {
     font-size: 32px;
   }
   
-  .retry-button {
+  .retry-button,
+  .back-button {
     padding: 8px 16px;
     font-size: 12px;
   }
