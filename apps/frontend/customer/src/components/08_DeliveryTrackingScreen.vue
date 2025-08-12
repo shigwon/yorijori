@@ -460,7 +460,7 @@ const initDeliveryMap = () => {
           z-index: 2;
           filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         ">
-          <img src="/src/assets/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" />
+          <img src="${window.location.origin}/customer/image/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" onload="console.log('픽업존 이미지 로드 성공')" onerror="console.error('픽업존 이미지 로드 실패')" />
         </div>
         <!-- 픽업존 텍스트 -->
         <div style="
@@ -482,6 +482,9 @@ const initDeliveryMap = () => {
         </div>
       </div>
     `
+    
+    console.log('픽업존 마커 HTML 생성:', pickupMarkerContent)
+    console.log('픽업존 이미지 경로:', `${window.location.origin}/customer/image/pickup.png`)
     
     // 픽업존 커스텀 오버레이
     const pickupOverlay = new window.kakao.maps.CustomOverlay({

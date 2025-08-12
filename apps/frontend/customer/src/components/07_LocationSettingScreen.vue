@@ -348,7 +348,7 @@ onMounted(async () => {
                 z-index: 2;
                 filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
                              ">
-                 <img src="/src/assets/pin.png" alt="핀" style="width: 100%; height: 100%; object-fit: contain;" />
+                 <img src="${window.location.origin}/customer/image/pin.png" alt="핀" style="width: 100%; height: 100%; object-fit: contain;" />
                </div>
               <div style="
                 position: absolute;
@@ -399,7 +399,7 @@ onMounted(async () => {
             draggable: true,
             map: mapInstance,
             image: new window.kakao.maps.MarkerImage(
-              '/src/assets/pin.png',
+              `${window.location.origin}/customer/image/pin.png`,
               new window.kakao.maps.Size(40, 40)
             )
           })
