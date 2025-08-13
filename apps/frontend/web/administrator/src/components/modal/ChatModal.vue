@@ -1,123 +1,275 @@
 <template>
-    <Transition name="modal-fade">
-      <div v-if="isVisible" class="modal-overlay" @click="closeModal">
-        <Transition name="modal-slide">
-          <div class="modal-content" @click.stop>
-            <!-- 모달 헤더 -->
-            <div class="modal-header">
+  <Transition name="modal-fade">
+    <div v-if="isVisible" class="modal-overlay" @click="closeModal">
+      <Transition name="modal-slide">
+        <div class="modal-content" @click.stop>
+          <!-- 모달 헤더 -->
+          <div class="modal-header">
+            <div class="chat-info">
               <div class="chat-id">#{{ orderNumber }}</div>
-              <button class="close-button" @click="closeModal">×</button>
-            </div>
-  
-            <!-- 채팅 영역 -->
-            <div class="chat-area">
-              <!-- 어시스턴트 메시지 -->
-              <div class="message assistant-message">
-                <div class="avatar">
-                  <img src="./assistant-avatar.png" alt="Assistant" />
-                </div>
-                <div class="message-content">
-                  <div class="message-sender">Assistant</div>
-                  <div class="message-bubble assistant-bubble">
-                    I'm doing well, thank you! How can I help you today?
-                  </div>
-                  <div class="message-time">08:16 AM</div>
-                </div>
-              </div>
-  
-              <!-- 사용자 메시지 -->
-              <div class="message user-message">
-                <div class="message-content">
-                  <div class="message-bubble user-bubble">
-                    Hello, how are you doing?
-                  </div>
-                  <div class="message-time">08:15 AM</div>
-                </div>
-              </div>
-  
-              <!-- 사용자 메시지 2 -->
-              <div class="message user-message">
-                <div class="message-content">
-                  <div class="message-bubble user-bubble">
-                    I have a question about the return policy for a product I purchased.
-                  </div>
-                  <div class="message-time">Just Now</div>
-                </div>
-              </div>
-  
-              <!-- 어시스턴트 타이핑 -->
-              <div class="message assistant-message">
-                <div class="avatar">
-                  <img src="./assistant-avatar.png" alt="Assistant" />
-                </div>
-                <div class="message-content">
-                  <div class="message-sender">Assistant</div>
-                  <div class="message-bubble assistant-bubble typing">
-                    <div class="typing-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
-                </div>
+              <div class="connection-status">
+                <v-chip 
+                  :color="isConnected ? 'success' : 'error'"
+                  size="x-small"
+                >
+                  {{ isConnected ? '연결됨' : '연결 안됨' }}
+                </v-chip>
               </div>
             </div>
-  
-            <!-- 입력 영역 -->
-            <div class="input-area">
-              <div class="input-container">
-                <button class="emoji-button">😊</button>
-                <input 
-                  type="text" 
-                  placeholder="Reply ..." 
-                  class="message-input"
-                  v-model="messageText"
-                  @keyup.enter="sendMessage"
-                />
-                <button class="send-button" @click="sendMessage">
-                  <span class="send-icon">→</span>
-                </button>
+            <button class="close-button" @click="closeModal">×</button>
+          </div>
+
+          <!-- 채팅 영역 -->
+          <div class="chat-area" ref="chatArea">
+            <div v-if="loading" class="loading-container">
+              <v-progress-circular indeterminate color="#3a57e8"></v-progress-circular>
+              <span>채팅방 연결 중...</span>
+            </div>
+            
+            <div v-else-if="messages.length === 0" class="empty-state">
+              <v-icon size="48" color="#8a92a6">mdi-chat-outline</v-icon>
+              <p>아직 메시지가 없습니다</p>
+              <p>첫 번째 메시지를 보내보세요!</p>
+            </div>
+            
+            <div v-else class="messages-container">
+              <div 
+                v-for="message in messages" 
+                :key="message.id"
+                class="message"
+                :class="message.sender === 'admin' ? 'user-message' : 'assistant-message'"
+              >
+                <div v-if="message.sender !== 'admin'" class="avatar">
+                  <v-icon color="#7c3aed">mdi-account</v-icon>
+                </div>
+                <div class="message-content">
+                  <div v-if="message.sender !== 'admin'" class="message-sender">고객</div>
+                  <div class="message-bubble" :class="message.sender === 'admin' ? 'user-bubble' : 'assistant-bubble'">
+                    {{ message.content }}
+                  </div>
+                  <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+                </div>
               </div>
             </div>
           </div>
-        </Transition>
-      </div>
-    </Transition>
-  </template>
+
+          <!-- 입력 영역 -->
+          <div class="input-area">
+            <div class="input-container">
+              <input 
+                type="text" 
+                placeholder="메시지를 입력하세요..." 
+                class="message-input"
+                v-model="messageText"
+                @keyup.enter="sendMessage"
+                :disabled="!isConnected"
+              />
+              <button 
+                class="send-button" 
+                @click="sendMessage"
+                :disabled="!isConnected || !messageText.trim()"
+              >
+                <v-icon size="16">mdi-send</v-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </div>
+  </Transition>
+</template>
   
   <script setup>
-  import { ref } from 'vue'
-  import { defineProps, defineEmits } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { defineProps, defineEmits } from 'vue'
+
+const props = defineProps({
+  isVisible: {
+    type: Boolean,
+    default: false
+  },
+  orderNumber: {
+    type: String,
+    default: ''
+  }
+})
+
+const emit = defineEmits(['close'])
+
+// Reactive data
+const messageText = ref('')
+const messages = ref([])
+const loading = ref(false)
+const isConnected = ref(false)
+const chatArea = ref(null)
+
+// WebSocket 관련
+let stompClient = null
+let subscription = null
+
+// Methods
+const closeModal = () => {
+  disconnectWebSocket()
+  emit('close')
+}
+
+const connectWebSocket = () => {
+  if (!props.orderNumber) return
   
-  const props = defineProps({
-    isVisible: {
-      type: Boolean,
-      default: false
-    },
-    orderNumber: {
-      type: String,
-      default: ''
+  try {
+    loading.value = true
+    console.log('WebSocket 연결 시작:', props.orderNumber)
+    
+    // SockJS와 STOMP 클라이언트 생성
+    const socket = new SockJS('ws://localhost:8080/ws/ws-chat/websocket')
+    stompClient = Stomp.over(socket)
+    
+    // 연결 설정
+    stompClient.connect({}, 
+      (frame) => {
+        console.log('WebSocket 연결 성공:', frame)
+        isConnected.value = true
+        loading.value = false
+        
+        // 채팅방 구독
+        subscribeToChat()
+      },
+      (error) => {
+        console.error('WebSocket 연결 실패:', error)
+        isConnected.value = false
+        loading.value = false
+      }
+    )
+  } catch (error) {
+    console.error('WebSocket 연결 오류:', error)
+    loading.value = false
+  }
+}
+
+const subscribeToChat = () => {
+  if (!stompClient || !props.orderNumber) return
+  
+  const topic = `/topic/inquiries/${props.orderNumber}`
+  console.log('채팅방 구독:', topic)
+  
+  subscription = stompClient.subscribe(topic, (message) => {
+    try {
+      const receivedMessage = JSON.parse(message.body)
+      console.log('메시지 수신:', receivedMessage)
+      
+      // 메시지 추가
+      messages.value.push({
+        id: Date.now() + Math.random(),
+        sender: receivedMessage.sender === 'admin' ? 'admin' : 'customer',
+        content: receivedMessage.content,
+        timestamp: receivedMessage.timestamp || new Date().toISOString()
+      })
+      
+      // 스크롤을 맨 아래로
+      nextTick(() => {
+        scrollToBottom()
+      })
+    } catch (error) {
+      console.error('메시지 파싱 오류:', error)
     }
   })
+}
+
+const sendMessage = () => {
+  if (!messageText.value.trim() || !isConnected.value || !props.orderNumber) return
   
-  const emit = defineEmits(['close'])
-  
-  // Reactive data
-  const messageText = ref('')
-  
-  // Methods
-  const closeModal = () => {
-    emit('close')
-  }
-  
-  const sendMessage = () => {
-    if (messageText.value.trim()) {
-      // 메시지 전송 로직
-      console.log('메시지 전송:', messageText.value)
-      messageText.value = ''
+  try {
+    const message = {
+      sender: 'admin',
+      content: messageText.value.trim(),
+      timestamp: new Date().toISOString()
     }
+    
+    console.log('메시지 전송:', message)
+    
+    // WebSocket을 통해 메시지 전송
+    stompClient.send(`/app/inquiry/${props.orderNumber}/send`, {}, JSON.stringify(message))
+    
+    // 로컬 메시지 추가
+    messages.value.push({
+      id: Date.now() + Math.random(),
+      sender: 'admin',
+      content: messageText.value.trim(),
+      timestamp: new Date().toISOString()
+    })
+    
+    messageText.value = ''
+    
+    // 스크롤을 맨 아래로
+    nextTick(() => {
+      scrollToBottom()
+    })
+  } catch (error) {
+    console.error('메시지 전송 오류:', error)
   }
-  </script>
+}
+
+const disconnectWebSocket = () => {
+  if (subscription) {
+    subscription.unsubscribe()
+    subscription = null
+  }
+  
+  if (stompClient) {
+    stompClient.disconnect()
+    stompClient = null
+  }
+  
+  isConnected.value = false
+  messages.value = []
+  console.log('WebSocket 연결 해제')
+}
+
+const scrollToBottom = () => {
+  if (chatArea.value) {
+    chatArea.value.scrollTop = chatArea.value.scrollHeight
+  }
+}
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+  
+  if (diffMins < 1) return '방금 전'
+  if (diffMins < 60) return `${diffMins}분 전`
+  
+  return date.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Watch for modal visibility changes
+watch(() => props.isVisible, (newValue) => {
+  if (newValue && props.orderNumber) {
+    connectWebSocket()
+  } else {
+    disconnectWebSocket()
+  }
+})
+
+// Watch for orderNumber changes
+watch(() => props.orderNumber, (newValue) => {
+  if (props.isVisible && newValue) {
+    disconnectWebSocket()
+    connectWebSocket()
+  }
+})
+
+// Lifecycle
+onUnmounted(() => {
+  disconnectWebSocket()
+})
+</script>
   
   <style scoped>
   .modal-overlay {
@@ -153,6 +305,12 @@
     border-bottom: 1px solid #374151;
   }
   
+  .chat-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
   .chat-id {
     background-color: #7c3aed;
     color: white;
@@ -160,6 +318,11 @@
     border-radius: 20px;
     font-size: 14px;
     font-weight: 500;
+  }
+  
+  .connection-status {
+    display: flex;
+    align-items: center;
   }
   
   .close-button {
@@ -186,6 +349,36 @@
     flex: 1;
     padding: 20px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: #8a92a6;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8a92a6;
+    text-align: center;
+  }
+  
+  .empty-state p {
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  
+  .messages-container {
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -265,38 +458,7 @@
     text-align: right;
   }
   
-  .typing-dots {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-  
-  .typing-dots span {
-    width: 6px;
-    height: 6px;
-    background-color: #9ca3af;
-    border-radius: 50%;
-    animation: typing 1.4s infinite ease-in-out;
-  }
-  
-  .typing-dots span:nth-child(1) {
-    animation-delay: -0.32s;
-  }
-  
-  .typing-dots span:nth-child(2) {
-    animation-delay: -0.16s;
-  }
-  
-  @keyframes typing {
-    0%, 80%, 100% {
-      transform: scale(0.8);
-      opacity: 0.5;
-    }
-    40% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
+
   
   .input-area {
     padding: 16px 20px;
@@ -310,20 +472,6 @@
     background-color: #374151;
     border-radius: 24px;
     padding: 8px 16px;
-  }
-  
-  .emoji-button {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 50%;
-    transition: background-color 0.3s;
-  }
-  
-  .emoji-button:hover {
-    background-color: #4b5563;
   }
   
   .message-input {
@@ -340,6 +488,11 @@
     color: #9ca3af;
   }
   
+  .message-input:disabled {
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+  
   .send-button {
     background-color: #7c3aed;
     border: none;
@@ -354,13 +507,13 @@
     transition: background-color 0.3s;
   }
   
-  .send-button:hover {
+  .send-button:hover:not(:disabled) {
     background-color: #8b5cf6;
   }
   
-  .send-icon {
-    font-size: 14px;
-    font-weight: bold;
+  .send-button:disabled {
+    background-color: #6b7280;
+    cursor: not-allowed;
   }
   
   /* 스크롤바 스타일링 */
@@ -408,49 +561,5 @@
     transform: scale(0.8) translateY(50px);
   }
   
-  /* 버튼 호버 효과 */
-  .chat-button {
-    transition: all 0.2s ease;
-    transform: translateY(0);
-  }
-  
-  .chat-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  .chat-button:active {
-    transform: translateY(0);
-  }
-  
-  /* 모달 내부 요소 애니메이션 */
-  .message {
-    animation: slideIn 0.5s ease forwards;
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  
-  .message:nth-child(1) { animation-delay: 0.1s; }
-  .message:nth-child(2) { animation-delay: 0.2s; }
-  .message:nth-child(3) { animation-delay: 0.3s; }
-  .message:nth-child(4) { animation-delay: 0.4s; }
-  
-  @keyframes slideIn {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* 입력 필드 포커스 효과 */
-  .message-input:focus {
-    transform: scale(1.02);
-    transition: transform 0.2s ease;
-  }
-  
-  /* 전송 버튼 클릭 효과 */
-  .send-button:active {
-    transform: scale(0.95);
-    transition: transform 0.1s ease;
-  }
+
   </style> 
