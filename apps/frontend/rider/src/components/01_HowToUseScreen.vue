@@ -49,11 +49,7 @@
       <div class="step-item">
         <div class="step-icon">
           <div class="icon-circle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="6" y="6" width="12" height="12" rx="2" stroke="white" stroke-width="2" fill="none"/>
-              <circle cx="12" cy="12" r="3" stroke="white" stroke-width="2" fill="none"/>
-              <circle cx="12" cy="10" r="1" fill="white"/>
-            </svg>
+            <img src="../assets/camera.png" alt="카메라" class="camera-icon" />
           </div>
         </div>
         <div class="step-content">
@@ -72,12 +68,23 @@
 
 <script setup>
 import { useAppState } from '../composables/useAppState'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const { goToScanOption, setProgressPercent } = useAppState()
+const route = useRoute()
+
+const robotId = ref('')
 
 onMounted(() => {
   setProgressPercent(5)
+  
+  // URL 파라미터에서 robotId 추출
+  const robotIdParam = route.query.robotId
+  if (robotIdParam) {
+    robotId.value = robotIdParam
+    console.log('QR 코드에서 전달된 로봇 ID:', robotId.value)
+  }
 })
 
 const handleNext = () => {
@@ -158,9 +165,8 @@ const handleScanClick = () => {
 .subtitle {
   font-size: 16px;
   color: #6B7280;
+  margin: 0;
   line-height: 1.5;
-  margin-bottom: 0;
-  margin-top: 10px;
 }
 
 /* 단계 섹션 */
@@ -208,6 +214,13 @@ const handleScanClick = () => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+}
+
+.camera-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* 이미지를 흰색으로 변환 */
 }
 
 .step-content {

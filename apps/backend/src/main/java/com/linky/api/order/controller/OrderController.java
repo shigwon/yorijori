@@ -52,8 +52,11 @@ public class OrderController {
             int orderId = orderService.searchOrderId(createOrderRequest);
             Order order = orderMapper.toEntity(createOrderRequest);
             int sectionNum = orderService.searchOrderCreateActivate(order.getRobotId());
-            //messageService.messageSend(order.getTel(), "https://naver.com?orderId=" + orderId +"&robotId=" + order.getRobotId() + "&code=" + order.getCode() + "&sectionNum=" + sectionNum);
+            messageService.messageSend(order.getTel(), "https://i13c102.p.ssafy.io/customer/welcome?orderId=" + orderId +"&robotId=" + order.getRobotId() + "&code=" + order.getCode() + "&sectionNum=" + sectionNum);
             mqttService.sendCloseSection(order.getRobotId(), Section.builder().sectionNum(sectionNum).sectionStatus("CLOSE").build());
+
+            deliveryService.removeTimer(order.getRobotId());
+
             return ApiResponseEntity.successResponseEntity("주문 생성에 성공했습니다.");
         } else {
             return ApiResponseEntity.failResponseEntity("주문 생성에 실패했습니다.");
@@ -66,9 +69,11 @@ public class OrderController {
         boolean success = orderService.updateLocation(orderId, updateLocationRequest);
         if(success) {
             int orderUpdateCount = orderService.searchOrderUpdateCount(updateLocationRequest.robotId());
+            int searchCapacity = orderService.searchCapacity(updateLocationRequest.robotId());
+
             if(orderUpdateCount >= 3) {
                 deliveryService.interruptTimer(updateLocationRequest.robotId());
-            } else {
+            } else if(orderUpdateCount == searchCapacity) {
                 deliveryService.resetTimer(updateLocationRequest.robotId());
             }
             return ApiResponseEntity.successResponseEntity("고객 위치가 성공적으로 전송되었습니다.");

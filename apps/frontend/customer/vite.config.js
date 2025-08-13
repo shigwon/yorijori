@@ -25,12 +25,12 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'],  // ✅ ngrok 주소 허용
     proxy: {
       '/api': {
-        target: '192.168.100.44:32214', // 백엔드 서버 IP
+        target: 'http://192.168.100.83:8080', // 백엔드 서버 IP
         changeOrigin: true,
         rewrite: (path) => path,
       },
       '/ws': {
-        target: 'http://192.168.100.82:8080', // WebSocket 프록시
+        target: 'http://192.168.100.83:8080', // WebSocket 프록시
         changeOrigin: true,
         ws: true, // WebSocket 지원
         rewrite: (path) => path,

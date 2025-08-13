@@ -1,8 +1,71 @@
 <template>
   <div class="delivery-tracking-container">
     <!-- 지도 섹션 -->
-    <div class="map-section">
+    <div v-if="!showStreaming" class="map-section">
       <div id="delivery-map" class="map-container"></div>
+      
+      <!-- 지도 위에 떠있는 실시간 스트리밍 버튼 -->
+      <div class="floating-streaming-button">
+        <button @click="toggleStreaming" class="streaming-button-floating">
+          <img src="../assets/streaming.png" alt="streaming" class="streaming-icon-floating" />
+          <span class="streaming-text-floating">{{ showStreaming ? '지도로 돌아가기' : '실시간 스트리밍' }}</span>
+        </button>
+      </div>
+      
+      <!-- 테스트용 위치 추적 버튼 (개발 완료 후 제거) -->
+      <div class="floating-test-button">
+        <button @click="testLocationTracking" class="test-button-floating">
+          🧪 위치 테스트
+        </button>
+      </div>
+    </div>
+
+    <!-- 스트리밍 섹션 -->
+    <div v-if="showStreaming" class="streaming-section">
+      <!-- 지도 위에 떠있는 실시간 스트리밍 버튼 (스트리밍 화면에서도 표시) -->
+      <div class="floating-streaming-button">
+        <button @click="toggleStreaming" class="streaming-button-floating">
+          <img src="../assets/streaming.png" alt="streaming" class="streaming-icon-floating" />
+          <span class="streaming-text-floating">지도로 돌아가기</span>
+        </button>
+      </div>
+      
+      <!-- 스트리밍 컨테이너 -->
+      <div class="streaming-container">
+        <!-- 스트리밍 화면 (기본 표시) -->
+        <div class="streaming-display">
+          <div class="streaming-image-container">
+            <img 
+              v-if="currentImage" 
+              :src="currentImage" 
+              alt="로봇 스트리밍" 
+              class="streaming-image"
+              @load="handleImageLoad"
+              @error="handleImageError"
+            />
+            <div v-else class="no-image-placeholder">
+              <span class="no-image-icon">📷</span>
+              <p class="no-image-text">스트리밍 대기 중...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 로딩 상태 (필요시에만) -->
+        <div v-if="isLoading" class="loading-overlay">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">SSE 연결 시도 중...</p>
+        </div>
+        
+        <!-- 에러 상태 (필요시에만) -->
+        <div v-if="error" class="error-overlay">
+          <div class="error-icon">⚠️</div>
+          <p class="error-text">{{ error }}</p>
+          <div class="error-actions">
+            <button @click="retryConnection" class="retry-button" v-if="robotId && robotId !== ''">다시 시도</button>
+            <button @click="goBackToMap" class="back-button">지도로 돌아가기</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 배달 상태 카드 -->
@@ -18,6 +81,8 @@
           <div class="time-value">5분</div>
         </div>
       </div>
+      
+
     
       <!-- 로봇 마스코트 -->
       <div class="robot-mascot">
@@ -61,184 +126,582 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onUnmounted } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
-const { openFoodCompartment, deliveryLocation, deliveryAddress, capturedImage } = useAppState()
+const { openFoodCompartment, deliveryLocation, deliveryAddress, capturedImage, robotId, sectionNum, orderCode } = useAppState()
 const showDeliveryCompleteModal = ref(false)
 
-onMounted(() => {
-  console.log('DeliveryTrackingScreen 마운트됨')
-  console.log('useAppState 배달 위치:', deliveryLocation.value)
-  console.log('useAppState 배달 주소:', deliveryAddress.value)
-  console.log('useAppState 사용자 사진:', capturedImage.value ? '있음' : '없음')
+// 스트리밍 관련 상태
+const showStreaming = ref(false)
+const isLoading = ref(false)
+const error = ref(null)
+const isConnected = ref(false)
+const currentImage = ref(null)
+const lastUpdateTime = ref('연결 대기 중...')
+const eventSource = ref(null)
+const robotMarker = ref(null) // 로봇 마커
+const robotPosition = ref({ latitude: 0, longitude: 0 }) // 로봇 현재 위치
+const pickupOverlay = ref(null) // 픽업존 오버레이
+const isPickupZoneSet = ref(false) // 픽업존이 설정되었는지 여부
+
+// 로봇 이미지 import
+import homerobotImage from '../assets/homerobot.png'
+
+// API 기본 URL (프록시 설정 활용)
+const API_BASE_URL = '' // 상대 경로 사용하여 프록시 활용
+
+// 스트리밍 토글
+const toggleStreaming = () => {
+  if (showStreaming.value) {
+    // 스트리밍 중지하고 지도로 돌아가기
+    stopStreaming()
+    showStreaming.value = false
+    
+    // 지도로 돌아갈 때 지도 다시 초기화
+    setTimeout(() => {
+      initDeliveryMap()
+    }, 100)
+  } else {
+    // 스트리밍 화면으로 이동 (robotId 체크 제거)
+    showStreaming.value = true
+    
+    // robotId가 있으면 스트리밍 시작, 없으면 연결 시도만
+    if (robotId.value && robotId.value !== '') {
+      startStreaming()
+    } else {
+      console.warn('⚠️ robotId가 설정되지 않음. 스트리밍 화면만 표시합니다.')
+      // 로딩 상태 해제하고 에러 메시지 표시
+      isLoading.value = false
+      error.value = '로봇 ID가 설정되지 않았습니다.\n\n' +
+                   'URL에 robotId 파라미터를 추가해주세요:\n' +
+                   '예시: ?robotId=5&sectionNum=3&orderCode=ABC123\n\n' +
+                   '이전 화면에서 사진 촬영이 완료되지 않았을 수 있습니다.'
+    }
+  }
+}
+
+// 백엔드 서버 연결 상태 확인
+const checkBackendConnection = async () => {
+  try {
+    // 간단한 연결 테스트 (health 엔드포인트가 없을 수 있으므로)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    
+    const response = await fetch('/api/v1/streaming/subscribe/test', { 
+      method: 'HEAD', // HEAD 요청으로 연결만 확인
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
+    return true // 연결 시도가 성공하면 true
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('백엔드 서버 연결 타임아웃')
+    } else {
+      console.error('백엔드 서버 연결 확인 실패:', error)
+    }
+    return false
+  }
+}
+
+
+
+// 로봇 마커 업데이트
+const updateRobotMarker = () => {
+  if (!window.deliveryMap || !robotPosition.value.latitude || !robotPosition.value.longitude) {
+    return
+  }
   
-  // 카카오맵 초기화 함수
-  const initDeliveryMap = () => {
-    console.log('카카오맵 초기화 시작')
+  try {
+    const newPosition = new window.kakao.maps.LatLng(
+      robotPosition.value.latitude, 
+      robotPosition.value.longitude
+    )
     
-    if (!window.kakao || !window.kakao.maps) {
-      console.error('카카오맵 API가 로드되지 않음')
-      return
+    // 기존 마커가 있으면 제거
+    if (robotMarker.value) {
+      robotMarker.value.setMap(null)
     }
     
-    const container = document.getElementById('delivery-map')
-    if (!container) {
-      console.error('지도 컨테이너를 찾을 수 없음')
-      return
+    // 새 로봇 마커 생성
+    robotMarker.value = new window.kakao.maps.Marker({
+      position: newPosition,
+      map: window.deliveryMap,
+      title: 'LiNKY 로봇',
+      image: new window.kakao.maps.MarkerImage(
+        homerobotImage,
+        new window.kakao.maps.Size(40, 40)
+      )
+    })
+    
+    console.log('로봇 마커 업데이트:', robotPosition.value)
+    
+    // 첫 번째 위치를 받았을 때 픽업존 설정
+    if (!isPickupZoneSet.value) {
+      createPickupZone(robotPosition.value.latitude, robotPosition.value.longitude)
+      isPickupZoneSet.value = true
+      console.log('픽업존 위치 설정 완료:', robotPosition.value)
     }
     
-    // useAppState에서 저장된 위치 정보 사용
-    const deliveryLat = deliveryLocation.value?.latitude || 37.5665
-    const deliveryLng = deliveryLocation.value?.longitude || 126.9780
+  } catch (error) {
+    console.error('로봇 마커 업데이트 실패:', error)
+  }
+}
+
+// 픽업존 생성 함수
+const createPickupZone = (lat, lng) => {
+  if (!window.deliveryMap) {
+    return
+  }
+  
+  try {
+    // 기존 픽업존이 있으면 제거
+    if (pickupOverlay.value) {
+      pickupOverlay.value.setMap(null)
+    }
     
-    console.log('지도 중심 설정:', deliveryLat, deliveryLng)
+    const pickupPosition = new window.kakao.maps.LatLng(lat, lng)
     
-    try {
-      const options = {
-        center: new window.kakao.maps.LatLng(deliveryLat, deliveryLng),
-        level: 4
+    // 픽업존 마커 HTML 생성
+    const pickupMarkerContent = `
+      <div style="position: relative; display: inline-block;">
+        <div style="
+          width: 24px;
+          height: 24px;
+          position: relative;
+          z-index: 2;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        ">
+          <img src="${window.location.origin}/customer/image/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" />
+        </div>
+        <!-- 픽업존 텍스트 -->
+        <div style="
+          position: absolute;
+          top: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+          z-index: 3;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        ">
+          픽업존
+        </div>
+      </div>
+    `
+    
+    // 픽업존 커스텀 오버레이 생성
+    pickupOverlay.value = new window.kakao.maps.CustomOverlay({
+      position: pickupPosition,
+      content: pickupMarkerContent,
+      map: window.deliveryMap,
+      yAnchor: 0
+    })
+    
+    console.log('픽업존 생성 완료:', { latitude: lat, longitude: lng })
+    
+  } catch (error) {
+    console.error('픽업존 생성 실패:', error)
+  }
+}
+
+// 위치 추적 중지 (로봇 마커와 픽업존 제거)
+const stopLocationTracking = () => {
+  // 로봇 마커 제거
+  if (robotMarker.value) {
+    robotMarker.value.setMap(null)
+    robotMarker.value = null
+  }
+  
+  // 픽업존 제거
+  if (pickupOverlay.value) {
+    pickupOverlay.value.setMap(null)
+    pickupOverlay.value = null
+  }
+  
+  // 픽업존 설정 상태 초기화
+  isPickupZoneSet.value = false
+}
+
+// 테스트용 위치 추적 (개발 완료 후 제거)
+const testLocationTracking = () => {
+  if (!window.deliveryMap) {
+    console.warn('지도가 초기화되지 않았습니다.')
+    return
+  }
+  
+  console.log('🧪 위치 추적 테스트 시작...')
+  
+  // 현재 사용자 위치를 기준으로 테스트 (deliveryLocation 사용)
+  const baseLat = deliveryLocation.value?.latitude || 37.5665
+  const baseLng = deliveryLocation.value?.longitude || 126.9780
+  
+  console.log('🧪 테스트 기준 위치:', { latitude: baseLat, longitude: baseLng })
+  
+  // 1초마다 랜덤 위치로 이동하는 테스트
+  const testInterval = setInterval(() => {
+    // 랜덤 오프셋 생성 (-0.003 ~ +0.003 범위, 더 현실적인 이동 거리)
+    const randomLat = baseLat + (Math.random() - 0.5) * 0.006
+    const randomLng = baseLng + (Math.random() - 0.5) * 0.006
+    
+    // 로봇 위치 업데이트
+    robotPosition.value = {
+      latitude: randomLat,
+      longitude: randomLng
+    }
+    
+    // 지도에 마커 업데이트
+    updateRobotMarker()
+    
+    console.log('🧪 테스트 위치 업데이트:', robotPosition.value)
+  }, 1000)
+  
+  // 10초 후 테스트 중지
+  setTimeout(() => {
+    clearInterval(testInterval)
+    console.log('🧪 위치 추적 테스트 완료')
+  }, 10000)
+}
+
+// 스트리밍 시작
+const startStreaming = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    
+    // SSE 연결 생성
+    const sseUrl = `${API_BASE_URL}/api/v1/streaming/subscribe/${robotId.value}`
+    eventSource.value = new EventSource(sseUrl)
+    
+    // 연결 타임아웃 설정 (10초 후 연결 실패로 처리)
+    const connectionTimeout = setTimeout(() => {
+      if (eventSource.value && eventSource.value.readyState === EventSource.CONNECTING) {
+        console.error('SSE 연결 타임아웃')
+        eventSource.value.close()
+        error.value = 'SSE 연결 타임아웃. 백엔드 서버를 확인해주세요.'
+        isLoading.value = false
+        isConnected.value = false
       }
-      
-      const map = new window.kakao.maps.Map(container, options)
-      
-      // 목적지 마커 (사용자가 설정한 위치)
-      const destPosition = new window.kakao.maps.LatLng(deliveryLat, deliveryLng)
-      
-      // 커스텀 마커 HTML 생성 (사용자 사진 포함)
-      const userImage = capturedImage.value || ''
-      console.log('배달 지도에서 사용자 이미지:', userImage ? '있음' : '없음')
-      const markerContent = `
-        <div style="position: relative; display: inline-block;">
-          <div style="
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            background: #7C3AED;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-          ">
-            ${userImage ? 
-              `<img src="${userImage}" alt="사용자" style="width: 100%; height: 100%; object-fit: cover;" />` : 
-              '<span style="font-size: 12px; color: white;">👤</span>'
+    }, 10000)
+    
+    // 연결 성공 시 타임아웃 해제
+    eventSource.value.onopen = () => {
+      clearTimeout(connectionTimeout)
+      console.log('SSE 연결 성공')
+      isConnected.value = true
+      isLoading.value = false
+      error.value = null
+    }
+
+    // SSE 메시지 수신
+    eventSource.value.onmessage = (event) => {
+      // 기본 메시지 처리 (필요시에만)
+    }
+
+    // robotStreamingImage 이벤트 수신
+    eventSource.value.addEventListener('robotStreamingImage', (event) => {
+      try {
+        // Base64 이미지 데이터 처리 (image/jpg;base64, 형식)
+        if (event.data.startsWith('image/jpg;base64,') || event.data.startsWith('image/jpeg;base64,')) {
+          // Base64 데이터 추출 (헤더 제거)
+          const base64Data = event.data.replace(/^image\/[^;]+;base64,/, '')
+          
+          try {
+            // Base64 디코딩
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
             }
-          </div>
-          <!-- 만날 위치 텍스트 -->
-          <div style="
-            position: absolute;
-            top: 32px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            white-space: nowrap;
-            z-index: 3;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          ">
-            만날 위치
-          </div>
-        </div>
-      `
-      
-      // 커스텀 오버레이로 마커 표시
-      const customOverlay = new window.kakao.maps.CustomOverlay({
-        position: destPosition,
-        content: markerContent,
-        map: map,
-        yAnchor: 0
-      })
-      
-      // 픽업존 마커 추가 (임의 위치)
-      const pickupLat = deliveryLat + 0.002 // 약간 북쪽으로
-      const pickupLng = deliveryLng - 0.001 // 약간 서쪽으로
-      const pickupPosition = new window.kakao.maps.LatLng(pickupLat, pickupLng)
-      
-      // 픽업존 마커 HTML 생성
-      const pickupMarkerContent = `
-        <div style="position: relative; display: inline-block;">
-          <div style="
-            width: 24px;
-            height: 24px;
-            position: relative;
-            z-index: 2;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-          ">
-            <img src="/src/assets/pickup.png" alt="픽업존" style="width: 100%; height: 100%; object-fit: contain;" />
-          </div>
-          <!-- 픽업존 텍스트 -->
-          <div style="
-            position: absolute;
-            top: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 3px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            white-space: nowrap;
-            z-index: 3;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          ">
-            픽업존
-          </div>
-        </div>
-      `
-      
-      // 픽업존 커스텀 오버레이
-      const pickupOverlay = new window.kakao.maps.CustomOverlay({
-        position: pickupPosition,
-        content: pickupMarkerContent,
-        map: map,
-        yAnchor: 0
-      })
-      
-      // 지도 로드 완료 후 컨테이너 스타일 조정
-      setTimeout(() => {
-        container.style.background = 'transparent'
-      }, 100)
-      
-      console.log('배달 지도 초기화 완료')
-      
-    } catch (error) {
-      console.error('배달 지도 초기화 실패:', error)
-      const container = document.getElementById('delivery-map')
-      if (container) {
-        container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 16px;">배달 경로를 불러오는 중...</div>'
+            const byteArray = new Uint8Array(byteNumbers)
+            
+            // JPEG Blob 생성
+            const blob = new Blob([byteArray], { type: 'image/jpeg' })
+            
+            // 이전 이미지 URL 해제
+            if (currentImage.value) {
+              URL.revokeObjectURL(currentImage.value)
+            }
+            
+            // 새 이미지 URL 생성
+            const imageUrl = URL.createObjectURL(blob)
+            
+            // 이미지 설정
+            currentImage.value = imageUrl
+            
+            // 상태 업데이트
+            lastUpdateTime.value = new Date().toLocaleTimeString('ko-KR')
+            isConnected.value = true
+            isLoading.value = false
+            error.value = null
+            
+          } catch (decodeError) {
+            console.error('이미지 디코딩 실패:', decodeError.message)
+            error.value = '이미지 디코딩에 실패했습니다: ' + decodeError.message
+            isLoading.value = false
+          }
+          return
+        }
+        
+        // JSON 파싱 시도 (기존 로직)
+        let data
+        try {
+          data = JSON.parse(event.data)
+        } catch (parseError) {
+          // 일반 텍스트인 경우 기본 처리
+          data = { type: 'text', content: event.data }
+        }
+        
+        if (data.type === 'image') {
+          // Base64 이미지 데이터를 Blob으로 변환
+          const byteCharacters = atob(data.image)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          
+          const blob = new Blob([byteArray], { type: 'image/jpeg' })
+          const imageUrl = URL.createObjectURL(blob)
+
+          // 이전 이미지 URL 해제
+          if (currentImage.value) {
+            URL.revokeObjectURL(currentImage.value)
+          }
+
+          currentImage.value = imageUrl
+          
+          lastUpdateTime.value = new Date().toLocaleTimeString('ko-KR')
+          isConnected.value = true
+        }
+      } catch (err) {
+        console.error('메시지 처리 실패:', err.message)
+        error.value = '메시지 처리에 실패했습니다: ' + err.message
+        isLoading.value = false
       }
+    })
+
+    // 위치 데이터 이벤트 수신 (같은 SSE 연결에서)
+    eventSource.value.addEventListener('robotLocation', (event) => {
+      try {
+        const locationData = JSON.parse(event.data)
+        console.log('위치 데이터 수신:', locationData)
+        
+        if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+          // 로봇 위치 업데이트
+          robotPosition.value = {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+          }
+          
+          // 지도에 로봇 마커 업데이트
+          updateRobotMarker()
+        }
+      } catch (parseError) {
+        console.error('위치 데이터 파싱 실패:', parseError)
+      }
+    })
+    
+    // SSE 연결 에러
+    eventSource.value.onerror = (error) => {
+      clearTimeout(connectionTimeout)
+      console.error('SSE 연결 에러')
+      isConnected.value = false
+      isLoading.value = false
+      error.value = 'SSE 연결에 실패했습니다.'
     }
+    
+  } catch (err) {
+    console.error('스트리밍 시작 실패:', err.message)
+    error.value = '스트리밍을 시작할 수 없습니다: ' + err.message
+    isLoading.value = false
+  }
+}
+
+// 스트리밍 중지
+const stopStreaming = () => {
+  if (eventSource.value) {
+    eventSource.value.close()
+    eventSource.value = null
+  }
+  isConnected.value = false
+}
+
+// 연결 재시도
+const retryConnection = () => {
+  error.value = null
+  startStreaming()
+}
+
+// 지도로 돌아가기
+const goBackToMap = () => {
+  showStreaming.value = false
+  // 스트리밍 중지
+  stopStreaming()
+  // 위치 추적 중지
+  stopLocationTracking()
+}
+
+// 이미지 로드 성공 핸들러
+const handleImageLoad = () => {
+  console.log('🖼️ 이미지 로드 완료:', currentImage.value)
+}
+
+// 이미지 로드 실패 핸들러
+const handleImageError = (event) => {
+  console.error('❌ 이미지 로드 실패:', event.target.src)
+  error.value = '이미지를 불러올 수 없습니다.'
+  isLoading.value = false
+  isConnected.value = false
+}
+
+// 카카오맵 초기화 함수
+const initDeliveryMap = () => {
+  console.log('카카오맵 초기화 시작')
+  
+  if (!window.kakao || !window.kakao.maps) {
+    console.error('카카오맵 API가 로드되지 않음')
+    return
+  }
+  
+  const container = document.getElementById('delivery-map')
+  if (!container) {
+    console.error('지도 컨테이너를 찾을 수 없음')
+    return
+  }
+  
+  // useAppState에서 저장된 위치 정보 사용
+  const deliveryLat = deliveryLocation.value?.latitude || 37.5665
+  const deliveryLng = deliveryLocation.value?.longitude || 126.9780
+  
+  console.log('지도 중심 설정:', deliveryLat, deliveryLng)
+  
+  try {
+    const options = {
+      center: new window.kakao.maps.LatLng(deliveryLat, deliveryLng),
+      level: 4
+    }
+    
+    const map = new window.kakao.maps.Map(container, options)
+    
+    // 지도 인스턴스를 전역 변수에 저장 (위치 추적에서 사용)
+    window.deliveryMap = map
+    
+    // 목적지 마커 (사용자가 설정한 위치)
+    const destPosition = new window.kakao.maps.LatLng(deliveryLat, deliveryLng)
+    
+    // 커스텀 마커 HTML 생성 (사용자 사진 포함)
+    const userImage = capturedImage.value || ''
+    console.log('배달 지도에서 사용자 이미지:', userImage ? '있음' : '없음')
+    const markerContent = `
+      <div style="position: relative; display: inline-block;">
+        <div style="
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          background: #7C3AED;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2;
+        ">
+          ${userImage ? 
+            `<img src="${userImage}" alt="사용자" style="width: 100%; height: 100%; object-fit: cover;" />` : 
+            '<span style="font-size: 12px; color: white;">👤</span>'
+          }
+        </div>
+        <!-- 만날 위치 텍스트 -->
+        <div style="
+          position: absolute;
+          top: 32px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          white-space: nowrap;
+          z-index: 3;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        ">
+          만날 위치
+        </div>
+      </div>
+    `
+    
+    // 커스텀 오버레이로 마커 표시
+    const customOverlay = new window.kakao.maps.CustomOverlay({
+      position: destPosition,
+      content: markerContent,
+      map: map,
+      yAnchor: 0
+    })
+    
+    // 픽업존은 백엔드에서 첫 번째 위치를 받았을 때 동적으로 생성됨
+    console.log('픽업존은 로봇의 첫 번째 위치에서 자동 생성됩니다.')
+    
+    // 지도 로드 완료 후 컨테이너 스타일 조정
+    setTimeout(() => {
+      container.style.background = 'transparent'
+    }, 100)
+    
+    console.log('배달 지도 초기화 완료')
+    
+    // 배달 시작 (타임라인 시작) - startDelivery 함수가 정의되지 않아 주석 처리
+    // startDelivery()
+    
+  } catch (error) {
+    console.error('배달 지도 초기화 실패:', error)
+  }
+}
+
+// 카카오맵 API 로드 확인 후 초기화
+const checkAndInitMap = () => {
+  if (window.kakao && window.kakao.maps) {
+    console.log('카카오맵 API 사용 가능')
+    initDeliveryMap()
+  } else {
+    console.log('카카오맵 API 로드 대기 중...')
+    setTimeout(checkAndInitMap, 500)
+  }
+}
+
+onMounted(() => {
+  // robotId가 없으면 경고
+  if (!robotId.value || robotId.value === '') {
+    console.warn('robotId가 설정되지 않음. URL에 ?robotId=숫자 파라미터를 추가해주세요.')
   }
   
   // 카카오맵 API 로드 확인 후 초기화
-  const checkAndInitMap = () => {
-    if (window.kakao && window.kakao.maps) {
-      console.log('카카오맵 API 사용 가능')
-      initDeliveryMap()
-    } else {
-      console.log('카카오맵 API 로드 대기 중...')
-      setTimeout(checkAndInitMap, 500)
-    }
-  }
-  
-  // 즉시 시도
   checkAndInitMap()
   
 
+  // 5초 후 자동으로 배달완료 모달 표시
   setTimeout(() => {
     console.log('배달 완료 모달 표시')
     showDeliveryCompleteModal.value = true
   }, 5000)
+})
+
+// 컴포넌트 언마운트 시 정리
+onUnmounted(() => {
+  stopStreaming()
+  stopLocationTracking()
+  if (currentImage.value) {
+    URL.revokeObjectURL(currentImage.value)
+  }
 })
 </script>
 
@@ -259,13 +722,331 @@ onMounted(() => {
   flex: 1;
   position: relative;
   background: #F3F4F6;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 400px;
 }
 
 .map-container {
   width: 100%;
   height: 100%;
   background: #E5E7EB;
+}
+
+/* 지도 위에 떠있는 실시간 스트리밍 버튼 */
+.floating-streaming-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+/* 테스트용 위치 추적 버튼 */
+.floating-test-button {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.streaming-button-floating {
+  background: rgba(124, 58, 237, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-button-floating {
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.streaming-button-floating {
+  background: rgba(124, 58, 237, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 140px;
+  justify-content: center;
+}
+
+.streaming-button-floating:hover {
+  background: rgba(109, 40, 217, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.test-button-floating:hover {
+  background: rgba(220, 38, 38, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.streaming-icon-floating {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.streaming-text-floating {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 스트리밍 섹션 */
+.streaming-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+}
+
+.streaming-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.streaming-image-container {
+  width: 100%;
+  height: calc(100vh - 400px);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.streaming-image {
+  width: 100%;
+  height: calc(100vh - 400px);
+  object-fit: cover;
+  background: #000;
+  max-width: none;
+  max-height: none;
+  object-position: center;
+  min-width: 100%;
+  min-height: calc(100vh - 400px);
+  position: relative;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #7C3AED;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.error-icon {
+  font-size: 40px;
+  color: #EF4444;
+}
+
+.error-text {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+  text-align: center;
+}
+
+.error-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.retry-button,
+.back-button {
+  background: #7C3AED;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.retry-button:hover,
+.back-button:hover {
+  background: #6D28D9;
+}
+
+.back-button {
+  background: #6B7280;
+}
+
+.back-button:hover {
+  background: #4B5563;
+}
+
+.streaming-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.loading-overlay,
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  z-index: 10;
+}
+
+.loading-overlay {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.error-overlay {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.streaming-image:not([src]) {
+  opacity: 0;
+}
+
+.streaming-image[src] {
+  opacity: 1;
+}
+
+.no-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6B7280;
+  font-size: 16px;
+}
+
+.no-image-icon {
+  font-size: 40px;
+}
+
+.streaming-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  color: #4B5563;
+  padding: 8px 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.info-value.connected {
+  color: #10B981;
 }
 
 /* 배달 상태 카드 */
@@ -275,10 +1056,19 @@ onMounted(() => {
   padding: 24px 32px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
-  margin-top: -60px;
+  margin-top: -30px;
   position: relative;
   z-index: 10;
   min-height: 180px;
+}
+
+/* 스트리밍 화면에서만 배달 상태 카드 위치 조정 */
+.delivery-tracking-container .streaming-section .delivery-status-card {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: translateY(-100px) !important;
 }
 
 /* 상태 텍스트 */
@@ -334,11 +1124,93 @@ onMounted(() => {
   font-weight: 700;
 }
 
+/* 배달 정보 섹션 */
+.delivery-info-section {
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #E5E7EB;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.delivery-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  justify-items: center;
+}
+
+.delivery-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4B5563;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-icon {
+  font-size: 20px;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+/* 실시간 스트리밍 버튼 */
+.streaming-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.streaming-button {
+  background: #7C3AED;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.streaming-button:hover {
+  background: #6D28D9;
+}
+
+.streaming-icon {
+  font-size: 20px;
+}
+
+.streaming-text {
+  font-size: 16px;
+}
+
 /* 로봇 마스코트 */
 .robot-mascot {
   display: flex;
   justify-content: center;
   margin-bottom: 24px;
+  margin-top: 20px;
+  transform: translateY(20px);
 }
 
 .robot-image {
@@ -358,6 +1230,7 @@ onMounted(() => {
   height: 2px;
   background: #E5E7EB;
   margin: 20px 0;
+  transform: translateY(17px);
 }
 
 .timeline-progress {
@@ -366,7 +1239,7 @@ onMounted(() => {
   left: 0;
   height: 100%;
   background: #7C3AED;
-  width: 66%;
+  width: 51%;
   transition: width 0.3s ease;
 }
 
@@ -468,5 +1341,123 @@ onMounted(() => {
   .marker-label {
     font-size: 11px;
   }
+  
+  .delivery-info-section {
+    margin-top: 16px;
+    padding: 12px 0;
+  }
+  
+  .delivery-info-grid {
+    gap: 8px;
+  }
+  
+  .delivery-info-item {
+    font-size: 12px;
+  }
+  
+  .info-icon {
+    font-size: 18px;
+  }
+  
+  .info-label {
+    font-size: 9px;
+  }
+  
+  .info-value {
+    font-size: 12px;
+  }
+  
+  /* 모바일에서 지도 위 스트리밍 버튼 */
+  .floating-streaming-button {
+    top: 15px;
+    left: 15px;
+  }
+  
+  .streaming-button-floating {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  
+  .streaming-icon-floating {
+    font-size: 16px;
+  }
+  
+  .streaming-text-floating {
+    font-size: 12px;
+  }
+  
+  /* 모바일에서 스트리밍 섹션 */
+  .streaming-header {
+    padding: 16px 20px;
+  }
+  
+  .streaming-title {
+    font-size: 20px;
+  }
+  
+  .robot-icon {
+    font-size: 24px;
+  }
+  
+  .back-to-map-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .back-icon {
+    font-size: 16px;
+  }
+  
+  .back-text {
+    font-size: 12px;
+  }
+  
+  .streaming-container {
+    padding: 16px;
+  }
+  
+  .streaming-image-container {
+    max-width: 100%;
+  }
+  
+  .loading-container,
+  .error-container,
+  .streaming-display {
+    padding: 20px;
+  }
+  
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .loading-text,
+  .error-text {
+    font-size: 14px;
+  }
+  
+  .error-icon,
+  .no-image-icon {
+    font-size: 32px;
+  }
+  
+  .retry-button,
+  .back-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+.no-image-text {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.debug-info {
+  margin: 5px 0 0 0;
+  font-size: 12px;
+  color: #9CA3AF;
+  font-family: monospace;
 }
 </style>

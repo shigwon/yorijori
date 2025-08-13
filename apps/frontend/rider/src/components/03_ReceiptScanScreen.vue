@@ -48,16 +48,69 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const { goToScanConfirmModal, goToLoadingModal, setProgressPercent, receiptData } = useAppState()
+const { goToLoadingModal, goToScanConfirmModal, receiptData, sendMessageToCustomer, robotId, setProgressPercent } = useAppState()
 
 const videoElement = ref(null)
 const canvas = ref(null)
+const isCapturing = ref(false)
 const cameraError = ref(false)
 const cameraStatus = ref('카메라 로딩 중...')
-const isCapturing = ref(false)
+const showSectionNumModal = ref(false)
+const sectionNum = ref('')
+const sectionNumError = ref(false)
+
+let stream = null
+
+// 음식함 번호 유효성 검사
+const validateSectionNum = () => {
+  const num = parseInt(sectionNum.value)
+  if (isNaN(num) || num < 1 || num > 99) {
+    sectionNumError.value = true
+  } else {
+    sectionNumError.value = false
+  }
+}
+
+const isSectionNumValid = computed(() => {
+  return sectionNum.value.length > 0 && !sectionNumError.value
+})
+
+// 음식함 번호 입력 취소
+const cancelSectionNum = () => {
+  showSectionNumModal.value = false
+  sectionNum.value = ''
+  sectionNumError.value = false
+}
+
+// 음식함 번호 입력 확인 및 문자 발송
+const confirmSectionNum = async () => {
+  if (!isSectionNumValid.value) return
+  
+  try {
+    // customer에게 문자 발송
+    const success = await sendMessageToCustomer(
+      receiptData.value.tel,
+      receiptData.value.id,
+      sectionNum.value
+    )
+    
+    if (success) {
+      console.log('고객에게 문자 발송 성공')
+      showSectionNumModal.value = false
+      // 다음 화면으로 이동 (위치 정보 수집)
+      goToLocationRequest()
+    } else {
+      console.error('고객에게 문자 발송 실패')
+      alert('고객에게 문자 발송에 실패했습니다. 다시 시도해주세요.')
+    }
+  } catch (error) {
+    console.error('문자 발송 중 오류:', error)
+    alert('오류가 발생했습니다. 다시 시도해주세요.')
+  }
+}
 
 onMounted(() => {
   setProgressPercent(40)
@@ -511,6 +564,9 @@ const processImageAsync = async (base64Image) => {
   justify-content: center;
   align-items: center;
   padding: 0 24px;
+  position: relative;
+  top: -30px;
+  margin-top: 50px;
 }
 
 .capture-button {

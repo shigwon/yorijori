@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api/v1/stream/':{                     // webrtc 발급용 api
+      '/api/v1/streaming/':{                     // webrtc 발급용 api
         target: 'http://192.168.100.83:8080',
         changeOrigin: true,
         secure: false

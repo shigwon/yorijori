@@ -1,5 +1,6 @@
 import apiClient from './apiconfig.js'
 import adminClient from './admin.js'
+import axios from 'axios'
 
 // ===== 일반 API 사용 예시 =====
 
@@ -16,12 +17,25 @@ export const login = async (email, password) => {
   }
 }
 
+
 // 로그아웃
 export const logout = async () => {
   try {
     const response = await apiClient.post('/admin/logout')
+    
+    // 세션 정보 삭제
+    localStorage.removeItem('adminSession')
+    localStorage.removeItem('adminEmail')
+    sessionStorage.removeItem('adminSession')
+    sessionStorage.removeItem('adminEmail')
+    
     return response.data
   } catch (error) {
+    // 에러가 발생해도 세션 정보는 삭제
+    localStorage.removeItem('adminSession')
+    localStorage.removeItem('adminEmail')
+    sessionStorage.removeItem('adminSession')
+    sessionStorage.removeItem('adminEmail')
     throw error
   }
 }
@@ -88,6 +102,16 @@ export const getPeriodOrderCount = async (startDate, endDate) => {
   }
 }
 
+// 채팅방 목록 조회
+export const getChatRooms = async () => {
+  try {
+    const response = await adminClient.get('/chat/rooms')
+    return response.data
+  } catch (error) {
+    throw error
+  }
+}
+
 // 로봇 목록 조회
 export const getRobots = async () => {
   try {
@@ -112,6 +136,28 @@ export const getRobot = async (robotId) => {
 export const getRobotsWithLocation = async () => {
   try {
     const response = await adminClient.get('/robots/with-location')
+    return response.data
+  } catch (error) {
+    throw error
+  }
+}
+
+// 전체 로봇 위치 조회
+export const getAllRobotsLocation = async () => {
+  try {
+    // 임시로 일반 axios 사용
+    const response = await axios.get('/api/v1/robots/location/current')
+    return response.data
+  } catch (error) {
+    throw error
+  }
+}
+
+// 특정 로봇 위치 조회
+export const getRobotLocation = async (robotId) => {
+  try {
+    // 임시로 일반 axios 사용
+    const response = await apiClient.get(`/v1/robots/${robotId}/location/current`)
     return response.data
   } catch (error) {
     throw error
@@ -161,29 +207,11 @@ export const getStream = async () => {
 // 로그 조회
 export const getLogs = async () => {
   try {
-    const response = await adminClient.get('/log')
+    const response = await adminClient.get('/logs')
     return response.data
   } catch (error) {
     throw error
   }
 }
 
-// 채팅 목록 조회
-export const getAllChats = async () => {
-  try {
-    const response = await adminClient.get('/chat/all')
-    return response.data
-  } catch (error) {
-    throw error
-  }
-}
 
-// 특정 채팅 조회
-export const getChat = async (chatId) => {
-  try {
-    const response = await adminClient.get(`/chat?id=${chatId}`)
-    return response.data
-  } catch (error) {
-    throw error
-  }
-} 

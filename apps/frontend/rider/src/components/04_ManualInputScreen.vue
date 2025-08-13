@@ -13,10 +13,14 @@
           <input 
             type="text" 
             v-model="orderNumber"
+            @input="validateOrderNumber"
             class="input-field" 
-            placeholder="1234567889"
-            maxlength="20"
+            placeholder="123456"
+            maxlength="6"
           />
+          <div v-if="orderNumberError" class="error-message">
+            주문번호를 6자리로 입력해주세요
+          </div>
         </div>
         
         <div class="input-group">
@@ -27,10 +31,14 @@
           <input 
             type="text" 
             v-model="safeNumber"
+            @input="formatPhoneNumber"
             class="input-field" 
-            placeholder="1234567889"
-            maxlength="20"
+            placeholder="010-1234-5678"
+            maxlength="13"
           />
+          <div v-if="phoneError" class="error-message">
+            전화번호를 11자리로 입력해주세요
+          </div>
         </div>
       </div>
     </div>
@@ -62,14 +70,62 @@ const { setProgressPercent } = useAppState()
 const orderNumber = ref('')
 const safeNumber = ref('')
 const showConfirmModal = ref(false)
+const phoneError = ref(false)
+const orderNumberError = ref(false)
 
 onMounted(() => {
   setProgressPercent(50) // Set progress to 50% on this screen
 })
 
 const isFormValid = computed(() => {
-  return orderNumber.value.trim() !== '' && safeNumber.value.trim() !== ''
+  // 주문번호가 6자리이고, 전화번호가 11자리여야 함
+  const orderValidChars = orderNumber.value.replace(/[^0-9a-zA-Z]/g, '')
+  const phoneNumbersOnly = safeNumber.value.replace(/[^0-9]/g, '')
+  return orderValidChars.length === 6 && 
+         phoneNumbersOnly.length === 11
 })
+
+// 주문번호 유효성 검사 함수
+const validateOrderNumber = () => {
+  // 숫자와 영문자만 허용 (소문자, 대문자)
+  const validChars = orderNumber.value.replace(/[^0-9a-zA-Z]/g, '')
+  
+  // 6자리로 제한
+  if (validChars.length > 6) {
+    orderNumber.value = validChars.slice(0, 6)
+  } else {
+    orderNumber.value = validChars
+  }
+  
+  // 오류 메시지 업데이트
+  orderNumberError.value = validChars.length > 0 && validChars.length !== 6
+}
+
+// 전화번호 형식 자동 변환 함수
+const formatPhoneNumber = () => {
+  // 숫자만 추출
+  let numbers = safeNumber.value.replace(/[^0-9]/g, '')
+  
+  // 11자리 이하로 제한
+  if (numbers.length > 11) {
+    numbers = numbers.slice(0, 11)
+  }
+  
+  // 형식에 맞게 하이픈 추가
+  let formatted = ''
+  if (numbers.length <= 3) {
+    formatted = numbers
+  } else if (numbers.length <= 7) {
+    formatted = numbers.slice(0, 3) + '-' + numbers.slice(3)
+  } else {
+    formatted = numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7)
+  }
+  
+  safeNumber.value = formatted
+  
+  // 오류 메시지 업데이트
+  phoneError.value = numbers.length > 0 && numbers.length !== 11
+}
 
 const handleNext = () => {
   if (isFormValid.value) {
@@ -172,6 +228,14 @@ const handleNext = () => {
 .input-field::placeholder {
   color: #D1D5DB;
   opacity: 0.7;
+}
+
+/* 오류 메시지 스타일 */
+.error-message {
+  color: #DC2626;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 /* 액션 섹션 */

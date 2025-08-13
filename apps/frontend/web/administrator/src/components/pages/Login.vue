@@ -7,7 +7,7 @@
         <!-- 로고 영역 -->
         <div class="logo-section">
           <div class="logo-placeholder">
-            <i class="logo-icon">👤</i>
+            <v-icon class="logo-icon">mdi-account-circle</v-icon>
           </div>
         </div>
   
@@ -102,8 +102,9 @@
   
   <script setup>
   import { ref, onMounted } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { login } from '../../api/examples.js'
+import { useRouter } from 'vue-router'
+import { login } from '../../api/examples.js'
+import { setSession, setSessionExpiry } from '../../api/sessionUtils.js'
   
   const router = useRouter()
   
@@ -166,49 +167,68 @@
     errorMessage.value = ''
     successMessage.value = ''
     
-    try {
-      // API 호출 (examples.js의 login 함수 사용)
-      const data = await login(formData.value.email, formData.value.password)
-  
-      // 로그인 성공
-      showSuccess(data.message || '로그인 성공! 관리자 페이지로 이동합니다.')
-      
-      // 로그인 정보 저장 (Remember me 체크 시)
-      if (formData.value.rememberMe) {
-        localStorage.setItem('adminEmail', formData.value.email)
-      }
-      
-      // 토큰 저장 (API 응답에 토큰이 포함된 경우 - 테스트 단계에서는 선택적)
-      if (data.token) {
-        localStorage.setItem('adminToken', data.token)
-      } else {
-        // 테스트 단계: 토큰이 없어도 로그인 성공으로 처리
-        console.log('테스트 모드: 토큰 없이 로그인 성공')
-      }
-      
-      // 즉시 페이지 이동 (UX 개선)
-      setTimeout(() => {
-        router.push('/main')
-      }, 500)
-      
-    } catch (error) {
-      console.error('로그인 오류:', error)
-      
-      // 에러 처리
-      if (error.response) {
-        // 서버에서 에러 응답 (4xx, 5xx)
-        const errorMessage = error.response.data?.message || '로그인에 실패했습니다.'
-        showError(errorMessage)
-      } else if (error.request) {
-        // 네트워크 오류 (서버에 도달하지 못함)
-        showError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
-      } else {
-        // 기타 오류
-        showError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
-      }
-    } finally {
-      isLoading.value = false
-    }
+         try {
+       // API 호출 (examples.js의 login 함수 사용)
+       const data = await login(formData.value.email, formData.value.password)
+   
+       // 백엔드 응답 구조에 따른 성공 처리
+       if (data.result === 'success' && data.data?.success) {
+         // 로그인 성공
+         showSuccess(data.data.message || '로그인 성공! 관리자 페이지로 이동합니다.')
+         
+         // 로그인 정보 저장 (Remember me 체크 시)
+         if (formData.value.rememberMe) {
+           localStorage.setItem('adminEmail', formData.value.email)
+         }
+         
+         // 세션 정보 저장
+         setSession(formData.value.email, formData.value.rememberMe)
+         
+         // 세션 만료 시간 설정 (30분)
+         setSessionExpiry(30)
+         
+         // 로그인 성공 시 세션 상태 업데이트
+         console.log('세션 방식 로그인 성공')
+         
+         // 즉시 페이지 이동 (UX 개선)
+         setTimeout(() => {
+           router.push('/main')
+         }, 500)
+       } else {
+         // 백엔드에서 성공 응답이지만 로그인 실패인 경우
+         const errorMessage = data.data?.message || '로그인에 실패했습니다.'
+         showError(errorMessage)
+       }
+       
+     } catch (error) {
+       console.error('로그인 오류:', error)
+       
+       // 에러 처리
+       if (error.response) {
+         // 서버에서 에러 응답 (4xx, 5xx)
+         const responseData = error.response.data
+         
+         // 백엔드 에러 메시지 처리
+         if (responseData?.data?.message) {
+           // 백엔드에서 구체적인 에러 메시지 제공
+           showError(responseData.data.message)
+         } else if (responseData?.message) {
+           // 일반적인 에러 메시지
+           showError(responseData.message)
+         } else {
+           // 기본 에러 메시지
+           showError('로그인에 실패했습니다.')
+         }
+       } else if (error.request) {
+         // 네트워크 오류 (서버에 도달하지 못함)
+         showError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
+       } else {
+         // 기타 오류
+         showError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+       }
+     } finally {
+       isLoading.value = false
+     }
   }
   
   const goBack = () => {
@@ -291,6 +311,7 @@
   
   .logo-icon {
     font-size: 40px;
+    color: #3a57e8;
   }
   
   /* 로그인 제목 */

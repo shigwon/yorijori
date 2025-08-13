@@ -21,10 +21,22 @@
               <!-- 초기 봇 메시지 -->
         <div class="message bot-message">
           <div class="message-content">
+            <div class="message-header">
+              <img src="../assets/robot.png" alt="robot" class="message-robot-icon" />
+              <span class="message-bot-name">링키 챗봇</span>
+            </div>
             <div class="message-text">
               <div>안녕하세요.</div>
               <div>링키 챗봇 AI 상담서비스입니다.</div>
               <div>어떤 문제로 상담이 필요하신가요?</div>
+              
+              <div class="help-text">
+                <div>다음과 같은 질문을 할 수 있습니다:</div>
+                <div>• "몇 번 로봇이 배달하나요?"</div>
+                <div>• "음식은 어디에 있나요?"</div>
+                <div>• "주문번호가 뭔가요?"</div>
+                <div>• "배달 상황이 어때요?"</div>
+              </div>
             </div>
           </div>
         </div>
@@ -32,12 +44,14 @@
               <!-- 상담 옵션 -->
         <div class="consultation-options">
           <div class="options-row">
-            <button class="option-button" @click="selectOption('메롱')">메롱</button>
-            <button class="option-button" @click="selectOption('개못해')">개못해</button>
-            <button class="option-button" @click="selectOption('그것도 못하냐')">그것도 못하냐</button>
-            <button class="option-button" @click="selectOption('알아서 잘해라')">알아서 잘해라</button>
-            <button class="option-button" @click="selectOption('ㅋㅋㅋㅋ')">ㅋㅋㅋㅋ</button>
-            <button class="option-button" @click="selectOption('싸우자')">싸우자</button>
+            <button class="option-button" @click="selectOption('로봇 정보')">로봇 정보</button>
+            <button class="option-button" @click="selectOption('음식함 위치')">음식함 위치</button>
+            <button class="option-button" @click="selectOption('주문 확인')">주문 확인</button>
+            <button class="option-button" @click="selectOption('배달 상황')">배달 상황</button>
+          </div>
+          <div class="options-row">
+            <button class="option-button" @click="selectOption('도움말')">도움말</button>
+            <button class="option-button" @click="selectOption('기타 문의')">기타 문의</button>
           </div>
         </div>
 
@@ -83,12 +97,41 @@ import { useAppState } from '../composables/useAppState'
 import { useWebSocket } from '../composables/useWebSocket'
 import { useAiChat } from '../composables/useAiChat'
 
-const { closeChatbot, goToWelcome } = useAppState()
+const { closeChatbot, goToWelcome, robotId, sectionNum, orderCode } = useAppState()
 const { connected, messages, sendMessage: sendWebSocketMessage, setOrderCode } = useWebSocket()
 const { sendMessage: sendAiMessage, isLoading, error } = useAiChat()
 
 const userInput = ref('')
 const chatArea = ref(null)
+
+// 스마트 답변을 위한 키워드 매핑
+const smartResponses = {
+  '로봇': () => robotId.value ? `${robotId.value}번 로봇이 배달하고 있습니다.` : '로봇 정보를 확인할 수 없습니다.',
+  '음식함': () => sectionNum.value ? `${sectionNum.value}번 음식함에 음식이 담겨있습니다.` : '음식함 번호를 확인할 수 없습니다.',
+  '주문번호': () => orderCode.value ? `주문번호는 ${orderCode.value}입니다.` : '주문번호를 확인할 수 없습니다.',
+  '배달': () => {
+    let response = '현재 배달 진행 상황입니다.\n'
+    if (robotId.value) response += `• ${robotId.value}번 로봇이 배달 중\n`
+    if (sectionNum.value) response += `• ${sectionNum.value}번 음식함으로 이동 중\n`
+    if (orderCode.value) response += `• 주문번호: ${orderCode.value}`
+    return response
+  }
+}
+
+// 스마트 답변 생성 함수
+const generateSmartResponse = (userQuestion) => {
+  const question = userQuestion.toLowerCase()
+  
+  // 키워드 매칭
+  for (const [keyword, responseFunc] of Object.entries(smartResponses)) {
+    if (question.includes(keyword)) {
+      return responseFunc()
+    }
+  }
+  
+  // 기본 답변
+  return null
+}
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -110,16 +153,32 @@ const getCurrentTime = () => {
 const selectOption = async (option) => {
    const time = getCurrentTime()
    
+   // 사용자 선택 메시지를 즉시 로컬에 추가하여 표시
+   const userMessage = {
+     sender: 'user',
+     content: `[${option}] ${option}`,
+     timestamp: time
+   }
+   messages.value.push(userMessage)
+   
    // WebSocket을 통해 사용자 선택 메시지 전송
    sendWebSocketMessage('user', `[${option}] ${option}`)
 
-   // AI API 호출
-   try {
-     const aiResponse = await sendAiMessage(`${option}에 대한 상담을 받고 싶습니다.`)
-     sendWebSocketMessage('bot', aiResponse)
-   } catch (err) {
-     console.error('AI 응답 실패:', err)
-     sendWebSocketMessage('bot', `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`)
+   // 스마트 답변 시도
+   const smartResponse = generateSmartResponse(option)
+   
+   if (smartResponse) {
+     // 스마트 답변이 있으면 즉시 응답
+     sendWebSocketMessage('bot', smartResponse)
+   } else {
+     // 스마트 답변이 없으면 AI API 호출
+     try {
+       const aiResponse = await sendAiMessage(`${option}에 대한 상담을 받고 싶습니다.`)
+       sendWebSocketMessage('bot', aiResponse)
+     } catch (err) {
+       console.error('AI 응답 실패:', err)
+       sendWebSocketMessage('bot', `${option} 상담을 진행하겠습니다. 하단 질문에 내용을 입력해주시길 바랍니다.`)
+     }
    }
    
    scrollToBottom()
@@ -131,22 +190,38 @@ const selectOption = async (option) => {
   const time = getCurrentTime()
   const userQuestion = userInput.value
   
+  // 사용자 메시지를 즉시 로컬에 추가하여 표시
+  const userMessage = {
+    sender: 'user',
+    content: userQuestion,
+    timestamp: time
+  }
+  messages.value.push(userMessage)
+  
   // WebSocket을 통해 사용자 메시지 전송
   sendWebSocketMessage('user', userQuestion)
   
   userInput.value = ''
 
-  // AI API 호출
-  try {
-    const aiResponse = await sendAiMessage(userQuestion)
-    sendWebSocketMessage('bot', aiResponse)
-  } catch (err) {
-    console.error('AI 응답 실패:', err)
-    sendWebSocketMessage('bot', '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다.')
+  // 먼저 스마트 답변 시도
+  const smartResponse = generateSmartResponse(userQuestion)
+  
+  if (smartResponse) {
+    // 스마트 답변이 있으면 즉시 응답
+    sendWebSocketMessage('bot', smartResponse)
+  } else {
+    // 스마트 답변이 없으면 AI API 호출
+    try {
+      const aiResponse = await sendAiMessage(userQuestion)
+      sendWebSocketMessage('bot', aiResponse)
+    } catch (err) {
+      console.error('AI 응답 실패:', err)
+      sendWebSocketMessage('bot', '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다.')
+    }
   }
   
   scrollToBottom()
-}
+ }
 
 
 
@@ -160,7 +235,10 @@ const scrollToBottom = () => {
 
 const closeChat = () => {
   closeChatbot()
-  goToWelcome()
+  
+  // 강제로 welcome 화면으로 이동
+  console.log('welcome 화면으로 강제 이동 시작')
+  window.location.href = '/customer/welcome'
 }
 
 onMounted(() => {
@@ -186,7 +264,7 @@ onMounted(() => {
    display: flex;
    justify-content: space-between;
    align-items: center;
-   padding: 16px 20px;
+   padding: 12px 16px;
    background: white;
    border-bottom: 1px solid #e0e0e0;
  }
@@ -194,12 +272,12 @@ onMounted(() => {
  .header-left {
    display: flex;
    align-items: center;
-   gap: 12px;
+   gap: 10px;
  }
 
  .bot-icon {
-   width: 32px;
-   height: 32px;
+   width: 28px;
+   height: 28px;
    border-radius: 50%;
    background: white;
    display: flex;
@@ -210,13 +288,13 @@ onMounted(() => {
  }
 
  .bot-icon-image {
-   width: 24px;
-   height: 24px;
+   width: 20px;
+   height: 20px;
    object-fit: contain;
  }
 
  .bot-name {
-   font-size: 16px;
+   font-size: 14px;
    font-weight: 600;
    color: #333;
  }
@@ -224,13 +302,13 @@ onMounted(() => {
  .close-button {
    background: none;
    border: none;
-   font-size: 24px;
+   font-size: 20px;
    color: #666;
    cursor: pointer;
    padding: 4px;
    border-radius: 50%;
-   width: 32px;
-   height: 32px;
+   width: 28px;
+   height: 28px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -244,9 +322,9 @@ onMounted(() => {
  /* 날짜 */
  .date-info {
    text-align: center;
-   padding: 8px;
+   padding: 6px;
    color: #999;
-   font-size: 12px;
+   font-size: 11px;
    background: #f5f5f5;
    position: relative;
  }
@@ -264,13 +342,13 @@ onMounted(() => {
  /* 채팅 영역 */
  .chat-area {
    flex: 1;
-   padding: 16px;
+   padding: 12px;
    overflow-y: auto;
    background: #f5f5f5;
  }
 
  .message {
-   margin-bottom: 16px;
+   margin-bottom: 12px;
    max-width: 80%;
    display: flex;
    flex-direction: column;
@@ -310,8 +388,8 @@ onMounted(() => {
  }
 
  .message-content {
-   padding: 8px 12px;
-   border-radius: 16px;
+   padding: 4px 8px;
+   border-radius: 12px;
    position: relative;
    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
    display: inline-block;
@@ -332,18 +410,18 @@ onMounted(() => {
  .message-header {
    display: flex;
    align-items: center;
-   gap: 8px;
-   margin-bottom: 8px;
+   gap: 5px;
+   margin-bottom: 4px;
  }
 
  .message-robot-icon {
-   width: 16px;
-   height: 16px;
+   width: 12px;
+   height: 12px;
    object-fit: contain;
  }
 
  .message-bot-name {
-   font-size: 11px;
+   font-size: 9px;
    font-weight: 600;
    color: #7C3AED;
  }
@@ -351,15 +429,45 @@ onMounted(() => {
  .user-message .message-content {
    background: #7C3AED;
    color: white;
+   border-radius: 14px;
+   padding: 4px 8px;
+ }
+
+ .user-message .message-text {
+   color: white;
  }
 
  .message-text {
-   font-size: 12px;
+   padding: 6px 10px;
+   border-radius: 14px;
    line-height: 1.3;
+   color: #333;
+   font-size: 12px;
  }
 
+
+
+/* 도움말 텍스트 스타일 */
+.help-text {
+  margin-top: 12px;
+  padding: 10px;
+  background: #FEF3C7;
+  border-radius: 6px;
+  border-left: 3px solid #F59E0B;
+}
+
+.help-text > div {
+  margin-bottom: 3px;
+  font-size: 12px;
+  color: #92400E;
+}
+
+.help-text > div:last-child {
+  margin-bottom: 0;
+}
+
  .message-text div {
-   margin-bottom: 4px;
+   margin-bottom: 2px;
  }
 
  .message-text div:last-child {
@@ -367,12 +475,12 @@ onMounted(() => {
  }
 
  .message-time {
-   font-size: 11px;
+   font-size: 9px;
    color: #999;
-   margin-top: 4px;
+   margin-top: 2px;
    text-align: right;
    white-space: nowrap;
-   padding-right: 4px;
+   padding-right: 2px;
    align-self: flex-end;
    max-width: fit-content;
    width: fit-content;
@@ -381,27 +489,27 @@ onMounted(() => {
 
  /* 상담 옵션 */
  .consultation-options {
-   margin: 16px 0;
+   margin: 12px 0;
  }
 
  .options-row {
    display: flex;
-   gap: 8px;
-   margin-bottom: 8px;
+   gap: 6px;
+   margin-bottom: 6px;
  }
 
  .option-button {
    flex: 0 0 auto;
-   padding: 8px 12px;
+   padding: 6px 10px;
    background: white;
    border: 1px solid #e0e0e0;
-   border-radius: 12px;
+   border-radius: 10px;
    color: #7C3AED;
-   font-size: 12px;
+   font-size: 11px;
    cursor: pointer;
    transition: all 0.2s;
-   margin-right: 8px;
-   margin-bottom: 8px;
+   margin-right: 6px;
+   margin-bottom: 6px;
    white-space: nowrap;
  }
 
@@ -420,8 +528,8 @@ onMounted(() => {
  .input-area {
    display: flex;
    align-items: center;
-   gap: 12px;
-   padding: 12px 20px;
+   gap: 10px;
+   padding: 10px 16px;
    background: white;
    border-top: 1px solid #e0e0e0;
  }
@@ -429,13 +537,13 @@ onMounted(() => {
  .attach-button {
    background: none;
    border: none;
-   font-size: 20px;
+   font-size: 18px;
    color: #666;
    cursor: pointer;
-   padding: 8px;
+   padding: 6px;
    border-radius: 50%;
-   width: 36px;
-   height: 36px;
+   width: 32px;
+   height: 32px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -448,10 +556,10 @@ onMounted(() => {
 
  .message-input {
    flex: 1;
-   padding: 10px 16px;
+   padding: 8px 14px;
    border: 1px solid #e0e0e0;
-   border-radius: 20px;
-   font-size: 14px;
+   border-radius: 18px;
+   font-size: 13px;
    outline: none;
    transition: border-color 0.2s;
    background: white;
@@ -469,8 +577,8 @@ onMounted(() => {
    background: #7C3AED;
    border: none;
    border-radius: 50%;
-   width: 36px;
-   height: 36px;
+   width: 32px;
+   height: 32px;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -489,8 +597,8 @@ onMounted(() => {
  }
 
  .loading-spinner {
-   width: 16px;
-   height: 16px;
+   width: 14px;
+   height: 14px;
    border: 2px solid #ffffff;
    border-top: 2px solid transparent;
    border-radius: 50%;
@@ -510,15 +618,15 @@ onMounted(() => {
    
    .options-row {
      flex-wrap: wrap;
-     gap: 6px;
+     gap: 5px;
    }
    
    .option-button {
      flex: 0 0 auto;
-     padding: 6px 10px;
-     font-size: 11px;
-     margin-right: 6px;
-     margin-bottom: 6px;
+     padding: 5px 8px;
+     font-size: 10px;
+     margin-right: 5px;
+     margin-bottom: 5px;
    }
  }
 </style> 

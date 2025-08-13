@@ -65,7 +65,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAppState } from '../composables/useAppState'
 
-const { goToComplete, orderData } = useAppState()
+const { goToComplete, orderData, receiptData } = useAppState()
 
 const videoRef = ref(null)
 const isCameraReady = ref(false)
@@ -361,16 +361,32 @@ const handleCapture = async () => {
 // 백그라운드에서 사진 처리
 const processPhotoAsync = async (base64Image) => {
   try {
+    // 디버깅: 현재 데이터 상태 확인
+    console.log('현재 receiptData:', receiptData.value)
+    console.log('현재 orderData:', orderData.value)
+    
     // base64 → Blob 변환
     const blob = await (await fetch(`data:image/jpeg;base64,${base64Image}`)).blob()
 
     // FormData 생성
     const formData = new FormData()
-    formData.append('orderCode', orderData.value.orderNumber || 'example') // 실제 주문코드 사용
+    
+    // 영수증 스캔한 주문번호 우선 사용, 없으면 수동 입력한 주문번호 사용
+    const orderCode = receiptData.value.id || orderData.value.orderNumber
+    console.log('선택된 orderCode:', orderCode)
+    
+    if (!orderCode) {
+      console.error('주문번호가 없습니다')
+      console.error('receiptData.id:', receiptData.value.id)
+      console.error('orderData.orderNumber:', orderData.value.orderNumber)
+      return
+    }
+    
+    formData.append('orderCode', orderCode)
     formData.append('fileCategory', 'FOOD') // 또는 FACE
     formData.append('file', blob, 'photo.jpg')
 
-    console.log('사진 API 요청 시작...')
+    console.log('사진 API 요청 시작...', { orderCode })
 
     // fetch 요청
     const response = await fetch('/api/v1/files', {
@@ -393,6 +409,24 @@ const processPhotoAsync = async (base64Image) => {
 }
 
 onMounted(() => {
+  // 데이터 상태 확인
+  console.log('PhotoCaptureScreen 진입 시 데이터 상태:')
+  console.log('receiptData:', receiptData.value)
+  console.log('orderData:', orderData.value)
+  
+  // localStorage에서 receiptData 복원 시도
+  const savedReceiptData = localStorage.getItem('receiptData')
+  if (savedReceiptData && (!receiptData.value.id || receiptData.value.id === '')) {
+    try {
+      const parsed = JSON.parse(savedReceiptData)
+      receiptData.value.id = parsed.id || ''
+      receiptData.value.tel = parsed.tel || ''
+      console.log('localStorage에서 receiptData 복원:', receiptData.value)
+    } catch (e) {
+      console.error('localStorage 데이터 파싱 실패:', e)
+    }
+  }
+  
   startCamera()
 })
 

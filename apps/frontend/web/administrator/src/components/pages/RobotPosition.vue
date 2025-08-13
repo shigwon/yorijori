@@ -1,194 +1,351 @@
 <template>
     <div class="robot-position-page">
-      <!-- 헤더 -->
-      <div class="page-header">
-        <h1 class="page-title">Robot Position</h1>
-      </div>
+     
   
-      <!-- 지도 컨테이너 -->
+     <!-- 카카오맵 api 넣을부분  -->
       <div class="map-container">
-        <div class="map">
-          <!-- 지도 배경 -->
-          <div class="map-background">
-            <!-- 도로 네트워크 -->
-            <div class="road-network">
-              <div class="road horizontal-road"></div>
-              <div class="road vertical-road"></div>
-              <div class="road diagonal-road"></div>
-            </div>
-            
-            <!-- 건물들 -->
-            <div class="buildings">
-              <!-- 주유소들 -->
-              <div class="building gas-station" style="top: 15%; left: 20%;">
-                <div class="building-icon">⛽</div>
-                <div class="building-label">SK엔크린</div>
-              </div>
-              <div class="building gas-station" style="top: 25%; left: 75%;">
-                <div class="building-icon">⛽</div>
-                <div class="building-label">GS칼텍스</div>
-              </div>
-              
-              <!-- 세무서 -->
-              <div class="building government" style="top: 35%; left: 15%;">
-                <div class="building-icon">🏛️</div>
-                <div class="building-label">광산세무서</div>
-              </div>
-              
-              <!-- 대형마트 -->
-              <div class="building supermarket" style="top: 45%; left: 70%;">
-                <div class="building-icon">🏪</div>
-                <div class="building-label">홈플러스</div>
-              </div>
-              
-              <!-- 아파트 단지들 -->
-              <div class="building apartment" style="top: 20%; left: 40%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">주공4단지</div>
-              </div>
-              <div class="building apartment" style="top: 30%; left: 60%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">수완중흥S클래스</div>
-              </div>
-              <div class="building apartment" style="top: 50%; left: 25%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">휴먼시아3단지</div>
-              </div>
-              <div class="building apartment" style="top: 60%; left: 45%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">운남주공8단지</div>
-              </div>
-              <div class="building apartment" style="top: 70%; left: 35%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">주공9단지</div>
-              </div>
-              <div class="building apartment" style="top: 80%; left: 55%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">운남주공5단지</div>
-              </div>
-              <div class="building apartment" style="top: 25%; left: 85%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">하남광주부영</div>
-              </div>
-              <div class="building apartment" style="top: 40%; left: 90%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">월곡2종공10단지</div>
-              </div>
-              <div class="building apartment" style="top: 55%; left: 80%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">운남아이유쉘</div>
-              </div>
-              <div class="building apartment" style="top: 75%; left: 70%;">
-                <div class="building-icon">🏢</div>
-                <div class="building-label">운남주공7단지</div>
-              </div>
-              
-              <!-- 학교들 -->
-              <div class="building school" style="top: 65%; left: 20%;">
-                <div class="building-icon">🏫</div>
-                <div class="building-label">금구초등학교</div>
-              </div>
-              <div class="building school" style="top: 85%; left: 40%;">
-                <div class="building-icon">🏫</div>
-                <div class="building-label">대반초등학교</div>
-              </div>
-              <div class="building school" style="top: 90%; left: 60%;">
-                <div class="building-icon">🏫</div>
-                <div class="building-label">운남고등학교</div>
-              </div>
-              
-              <!-- 하천 -->
-              <div class="building river" style="top: 35%; left: 50%;">
-                <div class="building-icon">🌊</div>
-                <div class="building-label">풍영정천</div>
-              </div>
-            </div>
-            
-            <!-- 로봇 위치 표시 -->
-            <div class="robot-location">
-              <div class="robot-icon">🤖</div>
-              <div class="robot-label">Robot-001</div>
-            </div>
-            
-            <!-- 사람 위치 표시 -->
-            <div class="person-location">
-              <div class="person-icon">👤</div>
-              <div class="person-label">User</div>
-            </div>
-            
-            <!-- 연결선 -->
-            <div class="connection-line"></div>
-            
-            <!-- 빨간 점들 (관심 지점) -->
-            <div class="red-dot" style="top: 22%; left: 42%;"></div>
-            <div class="red-dot" style="top: 32%; left: 62%;"></div>
-            <div class="red-dot" style="top: 52%; left: 27%;"></div>
-            <div class="red-dot" style="top: 62%; left: 47%;"></div>
-            <div class="red-dot" style="top: 72%; left: 37%;"></div>
-            <div class="red-dot" style="top: 82%; left: 57%;"></div>
-            <div class="red-dot" style="top: 27%; left: 87%;"></div>
-            <div class="red-dot" style="top: 42%; left: 92%;"></div>
-            <div class="red-dot" style="top: 57%; left: 82%;"></div>
-            <div class="red-dot" style="top: 77%; left: 72%;"></div>
-          </div>
-        </div>
+        <div id="map" class="kakao-map"></div>
       </div>
-  
-      <!-- 컨트롤 패널 -->
-      <div class="control-panel">
-        <div class="panel-section">
-          <h3 class="section-title">Robot Status</h3>
-          <div class="status-item">
-            <span class="status-label">Robot-001:</span>
-            <span class="status-value online">Online</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Battery:</span>
-            <span class="status-value">85%</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Speed:</span>
-            <span class="status-value">15 km/h</span>
+
+      <!-- 로봇 정보 패널 -->
+      <div class="robot-info-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">로봇 위치 정보</h3>
+          <div class="robot-selector">
+            <v-select
+              v-model="selectedRobotId"
+              :items="robotOptions"
+              item-title="title"
+              item-value="value"
+              label="로봇 선택"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="robot-select"
+              @update:model-value="onRobotChange"
+            ></v-select>
+            <v-btn
+              @click="refreshRobotData"
+              :loading="loading"
+              variant="outlined"
+              size="small"
+              class="refresh-btn"
+            >
+              <v-icon>mdi-refresh</v-icon>
+            </v-btn>
+            <v-chip 
+              :color="isConnected ? 'success' : 'error'"
+              size="small"
+              class="connection-status"
+            >
+              {{ isConnected ? '연결됨' : '연결 안됨' }}
+            </v-chip>
           </div>
         </div>
-        
-        <div class="panel-section">
-          <h3 class="section-title">Controls</h3>
-          <button class="control-btn" @click="centerMap">Center Map</button>
-          <button class="control-btn" @click="refreshLocation">Refresh Location</button>
-          <button class="control-btn" @click="toggleTracking">Toggle Tracking</button>
+
+                 <div v-if="selectedRobot" class="robot-details">
+           <div class="detail-grid">
+             <div class="detail-item">
+               <div class="detail-label">Current State</div>
+               <div class="detail-value">{{ selectedRobot.statusDisplayName }}</div>
+             </div>
+             <div class="detail-item">
+               <div class="detail-label">Last Charge Time</div>
+               <div class="detail-value">{{ formatDate(selectedRobot.lastChargeTime) }}</div>
+             </div>
+             <div class="detail-item">
+               <div class="detail-label">Latitude</div>
+               <div class="detail-value">{{ selectedRobot.latitude || 'N/A' }}</div>
+             </div>
+             <div class="detail-item">
+               <div class="detail-label">Longitude</div>
+               <div class="detail-value">{{ selectedRobot.longitude || 'N/A' }}</div>
+             </div>
+           </div>
+         </div>
+
+        <div v-else class="no-robot-selected">
+          <v-icon size="48" color="#8a92a6">mdi-robot</v-icon>
+          <p>로봇을 선택해주세요</p>
         </div>
       </div>
     </div>
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
   
   // Reactive data
-  const isTracking = ref(true)
-  
+const loading = ref(false)
+const selectedRobotId = ref(null)
+const allRobots = ref([])
+const selectedRobot = ref(null)
+const map = ref(null)
+const robotMarker = ref(null)
+const isConnected = ref(false)
+
+// SSE 관련
+let eventSource = null
+
+  // Computed
+  const robotOptions = computed(() => {
+    console.log('robotOptions 계산 중, allRobots:', allRobots.value)
+    const options = allRobots.value.map(robot => ({
+      title: `${robot.code} `,
+      value: robot.id
+    }))
+    console.log('생성된 옵션:', options)
+    return options
+  })
+
   // Methods
-  const centerMap = () => {
-    console.log('Centering map...')
-    // 지도 중앙화 로직
+
+// SSE 연결 시작
+const startSSEConnection = () => {
+  try {
+    console.log('SSE 연결 시작...')
+    loading.value = true
+    
+    // 기존 연결이 있으면 닫기
+    if (eventSource) {
+      eventSource.close()
+    }
+    
+    // SSE 연결 생성
+    eventSource = new EventSource('/api/v1/robots/location/subscribe')
+    
+    // 연결 성공
+    eventSource.onopen = (event) => {
+      console.log('SSE 연결 성공')
+      isConnected.value = true
+      loading.value = false
+    }
+    
+    // robotLocations 이벤트 수신
+    eventSource.addEventListener('robotLocations', (event) => {
+      try {
+        const robots = JSON.parse(event.data)
+        console.log('로봇 위치 데이터 수신:', robots)
+        
+        // 로봇 목록 업데이트
+        allRobots.value = robots
+        
+        // 첫 번째 로봇을 기본 선택 (처음 로드 시에만)
+        if (robots.length > 0 && !selectedRobotId.value) {
+          selectedRobotId.value = robots[0].id
+          selectedRobot.value = robots[0]
+          console.log('첫 번째 로봇 선택:', selectedRobotId.value)
+        }
+        
+        // 현재 선택된 로봇 정보 업데이트
+        if (selectedRobotId.value) {
+          const currentRobot = robots.find(r => r.id === selectedRobotId.value)
+          if (currentRobot) {
+            selectedRobot.value = currentRobot
+          }
+        }
+        
+      } catch (error) {
+        console.error('로봇 위치 데이터 파싱 실패:', error)
+      }
+    })
+    
+    // 일반 메시지 수신
+    eventSource.onmessage = (event) => {
+      console.log('일반 메시지 수신:', event.data)
+    }
+    
+    // 에러 처리
+    eventSource.onerror = (event) => {
+      console.error('SSE 연결 오류:', event)
+      isConnected.value = false
+      loading.value = false
+    }
+    
+  } catch (error) {
+    console.error('SSE 연결 시작 실패:', error)
+    loading.value = false
   }
-  
-  const refreshLocation = () => {
-    console.log('Refreshing robot location...')
-    // 로봇 위치 새로고침 로직
+}
+
+// SSE 연결 중지
+const stopSSEConnection = () => {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
   }
-  
-  const toggleTracking = () => {
-    isTracking.value = !isTracking.value
-    console.log('Tracking:', isTracking.value ? 'ON' : 'OFF')
-    // 추적 토글 로직
+  isConnected.value = false
+  console.log('SSE 연결 중지')
+}
+
+const onRobotChange = (robotId) => {
+  if (robotId) {
+    // 전체 목록에서 해당 로봇 찾기
+    const robot = allRobots.value.find(r => r.id === robotId)
+    if (robot) {
+      selectedRobot.value = robot
+    }
+  } else {
+    selectedRobot.value = null
   }
+}
+
+const refreshRobotData = () => {
+  // SSE 연결 재시작
+  stopSSEConnection()
+  startSSEConnection()
+}
+
+  const getRobotPosition = () => {
+    if (!selectedRobot.value || !selectedRobot.value.locationAvailable) {
+      return {}
+    }
+    
+    // 위도/경도를 지도 좌표로 변환 (간단한 예시)
+    const lat = selectedRobot.value.latitude
+    const lng = selectedRobot.value.longitude
+    
+    // 실제로는 지도 API의 좌표 변환 함수를 사용해야 함
+    // 여기서는 임시로 고정 위치 사용
+    return {
+      top: '30%',
+      left: '50%'
+    }
+  }
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'WORKING':
+        return 'working'
+      case 'WAITING':
+        return 'waiting'
+      case 'CHARGING':
+        return 'charging'
+      case 'ERROR':
+        return 'error'
+      default:
+        return 'unknown'
+    }
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '정보 없음'
+    return new Date(dateString).toLocaleString('ko-KR')
+  }
+
+  const formatLastUpdated = (dateString) => {
+    if (!dateString) return '정보 없음'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    
+    if (diffMins < 1) return '방금 전'
+    if (diffMins < 60) return `${diffMins}분 전`
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}시간 전`
+    return date.toLocaleDateString('ko-KR')
+  }
+
+  // 카카오맵 초기화
+  const initKakaoMap = () => {
+    if (window.kakao && window.kakao.maps) {
+      const container = document.getElementById('map')
+      const options = {
+        center: new window.kakao.maps.LatLng(37.5565, 126.972), // 서울 시청 근처
+        level: 3
+      }
+      
+      map.value = new window.kakao.maps.Map(container, options)
+      console.log('카카오맵 초기화 완료')
+    }
+  }
+
+  // 로봇 마커 업데이트
+  const updateRobotMarker = () => {
+    if (!map.value || !selectedRobot.value || !selectedRobot.value.locationAvailable) {
+      if (robotMarker.value) {
+        robotMarker.value.setMap(null)
+        robotMarker.value = null
+      }
+      return
+    }
+
+    const position = new window.kakao.maps.LatLng(
+      selectedRobot.value.latitude,
+      selectedRobot.value.longitude
+    )
+
+    // 기존 마커 제거
+    if (robotMarker.value) {
+      robotMarker.value.setMap(null)
+    }
+
+    // 새 마커 생성
+    const markerImage = new window.kakao.maps.MarkerImage(
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMloiIGZpbGw9IiMzYTU3ZTgiLz4KPHBhdGggZD0iTTEyIDZDNi40OCA2IDIgMTAuNDggMiAxNkMyIDIxLjUyIDYuNDggMjYgMTIgMjZDMjEuNTIgMjYgMjYgMjEuNTIgMjYgMTZDMjYgMTAuNDggMjEuNTIgNiAxMiA2WiIgZmlsbD0iIzNhNTdlOCIgZmlsbC1vcGFjaXR5PSIwLjMiLz4KPC9zdmc+',
+      new window.kakao.maps.Size(24, 24)
+    )
+
+    robotMarker.value = new window.kakao.maps.Marker({
+      position: position,
+      map: map.value,
+      image: markerImage
+    })
+
+    // SSE 연결은 이미 상위에서 관리되므로 여기서는 제거
+
+    // 마커 클릭 시 정보창 표시
+    const infowindow = new window.kakao.maps.InfoWindow({
+      content: `
+        <div style="padding: 30px; min-width: 200px; border-radius: 10px; background-color: #222738;">
+          <h3 style="margin: 0 0 8px 0; color: #3a57e8;">${selectedRobot.value.code}</h3>
+          <p style="margin: 4px 0; color: #666;">상태: ${selectedRobot.value.statusDisplayName}</p>
+          <p style="margin: 4px 0; color: #666;">위치: ${selectedRobot.value.locationDisplay}</p>
+          
+        </div>
+      `// 여기에 주문 정보랑 예상소요시간(이건로직을 고객의 위치 기준으로 현재 로봇위치기준 직선거리
+      //계산하는로직을 사용해야함함)
+    })
+
+    window.kakao.maps.event.addListener(robotMarker.value, 'click', function() {
+      infowindow.open(map.value, robotMarker.value)
+    })
+
+    // 지도 중심을 로봇 위치로 이동
+    map.value.setCenter(position)
+  }
+
+  // 로봇 선택 변경 시 마커 업데이트
+  watch(selectedRobot, () => {
+    updateRobotMarker()
+  }, { deep: true })
+
+  // 카카오맵 스크립트 로드
+  const loadKakaoMapScript = () => {
+    const script = document.createElement('script')
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=da17381f8255309ebdec1286b22aa97f&autoload=false`
+    script.onload = () => {
+      window.kakao.maps.load(() => {
+        initKakaoMap()
+      })
+    }
+    document.head.appendChild(script)
+  }
+
+  // Lifecycle
+onMounted(() => {
+  loadKakaoMapScript()
+  startSSEConnection()
+})
+
+onUnmounted(() => {
+  stopSSEConnection()
+})
   </script>
   
   <style scoped>
   .robot-position-page {
-    padding: 20px;
+    padding-top: 20px;
     height: 100%;
     background-color: #081028;
     color: #ffffff;
@@ -210,11 +367,18 @@
   
   /* 지도 컨테이너 */
   .map-container {
-    flex: 1;
+    width: 800px;
+    height: 600px;
     background-color: #1a1f2e;
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 20px;
+    align-self: center;
+  }
+
+  .kakao-map {
+    width: 100%;
+    height: 100%;
   }
   
   .map {
@@ -427,6 +591,146 @@
       opacity: 1;
     }
   }
+
+  /* 로봇 정보 패널 */
+  .robot-info-panel {
+    background-color: #1a1f2e;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .robot-selector {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .connection-status {
+    margin-left: 8px;
+  }
+
+  .robot-select {
+    min-width: 200px;
+  }
+
+  .refresh-btn {
+    background-color: #3a57e8;
+    color: white;
+  }
+
+  .robot-details {
+    background-color: #222738;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+     .detail-grid {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 20px;
+   }
+
+   .detail-item {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     padding: 16px;
+     background-color: #1a1f2e;
+     border-radius: 8px;
+     border-bottom: 2px solid #3a57e8;
+   }
+
+   .detail-label {
+     font-size: 12px;
+     color: #8a92a6;
+     font-weight: 400;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+   }
+
+   .detail-value {
+     font-size: 16px;
+     font-weight: 600;
+     color: #ffffff;
+   }
+
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .status-badge.working {
+    background-color: rgba(19, 197, 114, 0.2);
+    color: #13c572;
+  }
+
+  .status-badge.waiting {
+    background-color: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+  }
+
+  .status-badge.charging {
+    background-color: rgba(58, 87, 232, 0.2);
+    color: #3a57e8;
+  }
+
+  .status-badge.error {
+    background-color: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+  }
+
+  .status-badge.unknown {
+    background-color: rgba(138, 146, 166, 0.2);
+    color: #8a92a6;
+  }
+
+  .detail-value.online {
+    color: #13c572;
+  }
+
+  .detail-value.offline {
+    color: #ff4757;
+  }
+
+  .detail-value.available {
+    color: #13c572;
+  }
+
+  .detail-value.unavailable {
+    color: #ff4757;
+  }
+
+  .no-robot-selected {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #8a92a6;
+    text-align: center;
+  }
+
+  .no-robot-selected p {
+    margin-top: 12px;
+    font-size: 16px;
+  }
   
   /* 컨트롤 패널 */
   .control-panel {
@@ -471,7 +775,9 @@
   }
   
   .control-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     padding: 8px 12px;
     margin-bottom: 8px;
@@ -487,6 +793,24 @@
   .control-btn:hover {
     background-color: #3a57e8;
   }
+
+  /* Vuetify 스타일 오버라이드 */
+  :deep(.v-select .v-field) {
+    background-color: #2a2f3e;
+    border-color: #3a3f4e;
+  }
+
+  :deep(.v-select .v-field__input) {
+    color: #ffffff;
+  }
+
+  :deep(.v-select .v-field__label) {
+    color: #8a92a6;
+  }
+
+  :deep(.v-btn) {
+    text-transform: none;
+  }
   
   /* 반응형 디자인 */
   @media (max-width: 768px) {
@@ -494,8 +818,9 @@
       flex-direction: column;
     }
     
-    .map {
-      min-height: 300px;
+    .map-container {
+      width: 100%;
+      height: 400px;
     }
     
     .building-label {
@@ -510,6 +835,21 @@
     .person-icon {
       font-size: 18px;
     }
+
+    .panel-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .robot-selector {
+      flex-direction: column;
+    }
+
+         .detail-grid {
+       grid-template-columns: 1fr 1fr;
+       gap: 12px;
+     }
   }
   
   @media (max-width: 480px) {
@@ -525,8 +865,22 @@
       padding: 15px;
     }
     
-    .map {
-      min-height: 250px;
+    .map-container {
+      width: 100%;
+      height: 300px;
     }
+
+         .robot-info-panel {
+       padding: 15px;
+     }
+
+     .detail-grid {
+       grid-template-columns: 1fr;
+       gap: 10px;
+     }
+
+     .detail-item {
+       padding: 12px;
+     }
   }
   </style>

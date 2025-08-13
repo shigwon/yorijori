@@ -16,19 +16,23 @@ const adminClient = axios.create({
 // 요청 인터셉터
 adminClient.interceptors.request.use(
   (config) => {
-    // 관리자 토큰이 있으면 헤더에 추가 (테스트 단계에서는 선택적)
-    const adminToken = localStorage.getItem('adminToken')
-    if (adminToken) {
-      config.headers.Authorization = `Bearer ${adminToken}`
+    // 세션 기반 인증 확인
+    const adminSession = localStorage.getItem('adminSession') || sessionStorage.getItem('adminSession')
+    const adminEmail = localStorage.getItem('adminEmail') || sessionStorage.getItem('adminEmail')
+    
+    if (adminSession === 'true' && adminEmail) {
+      // 세션 기반 인증 헤더 추가
+      config.headers['X-Admin-Session'] = 'true'
+      config.headers['X-Admin-Email'] = adminEmail
+      // console.log('세션 기반 API 요청:', config.method?.toUpperCase(), config.url)
     } else {
-      // 테스트 단계: 토큰이 없어도 요청 진행
-      console.log('테스트 모드: 토큰 없이 API 요청')
+      // 세션이 없는 경우에도 요청 진행 (테스트 환경)
+      console.log('세션 없이 API 요청 (테스트 모드)')
     }
     
     // 관리자 권한 헤더 추가
     config.headers['X-Admin-Role'] = 'admin'
     
-    console.log('Admin API 요청:', config.method?.toUpperCase(), config.url)
     return config
   },
   (error) => {
@@ -40,18 +44,22 @@ adminClient.interceptors.request.use(
 // 응답 인터셉터
 adminClient.interceptors.response.use(
   (response) => {
-    console.log('Admin API 응답:', response.status, response.config.url)
+    // console.log('Admin API 응답:', response.status, response.config.url)
     return response
   },
   (error) => {
     console.error('Admin API 응답 오류:', error.response?.status, error.response?.data)
     
-    // 401 Unauthorized 처리 (테스트 단계에서는 토큰이 없어도 허용)
+    // 401 Unauthorized 처리 (세션 만료)
     if (error.response?.status === 401) {
-      // 테스트 단계: 토큰이 없어도 로그인 페이지로 강제 이동하지 않음
-      console.log('테스트 모드: 401 오류 발생했지만 토큰이 없어도 계속 진행')
-      localStorage.removeItem('adminToken')
-      // window.location.href = '/' // 테스트 단계에서는 주석 처리
+      console.log('세션 만료 또는 인증 실패')
+      // 세션 정보 삭제
+      localStorage.removeItem('adminSession')
+      localStorage.removeItem('adminEmail')
+      sessionStorage.removeItem('adminSession')
+      sessionStorage.removeItem('adminEmail')
+      // 로그인 페이지로 리다이렉트
+      window.location.href = '/'
     }
     
     // 403 Forbidden 처리

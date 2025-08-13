@@ -10,27 +10,37 @@
             <div class="input-container">
               <input 
                 v-model="editedReceiptData.id" 
+                @input="validateOrderNumber"
                 type="text" 
                 class="info-input"
                 placeholder="주문번호를 입력하세요"
+                maxlength="6"
               />
               <span class="edit-icon">✏️</span>
             </div>
+          </div>
+          <div v-if="orderNumberError" class="error-message">
+            주문번호를 6자리로 입력해주세요
           </div>
           <div class="info-item">
             <span class="info-label">안심번호 :</span>
             <div class="input-container">
               <input 
                 v-model="editedReceiptData.tel" 
+                @input="formatPhoneNumber"
                 type="text" 
                 class="info-input"
-                placeholder="안심번호를 입력하세요"
+                placeholder="010-1234-5678"
+                maxlength="13"
               />
               <span class="edit-icon">✏️</span>
             </div>
           </div>
+          <div v-if="phoneError" class="error-message">
+            전화번호를 11자리로 입력해주세요
+          </div>
         </div>
-        <button class="next-button" @click="handleNext">다음</button>
+        <button class="next-button" @click="handleNext" :disabled="!isFormValid">다음</button>
         <p class="help-text" @click="handleProblemClick">주문정보에 문제가 생기셨나요?</p>
       </div>
       <div class="bottom-text">주문정보가 스캔되었어요.</div>
@@ -40,7 +50,7 @@
 
 <script setup>
 import { useAppState } from '../composables/useAppState'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const { goToScanOption, receiptData } = useAppState()
@@ -59,13 +69,70 @@ const editedReceiptData = ref({
   tel: ''
 })
 
+// 오류 상태
+const orderNumberError = ref(false)
+const phoneError = ref(false)
+
 onMounted(() => {
   // 스캔된 데이터로 초기화
   editedReceiptData.value = {
     id: receiptData.value.id || '',
     tel: receiptData.value.tel || ''
   }
+  
+  // 초기 유효성 검사
+  validateOrderNumber()
+  formatPhoneNumber()
 })
+
+// 폼 유효성 검사
+const isFormValid = computed(() => {
+  const orderValidChars = editedReceiptData.value.id.replace(/[^0-9a-zA-Z]/g, '')
+  const phoneNumbersOnly = editedReceiptData.value.tel.replace(/[^0-9]/g, '')
+  return orderValidChars.length === 6 && phoneNumbersOnly.length === 11
+})
+
+// 주문번호 유효성 검사 함수
+const validateOrderNumber = () => {
+  // 숫자와 영문자만 허용 (소문자, 대문자)
+  const validChars = editedReceiptData.value.id.replace(/[^0-9a-zA-Z]/g, '')
+  
+  // 6자리로 제한
+  if (validChars.length > 6) {
+    editedReceiptData.value.id = validChars.slice(0, 6)
+  } else {
+    editedReceiptData.value.id = validChars
+  }
+  
+  // 오류 메시지 업데이트
+  orderNumberError.value = validChars.length > 0 && validChars.length !== 6
+}
+
+// 전화번호 형식 자동 변환 함수
+const formatPhoneNumber = () => {
+  // 숫자만 추출
+  let numbers = editedReceiptData.value.tel.replace(/[^0-9]/g, '')
+  
+  // 11자리 이하로 제한
+  if (numbers.length > 11) {
+    numbers = numbers.slice(0, 11)
+  }
+  
+  // 형식에 맞게 하이픈 추가
+  let formatted = ''
+  if (numbers.length <= 3) {
+    formatted = numbers
+  } else if (numbers.length <= 7) {
+    formatted = numbers.slice(0, 3) + '-' + numbers.slice(3)
+  } else {
+    formatted = numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7)
+  }
+  
+  editedReceiptData.value.tel = formatted
+  
+  // 오류 메시지 업데이트
+  phoneError.value = numbers.length > 0 && numbers.length !== 11
+}
 
 const handleNext = () => {
   console.log('다음 버튼 클릭됨 - handleNext 시작')
@@ -77,6 +144,10 @@ const handleNext = () => {
   }
   
   console.log('receiptData 저장 완료:', receiptData.value)
+  
+  // localStorage에 저장하여 페이지 이동 시에도 데이터 유지
+  localStorage.setItem('receiptData', JSON.stringify(receiptData.value))
+  console.log('localStorage에 receiptData 저장 완료')
   
   // API 호출은 하되 기다리지 않음 (백그라운드에서 실행)
   fetch('/api/v1/orders/create', {
@@ -215,7 +286,7 @@ const handleProblemClick = () => {
   border: none;
   outline: none;
   text-align: right;
-  width: 60%;
+  width: 80%;
   padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.2s ease;
@@ -242,7 +313,7 @@ const handleProblemClick = () => {
   position: relative;
   display: flex;
   align-items: center;
-  width: 60%;
+  width: 65%;
 }
 
 .edit-icon {
@@ -257,6 +328,17 @@ const handleProblemClick = () => {
   opacity: 1;
   color: #7C3AED;
 }
+
+/* 오류 메시지 스타일 */
+.error-message {
+  color: #DC2626;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+  text-align: right;
+  width: 100%;
+}
+
 .next-button {
   width: 100%;
   height: 56px;
@@ -271,14 +353,24 @@ const handleProblemClick = () => {
   box-shadow: 0 4px 12px rgba(124, 60, 237, 0.2);
   margin-bottom: 24px;
 }
-.next-button:hover {
+
+.next-button:hover:not(:disabled) {
   background: #6D28D9;
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(124, 60, 237, 0.3);
 }
-.next-button:active {
+
+.next-button:active:not(:disabled) {
   transform: translateY(0);
 }
+
+.next-button:disabled {
+  background: #D1D5DB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .help-text {
   font-size: 14px;
   color: #9CA3AF;
