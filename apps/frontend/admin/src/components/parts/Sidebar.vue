@@ -99,14 +99,14 @@ const activeMenu = ref('dashboard')
 
 // 라우트 매핑
 const routes = {
-  'dashboard': '/dashboard-detail',
-  'robot-status': '/robot-status',
-  'likes': '/likes',
-  'chat': '/chat',
-  'calendar': '/calendar',
-  'system-logs': '/system-logs',
-  'driving-stream': '/driving-stream',
-  'robot-position': '/robot-position'
+  'dashboard': '/admin/dashboard-detail',
+  'robot-status': '/admin/robot-status',
+  'likes': '/admin/likes',
+  'chat': '/admin/chat',
+  'calendar': '/admin/calendar',
+  'system-logs': '/admin/system-logs',
+  'driving-stream': '/admin/driving-stream',
+  'robot-position': '/admin/robot-position'
 }
 
 // 메뉴 클릭 핸들러
