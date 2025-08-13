@@ -1,7 +1,7 @@
 <template>
     <div class="sidebar">
       <div class="logo">
-        <img src="./linky2-1-1.png" alt="Linky" class="logo-img" />
+        <!-- <img src="./linky2-1-1.png" alt="Linky" class="logo-img" /> -->
         <span class="logo-text">Linky</span>
       </div>
       
