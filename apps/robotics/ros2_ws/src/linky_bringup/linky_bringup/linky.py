@@ -4,26 +4,89 @@ import json
 import time
 import math
 import base64
-import mimetypes
-from urllib.parse import urlparse
-from urllib.request import urlopen, Request
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Bool, Int32MultiArray
+from rclpy.timer import Timer
+from std_msgs.msg import String, Bool
 from geometry_msgs.msg import Point
 
+# ===== 고정 설정(필요시 여기서만 수정) =====
+MAX_ORDERS        = 3
+ALLOW_OVERWRITE   = False
+ARRIVE_RADIUS_M   = 5.0
+DOOR_OPEN_SEC     = 5.0
+FACE_CACHE_DIR    = "/tmp/face_cache"
+FACE_MAX_BYTES    = 3 * 1024 * 1024
 
-def haversine_m(lat1, lon1, lat2, lon2):
+# ===== 공용 유틸 =====
+def haversine_m(lat1, lon1, lat2, lon2) -> float:
     R = 6371000.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2.0) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
+    a = (math.sin(dlat / 2.0) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+         * math.sin(dlon / 2.0) ** 2)
     return 2 * R * math.asin(math.sqrt(a))
 
+def _to_float(x, default=None) -> Optional[float]:
+    try:
+        if x is None:
+            return default
+        return float(x)
+    except Exception:
+        return default
 
+def _to_int(x, default=None) -> Optional[int]:
+    try:
+        if x is None:
+            return default
+        return int(x)
+    except Exception:
+        return default
+
+def _extract_pure_b64(s: str) -> str:
+    """'data:image/...;base64,....' 또는 순수 base64 → 순수 base64만 반환"""
+    if not isinstance(s, str):
+        return ""
+    s = s.strip()
+    if not s:
+        return ""
+    if ';base64,' in s:
+        s = s.split(';base64,', 1)[1]
+    return s
+
+def _validate_b64_and_optionally_save(order_id: str,
+                                      b64: str,
+                                      max_bytes: int,
+                                      cache_dir: str) -> Tuple[str, str]:
+    """
+    base64 디코드/용량 검증 후 (선택) 캐시에 저장.
+    return: (normalized_b64, face_path or "")
+    """
+    try:
+        raw = base64.b64decode(b64, validate=False)
+    except Exception:
+        raise ValueError("invalid base64 data")
+
+    if len(raw) > max_bytes:
+        raise ValueError(f"image too large ({len(raw)} > {max_bytes})")
+
+    face_path = ""
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        face_path = os.path.join(cache_dir, f"{order_id}.jpg")
+        with open(face_path, "wb") as f:
+            f.write(raw)
+    except Exception:
+        face_path = ""  # 저장 실패는 치명적 아님
+
+    normalized_b64 = base64.b64encode(raw).decode("ascii")
+    return normalized_b64, face_path
+
+# ===== 데이터 모델 =====
 @dataclass
 class Order:
     orderId: str
@@ -32,34 +95,24 @@ class Order:
     customerLatitude: float
     customerLongitude: float
     spaceNum: int
-    faceImageUrl: str
     createdTs: float = field(default_factory=lambda: time.time())
     status: str = "픽업존대기중"      # 픽업존대기중 → 배달중 → 배달완료
-    arrival_notified: bool = False   # 도착 이벤트(정지/얼굴등록) 1회만 수행
-    face_path: str = ""              # 캐시된 파일 경로
-    face_b64: str = ""               # 캐시된 base64(데이터 페이로드)
+    arrival_notified: bool = False   # 도착 이벤트 1회 보장
+    face_path: str = ""              # 캐시 파일 경로(옵션)
+    face_b64: str = ""               # 서버에서 받은 base64(정규화 형태)
 
-
+# ===== 노드 =====
 class OrdersStoreNode(Node):
     def __init__(self):
-        super().__init__('orders_store_node')
+        super().__init__('linky')
 
-        # ---- 파라미터 ----
-        self.declare_parameter('max_orders', 3)
-        self.declare_parameter('allow_overwrite', False)
-        self.declare_parameter('arrive_radius_m', 5.0)
-        self.declare_parameter('door_open_sec', 30.0)         # 문 열린 유지 시간
-        self.declare_parameter('face_cache_dir', '/tmp/face_cache')
-        self.declare_parameter('face_download_timeout', 5.0)
-        self.declare_parameter('face_max_bytes', 3 * 1024 * 1024)
-
-        self.max_orders = int(self.get_parameter('max_orders').value)
-        self.allow_overwrite = bool(self.get_parameter('allow_overwrite').value)
-        self.arrive_radius_m = float(self.get_parameter('arrive_radius_m').value)
-        self.door_open_sec = float(self.get_parameter('door_open_sec').value)
-        self.face_cache_dir = str(self.get_parameter('face_cache_dir').value)
-        self.face_dl_timeout = float(self.get_parameter('face_download_timeout').value)
-        self.face_max_bytes = int(self.get_parameter('face_max_bytes').value)
+        # ---- 설정(상수 바인딩) ----
+        self.max_orders       = int(MAX_ORDERS)
+        self.allow_overwrite  = bool(ALLOW_OVERWRITE)
+        self.arrive_radius_m  = float(ARRIVE_RADIUS_M)
+        self.door_open_sec    = float(DOOR_OPEN_SEC)
+        self.face_cache_dir   = str(FACE_CACHE_DIR)
+        self.face_max_bytes   = int(FACE_MAX_BYTES)
         os.makedirs(self.face_cache_dir, exist_ok=True)
 
         # ---- 상태 ----
@@ -71,22 +124,21 @@ class OrdersStoreNode(Node):
 
         # ---- 구독 ----
         self.create_subscription(String, '/server/order_list', self.on_order_list, 10)
-        self.create_subscription(Point, '/slam/position', self.location_callback, 10)
         self.create_subscription(String, '/face_match_by_order', self.on_face_match, 10)
 
         # ---- 퍼블리시 ----
-        self.pub_robot_status = self.create_publisher(String, '/robot/status', 10)                 # 대기중/주행중
-        self.pub_delivery_state = self.create_publisher(String, '/robot/delivery_state', 10)       # 픽업존대기중/배달중/배달완료
-        self.pub_delivery_state_json = self.create_publisher(String, '/robot/delivery_state_json', 10)  # {"orderId","state"}
-        self.pub_drive_enable = self.create_publisher(Bool, '/robot/drive_enable', 10)             # True=주행, False=정지
-        self.pub_face_register = self.create_publisher(String, '/face_db/register', 10)            # {"orderId","image_base64"}
-        self.pub_food_bay = self.create_publisher(Int32MultiArray, '/food_bay_cmd', 10)            # [bay, 1/0]
+        self.pub_robot_status       = self.create_publisher(String, '/robot/status', 10)                 # 대기중/주행중
+        self.pub_delivery_state     = self.create_publisher(String, '/robot/delivery_state', 10)         # 픽업존대기중/배달중/배달완료
+        self.pub_delivery_state_json= self.create_publisher(String, '/robot/delivery_state_json', 10)    # {"orderId","state"}
+        self.pub_drive_enable       = self.create_publisher(Bool,   '/robot/drive_enable', 10)           # True=주행, False=정지
+        self.pub_face_register      = self.create_publisher(String, '/face_db/register', 10)             # {"orderId","image_base64"}
+        self.pub_food_bay           = self.create_publisher(Int32MultiArray, '/food_bay_cmd', 10)        # [bay, OPEN/CLOSE]
 
         # 베이별 자동 닫기 타이머
-        self._bay_close_timers: Dict[int, rclpy.timer.Timer] = {}
+        self._bay_close_timers: Dict[int, Timer] = {}
 
         self.set_robot_status("대기중")
-        self.get_logger().info('OrdersStoreNode ready (drive_enable + face cache + food bay).')
+        self.get_logger().info('OrdersStoreNode ready (drive_enable + base64 face cache + food bay).')
 
     # ========== 주문 수신 ==========
     def on_order_list(self, msg: String):
@@ -98,37 +150,53 @@ class OrdersStoreNode(Node):
             payload = json.loads(msg.data)
             arr = payload["orders"] if isinstance(payload, dict) and "orders" in payload else payload
             if not isinstance(arr, list):
-                self.get_logger().warn('order_list must be list or {"orders":[...]}. Ignored.')
+                self.get_logger().warning('order_list must be list or {"orders":[...]}. Ignored.')
                 return
 
             new_list: List[Order] = []
             for o in arr[: self.max_orders]:
                 try:
+                    lat = _to_float(o.get("customerLatitude"))
+                    lon = _to_float(o.get("customerLongitude"))
+                    bay = _to_int(o.get("spaceNum"))
+                    if lat is None or lon is None or bay is None:
+                        raise ValueError("customerLatitude/Longitude/spaceNum required")
+
                     ord_obj = Order(
                         orderId=str(o.get("orderId", "")),
-                        code=str(o.get("code", "")),
+                        code=str(o.get("code", "")),     # 주문 번호/코드
                         tel=str(o.get("tel", "")),
-                        customerLatitude=float(o.get("customerLatitude")),
-                        customerLongitude=float(o.get("customerLongitude")),
-                        spaceNum=int(o.get("spaceNum")),
-                        faceImageUrl=str(o.get("faceImageUrl", ""))
+                        customerLatitude=lat,
+                        customerLongitude=lon,
+                        spaceNum=bay,
                     )
 
-                    # 얼굴 이미지 미리 캐시
-                    if ord_obj.faceImageUrl:
+                    # === 서버 base64 파싱 ===
+                    # 우선순위: faceImageBase64, face_base64
+                    img_b64_raw = (o.get("faceImageBase64")
+                                   or o.get("face_base64")
+                                   or o.get("faceImageUrl")
+                                   or "")
+                    img_b64_raw = _extract_pure_b64(str(img_b64_raw))
+
+                    if img_b64_raw:
                         try:
-                            face_path, face_b64 = self._download_face_to_cache(ord_obj.orderId, ord_obj.faceImageUrl)
+                            normalized_b64, face_path = _validate_b64_and_optionally_save(
+                                ord_obj.orderId, img_b64_raw, self.face_max_bytes, self.face_cache_dir
+                            )
+                            ord_obj.face_b64 = normalized_b64
                             ord_obj.face_path = face_path or ""
-                            ord_obj.face_b64 = face_b64 or ""
-                            if ord_obj.face_path:
-                                self.get_logger().info(f"[FaceCache] {ord_obj.orderId} -> {ord_obj.face_path}")
+                            if face_path:
+                                self.get_logger().info(f"[FaceCache] {ord_obj.orderId} -> {face_path}")
                         except Exception as e:
-                            self.get_logger().warn(f"[FaceCache] {ord_obj.orderId} download failed: {e}")
+                            self.get_logger().warning(f"[FaceCache] base64 invalid for {ord_obj.orderId}: {e}")
+                    else:
+                        self.get_logger().warning(f"[FaceCache] no base64 provided for {ord_obj.orderId}")
 
                     new_list.append(ord_obj)
 
                 except Exception as e:
-                    self.get_logger().warn(f"Skip invalid item: {e}")
+                    self.get_logger().warning(f"Skip invalid item: {e}")
 
             self.orders = new_list
             self._stored_once = True
@@ -137,8 +205,7 @@ class OrdersStoreNode(Node):
                 self.current_target_index = 0
                 self.set_order_state(self.current_target_index, "배달중")
                 self.set_robot_status("주행중")
-                # 주문 수신 즉시 출발
-                self.publish_drive_enable(True)
+                self.publish_drive_enable(True)   # 주문 수신 즉시 출발
             else:
                 self.current_target_index = None
                 self.set_robot_status("대기중")
@@ -151,8 +218,8 @@ class OrdersStoreNode(Node):
 
     # ========== 위치 갱신 ==========
     def location_callback(self, msg: Point):
-        self.robot_lat = float(msg.x)
-        self.robot_lon = float(msg.y)
+        self.robot_lat = _to_float(msg.x)
+        self.robot_lon = _to_float(msg.y)
         self.check_arrival()
 
     def check_arrival(self):
@@ -168,36 +235,32 @@ class OrdersStoreNode(Node):
             return
 
         try:
-            dist = haversine_m(self.robot_lat, self.robot_lon, target.customerLatitude, target.customerLongitude)
+            dist = haversine_m(self.robot_lat, self.robot_lon,
+                               target.customerLatitude, target.customerLongitude)
         except Exception as e:
-            self.get_logger().warn(f"distance calc failed: {e}")
+            self.get_logger().warning(f"distance calc failed: {e}")
             return
 
         if dist <= self.arrive_radius_m:
             if target.status != "픽업존대기중":
                 self.set_order_state(self.current_target_index, "픽업존대기중")
-                self.get_logger().info(f"[Arrived] orderId={target.orderId}, bay={target.spaceNum}, dist={dist:.2f} m")
+                self.get_logger().info(
+                    f"[Arrived] orderId={target.orderId}, bay={target.spaceNum}, dist={dist:.2f} m"
+                )
 
             if not target.arrival_notified:
                 # 도착 → 차량 정지
                 self.publish_drive_enable(False)
 
-                # 얼굴 DB 등록 (캐시된 base64 우선)
+                # 얼굴 DB 등록 (캐시된 base64만 사용)
                 img_b64 = target.face_b64
-                if not img_b64 and target.faceImageUrl:
-                    try:
-                        _, img_b64_retry = self._download_face_to_cache(target.orderId, target.faceImageUrl)
-                        img_b64 = img_b64_retry or ""
-                        target.face_b64 = img_b64
-                    except Exception as e:
-                        self.get_logger().warn(f"[FaceCache] retry failed ({target.orderId}): {e}")
-
                 if img_b64:
                     reg = String()
-                    reg.data = json.dumps({"orderId": target.orderId, "image_base64": img_b64}, ensure_ascii=False)
+                    reg.data = json.dumps({"orderId": target.orderId,
+                                           "image_base64": img_b64}, ensure_ascii=False)
                     self.pub_face_register.publish(reg)
                 else:
-                    self.get_logger().warn(f"[FaceDB] No face image available for orderId={target.orderId}")
+                    self.get_logger().warning(f"[FaceDB] No face image base64 for orderId={target.orderId}")
 
                 target.arrival_notified = True
         else:
@@ -211,7 +274,7 @@ class OrdersStoreNode(Node):
             order_id = str(data.get("orderId", ""))
             matched = bool(data.get("matched", False))
         except Exception as e:
-            self.get_logger().warn(f"face_match parse error: {e}")
+            self.get_logger().warning(f"face_match parse error: {e}")
             return
 
         if self.current_target_index is None or not self.orders:
@@ -224,7 +287,7 @@ class OrdersStoreNode(Node):
             return
 
         if target.status == "픽업존대기중" and matched:
-            # 음식칸 열기 → 일정 시간 뒤 닫기
+            # 음식칸 열기 → 일정 시간 뒤 1회 닫기
             self.open_food_bay_then_close(target.spaceNum, self.door_open_sec)
 
             # 주문 완료 → 다음 주문으로
@@ -236,21 +299,20 @@ class OrdersStoreNode(Node):
                 nxt = self.orders[self.current_target_index]
                 self.set_order_state(self.current_target_index, "배달중")
                 self.set_robot_status("주행중")
-                # 다음 주문 시작: 출발
                 self.publish_drive_enable(True)
-                self.get_logger().info(f"Next target -> orderId={nxt.orderId}, bay={nxt.spaceNum}")
+                self.get_logger().info(
+                    f"Next target -> orderId={nxt.orderId}, bay={nxt.spaceNum}"
+                )
             else:
                 self.current_target_index = None
                 self.set_robot_status("대기중")
                 self.publish_drive_enable(False)
                 self.get_logger().info("All deliveries completed. Robot is now 대기중.")
 
-    # ========== Food bay helpers ==========
-    def publish_food_bay(self, bay: int, state: int):
-        msg = Int32MultiArray()
-        msg.data = [int(bay), int(state)]  # 1=open, 0=close
+    def publish_food_bay(self, bay: int, state: str):
+        msg = String()
+        msg.data = f"{bay} {state}"
         self.pub_food_bay.publish(msg)
-        self.get_logger().info(f"[FoodBay] bay={bay} -> {'OPEN' if state==1 else 'CLOSE'}")
 
     def open_food_bay_then_close(self, bay: int, duration_sec: float):
         # 기존 타이머 있으면 취소
@@ -263,12 +325,12 @@ class OrdersStoreNode(Node):
             self._bay_close_timers.pop(bay, None)
 
         # 즉시 열기
-        self.publish_food_bay(bay, 1)
+        self.publish_food_bay(bay, 'OPEN')
 
-        # duration 후 닫기
+        # duration 후 1회 닫기 (콜백 내부에서 자기 자신 cancel)
         def cb():
             try:
-                self.publish_food_bay(bay, 0)
+                self.publish_food_bay(bay, 'CLOSE')
             finally:
                 t = self._bay_close_timers.pop(bay, None)
                 if t is not None:
@@ -281,94 +343,24 @@ class OrdersStoreNode(Node):
         self._bay_close_timers[bay] = timer
         self.get_logger().info(f"Scheduled auto-close for bay {bay} in {duration_sec:.1f}s")
 
-    # ========== 상태 퍼블리시 ==========
     def set_robot_status(self, s: str):
-        out = String(); out.data = s
+        out = String()
+        out.data = s
         self.pub_robot_status.publish(out)
 
     def set_order_state(self, idx: int, state: str):
         self.orders[idx].status = state
-        # 간단 문자열
-        out = String(); out.data = state
+        out = String()
+        out.data = state
         self.pub_delivery_state.publish(out)
-        # 식별 포함 JSON
         j = String()
         j.data = json.dumps({"orderId": self.orders[idx].orderId, "state": state}, ensure_ascii=False)
         self.pub_delivery_state_json.publish(j)
 
     def publish_drive_enable(self, enable: bool):
-        m = Bool(); m.data = bool(enable)
+        m = Bool()
+        m.data = bool(enable)
         self.pub_drive_enable.publish(m)
-
-    # ========== 얼굴 캐시 헬퍼 ==========
-    def _download_face_to_cache(self, order_id: str, url_or_data: str):
-        """
-        url_or_data:
-         - data URL (data:image/...;base64,....)
-         - 순수 base64 문자열
-         - http/https URL
-        return: (face_path, face_b64)
-        """
-        s = (url_or_data or "").strip()
-
-        # data URL
-        if s.startswith('data:') and ';base64,' in s:
-            b64 = s.split(';base64,', 1)[1]
-            data = base64.b64decode(b64, validate=False)
-            ext = self._guess_ext_from_data_url(s)
-            face_path = os.path.join(self.face_cache_dir, f"{order_id}{ext}")
-            with open(face_path, 'wb') as f:
-                f.write(data)
-            return face_path, b64
-
-        # 순수 base64일 가능성
-        if not s.lower().startswith('http'):
-            try:
-                data = base64.b64decode(s, validate=False)
-                face_path = os.path.join(self.face_cache_dir, f"{order_id}.jpg")
-                with open(face_path, 'wb') as f:
-                    f.write(data)
-                b64 = base64.b64encode(data).decode('ascii')
-                return face_path, b64
-            except Exception:
-                raise ValueError("faceImageUrl is neither http(s) nor base64")
-
-        # http/https URL
-        parsed = urlparse(s)
-        if parsed.scheme not in ('http', 'https'):
-            raise ValueError(f"unsupported scheme: {parsed.scheme}")
-
-        req = Request(s, headers={'User-Agent': 'FaceFetcher/1.0'})
-        with urlopen(req, timeout=self.face_dl_timeout) as resp:
-            content_len = resp.getheader('Content-Length')
-            if content_len is not None:
-                try:
-                    if int(content_len) > self.face_max_bytes:
-                        raise ValueError(f"image too large: {content_len} > {self.face_max_bytes}")
-                except Exception:
-                    pass
-
-            data = resp.read(self.face_max_bytes + 1)
-            if len(data) > self.face_max_bytes:
-                raise ValueError(f"image too large (>{self.face_max_bytes} bytes)")
-
-            ctype = (resp.getheader('Content-Type') or '').split(';')[0].strip()
-            ext = mimetypes.guess_extension(ctype) or '.jpg'
-            face_path = os.path.join(self.face_cache_dir, f"{order_id}{ext}")
-            with open(face_path, 'wb') as f:
-                f.write(data)
-
-            b64 = base64.b64encode(data).decode('ascii')
-            return face_path, b64
-
-    def _guess_ext_from_data_url(self, data_url: str) -> str:
-        try:
-            head = data_url.split(',', 1)[0]
-            ctype = head.split(':', 1)[1].split(';', 1)[0]
-            return mimetypes.guess_extension(ctype) or '.jpg'
-        except Exception:
-            return '.jpg'
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -380,7 +372,6 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
