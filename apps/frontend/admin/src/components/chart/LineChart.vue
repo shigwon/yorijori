@@ -121,7 +121,9 @@ const chartOptions = computed(() => {
       toolbar: {
         show: false
       },
-      background: 'transparent'
+      background: 'transparent',
+      redrawOnWindowResize: true,
+      redrawOnParentResize: true
     },
     stroke: {
       curve: 'smooth',
@@ -150,14 +152,21 @@ const chartOptions = computed(() => {
         style: {
           colors: '#8a92a6',
           fontSize: '12px'
-        }
+        },
+        rotate: 0,
+        rotateAlways: false,
+        maxHeight: 60,
+        trim: false,
+        showDuplicates: false
       },
       axisBorder: {
         show: false
       },
       axisTicks: {
         show: false
-      }
+      },
+      tickAmount: 24,
+      tickPlacement: 'on'
     },
           yaxis: {
         labels: {
@@ -200,6 +209,27 @@ const chartOptions = computed(() => {
     theme: {
       mode: 'dark'
     },
+    responsive: [{
+      breakpoint: 480,
+      options: {
+        xaxis: {
+          labels: {
+            fontSize: '10px',
+            maxHeight: 40
+          }
+        }
+      }
+    }, {
+      breakpoint: 768,
+      options: {
+        xaxis: {
+          labels: {
+            fontSize: '11px',
+            maxHeight: 50
+          }
+        }
+      }
+    }],
     markers: {
       size: 7,
       colors: props.colors,
@@ -225,16 +255,16 @@ const chartOptions = computed(() => {
 .date-selector {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px;
   background-color: #2a2f3e;
   border-radius: 8px;
 }
 
 .date-label {
   color: #b6bace;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -242,10 +272,10 @@ const chartOptions = computed(() => {
 .date-input {
   background-color: #222738;
   border: 1px solid #374151;
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: 4px;
+  padding: 4px 8px;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 12px;
   outline: none;
   transition: border-color 0.3s ease;
 }
