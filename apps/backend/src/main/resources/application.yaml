@@ -22,7 +22,7 @@ spring:
       driver-class-name: org.postgresql.Driver
       url: ${POSTGRES_DB_URL}
       username: ${POSTGRES_DB_USERNAME}
-    password: ${POSTGRES_DB_PASSWORD}
+      password: ${POSTGRES_DB_PASSWORD}
 
   hikari:
     minimum-idle: 5
