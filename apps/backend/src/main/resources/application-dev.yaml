@@ -22,3 +22,7 @@ spring:
     broker-url: ${MOSQUITTO_URL}
     client-id: ${MOSQUITTO_CLIENT_ID}
     topic: ${MOSQUITTO_CLIENT_ID}
+
+ocr:
+  server:
+    address: localhost
