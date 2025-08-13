@@ -7,52 +7,63 @@ import RobotPosition from '../components/pages/RobotPosition.vue'
 import WebRTCTest from '../components/pages/WebRTCTest.vue'
 import Likes from '../components/pages/Likes.vue'
 import DashboardDetail from '../components/pages/DashboardDetial.vue'
+import TestSSE from '../components/pages/TESTsse.vue'
+
+// 환경에 따른 경로 설정
+const isDevelopment = import.meta.env.DEV
+const prefix = isDevelopment ? '' : '/admin'
+const baseUrl = isDevelopment ? '/' : '/admin/'
 
 const routes = [
   {
-    path: '/admin',
+    path: `${prefix}`,
     name: 'Login',
     component: Login
   },
   {
-    path: '/admin/main',
+    path: `${prefix}/main`,
     name: 'Administrator',
     component: Administrator
   },
   {
-    path: '/admin/dashboard-detail',
+    path: `${prefix}/dashboard-detail`,
     name: 'DashboardDetail',
     component: DashboardDetail
   },
   {
-    path: '/admin/log',
+    path: `${prefix}/log`,
     name: 'Log',
     component: Log
   },
   {
-    path: '/admin/robot-status',
+    path: `${prefix}/robot-status`,
     name: 'RobotStatus',
     component: RobotStatus
   },
   {
-    path: '/admin/robot-position',
+    path: `${prefix}/robot-position`,
     name: 'RobotPosition',
     component: RobotPosition
   },
   {
-    path: '/admin/webrtc-test',
+    path: `${prefix}/webrtc-test`,
     name: 'WebRTCTest',
     component: WebRTCTest
   },
   {
-    path: '/admin/likes',
+    path: `${prefix}/likes`,
     name: 'Likes',
     component: Likes
+  },
+  {
+    path: `${prefix}/test-sse`,
+    name: 'TestSSE',
+    component: TestSSE
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(baseUrl),
   routes
 })
 

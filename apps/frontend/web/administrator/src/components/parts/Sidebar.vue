@@ -1,17 +1,18 @@
 <template>
     <div class="sidebar">
       <div class="logo">
-        <img src="./linky2-1-1.png" alt="Linky" class="logo-img" />
-        <span class="logo-text">Linky</span>
+        <img src="/링키 1차안.png" alt="Linky" class="logo-img" />
+        <span class="logo-text"
+        @click="setActiveMenu('main')">Linky</span>
       </div>
       
       <nav class="nav-menu">
         <div 
           class="nav-item" 
-          
+          :class="{ active: activeMenu === 'dashboard' }"
           @click="setActiveMenu('dashboard')"
         >
-          <i class="nav-icon">📊</i>
+          <v-icon class="nav-icon">mdi-view-dashboard</v-icon>
           <span>Dashboard</span>
         </div>
         <div 
@@ -19,7 +20,7 @@
           :class="{ active: activeMenu === 'robot-status' }"
           @click="setActiveMenu('robot-status')"
         >
-          <i class="nav-icon">🤖</i>
+          <v-icon class="nav-icon">mdi-robot</v-icon>
           <span>Robot Status</span>
         </div>
         <div 
@@ -27,58 +28,37 @@
           :class="{ active: activeMenu === 'likes' }"
           @click="setActiveMenu('likes')"
         >
-          <i class="nav-icon">❤️</i>
+          <v-icon class="nav-icon">mdi-heart</v-icon>
           <span>Likes</span>
         </div>
-        <div 
-          class="nav-item" 
-          :class="{ active: activeMenu === 'chat' }"
-          @click="setActiveMenu('chat')"
-        >
-          <i class="nav-icon">💬</i>
-          <span>Chat</span>
-        </div>
-        <div 
-          class="nav-item" 
-          :class="{ active: activeMenu === 'calendar' }"
-          @click="setActiveMenu('calendar')"
-        >
-          <i class="nav-icon">📅</i>
-          <span>Calendar</span>
-        </div>
+        
+        
         <div 
           class="nav-item" 
           :class="{ active: activeMenu === 'system-logs' }"
           @click="setActiveMenu('system-logs')"
         >
-          <i class="nav-icon">💻</i>
+          <v-icon class="nav-icon">mdi-file-document</v-icon>
           <span>System Logs</span>
         </div>
-        <div 
-          class="nav-item" 
-          :class="{ active: activeMenu === 'driving-stream' }"
-          @click="setActiveMenu('driving-stream')"
-        >
-          <i class="nav-icon">🎥</i>
-          <span>Driving Stream</span>
-        </div>
+        
         <div 
           class="nav-item" 
           :class="{ active: activeMenu === 'robot-position' }"
           @click="setActiveMenu('robot-position')"
         >
-          <i class="nav-icon">📍</i>
+          <v-icon class="nav-icon">mdi-map-marker</v-icon>
           <span>Robot Position</span>
         </div>
       </nav>
       
       <div class="sidebar-bottom">
-        <div class="nav-item">
-          <i class="nav-icon">⚙️</i>
+        <div class="nav-item" @click="openSettings">
+          <v-icon class="nav-icon">mdi-cog</v-icon>
           <span>Settings</span>
         </div>
         <div class="nav-item">
-          <i class="nav-icon">⏻</i>
+          <v-icon class="nav-icon">mdi-power</v-icon>
           <span>Power</span>
         </div>
       </div>
@@ -89,30 +69,31 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { defineEmits } from 'vue'
+  import SettingsModal from './SettingsModal.vue'
   
   const router = useRouter()
-  const emit = defineEmits(['menu-change'])
+  const emit = defineEmits(['menu-change', 'open-settings'])
   
   // Reactive data
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const emit = defineEmits(['menu-change'])
 
 // 현재 활성 메뉴
 const activeMenu = ref('dashboard')
 
+// 환경에 따른 경로 설정
+const isDevelopment = import.meta.env.DEV
+const prefix = isDevelopment ? '' : '/admin'
+
 // 라우트 매핑
 const routes = {
-  'dashboard': '/dashboard-detail',
-  'robot-status': '/robot-status',
-  'likes': '/likes',
-  'chat': '/chat',
-  'calendar': '/calendar',
-  'system-logs': '/system-logs',
-  'driving-stream': '/driving-stream',
-  'robot-position': '/robot-position'
+  'dashboard': `${prefix}/dashboard-detail`,
+  'robot-status': `${prefix}/robot-status`,
+  'likes': `${prefix}/likes`,
+  'chat': `${prefix}/chat`,
+  'calendar': `${prefix}/calendar`,
+  'system-logs': `${prefix}/log`,
+  'driving-stream': `${prefix}/webrtc-test`,
+  'robot-position': `${prefix}/robot-position`,
+  'main': `${prefix}/main`
 }
 
 // 메뉴 클릭 핸들러
@@ -136,8 +117,11 @@ const goToSystemLogs = () => setActiveMenu('system-logs')
 const goToDrivingStream = () => setActiveMenu('driving-stream')
 const goToRobotPosition = () => setActiveMenu('robot-position')
 
-  </script>
-  
+// Settings 모달 열기
+const openSettings = () => {
+  emit('open-settings')
+}
+</script>
   <style scoped>
   .sidebar {
     width: 250px;
@@ -163,6 +147,7 @@ const goToRobotPosition = () => setActiveMenu('robot-position')
     font-size: 24px;
     font-weight: bold;
     color: #3dade5;
+    cursor: pointer;
   }
   
   .nav-menu {
@@ -184,14 +169,12 @@ const goToRobotPosition = () => setActiveMenu('robot-position')
     transform: translateX(5px);
   }
   
-  .nav-item.active {
-    background-color: #3a57e8;
-    box-shadow: 0 2px 8px rgba(58, 87, 232, 0.3);
-  }
+
   
   .nav-icon {
     margin-right: 12px;
     font-size: 18px;
+    color: inherit;
   }
   
   .sidebar-bottom {
