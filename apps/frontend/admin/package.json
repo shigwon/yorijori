@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "axios": "^1.11.0",
     "openvidu-browser": "^2.31.0",
     "pinia": "^3.0.3",
