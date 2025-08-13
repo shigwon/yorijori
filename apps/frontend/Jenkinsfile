@@ -61,13 +61,13 @@ pipeline {
                         },
                         adminBuild: {
                             dir('apps/frontend/web/administrator') {
-                                                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Current directory: ${pwd()}"
                                 sh "echo Installing dependencies and building the application..."
                                 sh "npm install"
                                 sh "echo Building the application..."
                                 sh 'npm run build'
                             }
-                            stash includes: 'apps/frontend/admin/dist/**/*', name: 'frontend-admin-build'
+                            stash includes: 'apps/frontend/administrator/dist/**/*', name: 'frontend-admin-build'
                         }
                     )
                 }
