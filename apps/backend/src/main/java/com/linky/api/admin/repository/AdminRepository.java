@@ -20,4 +20,9 @@ public interface AdminRepository {
 
     List<Map<String, Object>> getDailyOrderCountInWeek(@Param("startDateTime") LocalDateTime startDateTime,
                                                        @Param("endDateTime") LocalDateTime endDateTime);
+
+    List<Map<String, Object>> getOrderLogs(@Param("state") String state,
+                                           @Param("startTime") LocalDateTime startTime,
+                                           @Param("endTime") LocalDateTime endTime,
+                                           @Param("robotId") Integer robotId);
 }
