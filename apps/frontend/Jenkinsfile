@@ -67,7 +67,7 @@ pipeline {
                                 sh "echo Building the application..."
                                 sh 'npm run build'
                             }
-                            stash includes: 'apps/frontend/administrator/dist/**/*', name: 'frontend-admin-build'
+                            stash includes: 'apps/frontend/web/administrator/dist/**/*', name: 'frontend-admin-build'
                         }
                     )
                 }
