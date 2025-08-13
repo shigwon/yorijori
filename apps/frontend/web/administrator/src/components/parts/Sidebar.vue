@@ -74,6 +74,7 @@
   const router = useRouter()
   const emit = defineEmits(['menu-change', 'open-settings'])
   
+
 // 현재 활성 메뉴
 const activeMenu = ref('dashboard')
 
