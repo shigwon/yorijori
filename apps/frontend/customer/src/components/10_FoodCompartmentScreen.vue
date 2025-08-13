@@ -108,11 +108,12 @@ const handleSurvey = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 40px;
 }
 
 .babo-image {
-  width: 240px;
-  height: 240px;
+  width: 300px;
+  height: 300px;
   object-fit: contain;
   margin-bottom: 15px;
 }
@@ -124,10 +125,9 @@ const handleSurvey = () => {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  position: fixed;
-  top: 480px;
-  left: 0;
-  right: 0;
+  margin-top: auto;
+  margin-bottom: 20px;
+  width: 100%;
   z-index: 1000;
 }
 
@@ -135,6 +135,7 @@ const handleSurvey = () => {
 .confirm-button {
   width: 100%;
   max-width: 300px;
+  min-width: 280px;
   height: 56px;
   background: #7C3AED;
   border: none;
@@ -187,12 +188,11 @@ const handleSurvey = () => {
   }
   
   .babo-image {
-    width: 200px;
-    height: 200px;
+    width: 260px;
+    height: 260px;
   }
   
   .bottom-section {
-    top: 420px;
     padding: 25px 20px;
   }
   
