@@ -93,12 +93,6 @@
   const router = useRouter()
   const emit = defineEmits(['menu-change'])
   
-  // Reactive data
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const emit = defineEmits(['menu-change'])
 
 // 현재 활성 메뉴
 const activeMenu = ref('dashboard')
