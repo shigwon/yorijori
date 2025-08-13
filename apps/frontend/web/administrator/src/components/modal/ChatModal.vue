@@ -14,7 +14,7 @@
               <!-- 어시스턴트 메시지 -->
               <div class="message assistant-message">
                 <div class="avatar">
-                  <img src="./assistant-avatar.png" alt="Assistant" />
+                  <!-- <img src="./assistant-avatar.png" alt="Assistant" /> -->
                 </div>
                 <div class="message-content">
                   <div class="message-sender">Assistant</div>
@@ -48,7 +48,7 @@
               <!-- 어시스턴트 타이핑 -->
               <div class="message assistant-message">
                 <div class="avatar">
-                  <img src="./assistant-avatar.png" alt="Assistant" />
+                  <!-- <img src="./assistant-avatar.png" alt="Assistant" /> -->
                 </div>
                 <div class="message-content">
                   <div class="message-sender">Assistant</div>
