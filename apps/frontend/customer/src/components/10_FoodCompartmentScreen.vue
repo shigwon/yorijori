@@ -54,7 +54,7 @@ const handleSurvey = () => {
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  background: #7C3AED;
+  background: #FFFFFF;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -82,7 +82,7 @@ const handleSurvey = () => {
 .title-text {
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: #333333;
   margin-bottom: 30px;
   line-height: 1.4;
 }
@@ -90,7 +90,7 @@ const handleSurvey = () => {
 .number-part {
   font-size: 32px;
   font-weight: 900;
-  color: white;
+  color: #7C3AED;
   margin: 0 4px;
 }
 
@@ -108,11 +108,12 @@ const handleSurvey = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 40px;
 }
 
 .babo-image {
-  width: 240px;
-  height: 240px;
+  width: 300px;
+  height: 300px;
   object-fit: contain;
   margin-bottom: 15px;
 }
@@ -124,10 +125,9 @@ const handleSurvey = () => {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  position: fixed;
-  top: 480px;
-  left: 0;
-  right: 0;
+  margin-top: auto;
+  margin-bottom: 20px;
+  width: 100%;
   z-index: 1000;
 }
 
@@ -135,24 +135,28 @@ const handleSurvey = () => {
 .confirm-button {
   width: 100%;
   max-width: 300px;
+  min-width: 280px;
   height: 56px;
-  background: white;
+  background: #7C3AED;
   border: none;
   border-radius: 12px;
   font-size: 18px;
   font-weight: 600;
-  color: #1F2937;
+  color: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 .confirm-button:hover {
-  background: #F3F4F6;
+  background: #6D28D9;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
 }
 
 .confirm-button:active {
   transform: translateY(0);
+  background: #5B21B6;
 }
 
 /* Survey Link */
@@ -184,12 +188,11 @@ const handleSurvey = () => {
   }
   
   .babo-image {
-    width: 200px;
-    height: 200px;
+    width: 260px;
+    height: 260px;
   }
   
   .bottom-section {
-    top: 420px;
     padding: 25px 20px;
   }
   
