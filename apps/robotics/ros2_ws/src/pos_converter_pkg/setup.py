@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'navigator_pkg'
+package_name = 'pos_converter_pkg'
 
 setup(
     name=package_name,
@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'pos_converter_node = pos_converter_pkg.pos_converter_node:main',
         ],
     },
 )

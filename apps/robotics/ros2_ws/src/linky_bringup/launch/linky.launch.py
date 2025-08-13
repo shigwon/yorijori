@@ -10,15 +10,15 @@ import os
 
 def generate_launch_description():    
     return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution([
-                    FindPackageShare('realsense2_linky'),
-                    'launch',
-                    'realsense2_linky.launch.py'
-                ])
-            )
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         PathJoinSubstitution([
+        #             FindPackageShare('realsense2_linky'),
+        #             'launch',
+        #             'realsense2_linky.launch.py'
+        #         ])
+        #     )
+        # ),
 
         Node(
             package='face_recognition_pkg',
@@ -26,11 +26,22 @@ def generate_launch_description():
             name='face_recognition',
             output='screen'
         ),
-        
+        Node(
+            package='linky_bringup',
+            executable='linky',
+            name='linky',
+            output='screen'
+        ),
         Node(
             package='mqtt_bridge_pkg',
             executable='mqtt_bridge_node',
             name='mqtt_bridge',
+            output='screen'
+        ),
+        Node(
+            package='pos_converter_pkg',
+            executable='pos_converter_node',
+            name='pos_converter',
             output='screen'
         ),
         Node(
@@ -39,11 +50,10 @@ def generate_launch_description():
             name='drive_controller',
             output='screen'
         ),
-
         Node(
-            package='slam_pkg',
-            executable='slam_node',
-            name='slam',
+            package='vehicle_contoller_pkg',
+            executable='pure_pursuit_controller_node',
+            name='pure_pursuit_controller',
             output='screen'
-        )
+        ),
     ])

@@ -23,6 +23,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'linky = linky_bringup.linky:main',
         ],
     },
 )
