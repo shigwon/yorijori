@@ -59,7 +59,7 @@ pipeline {
                             stash includes: 'apps/frontend/customer/dist/**/*', name: 'frontend-customer-build'
                         },
                         adminBuild: {
-                            dir('apps/frontend/web/administrator') {
+                            dir('apps/frontend/admin') {
                                 sh "echo Current directory: ${pwd()}"
                                 sh "echo Installing dependencies and building the application..."
                                 sh "npm install"
