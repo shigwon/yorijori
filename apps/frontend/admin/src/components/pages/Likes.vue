@@ -10,7 +10,7 @@
                 <option value="this-month">This Month</option>
                 <option value="this-year">This Year</option>
               </select>
-              <i class="dropdown-icon">▼</i>
+              <v-icon class="dropdown-icon">mdi-chevron-down</v-icon>
             </div>
           </div>
           
@@ -82,13 +82,13 @@
                 <option value="this-month">This Month</option>
                 <option value="this-year">This Year</option>
               </select>
-              <i class="dropdown-icon">▼</i>
+              <v-icon class="dropdown-icon">mdi-chevron-down</v-icon>
             </div>
           </div>
           
           <div class="rating-display">
             <div class="star-rating">
-              <span class="star">⭐</span>
+              <v-icon class="star">mdi-star</v-icon>
               <span class="rating-value">{{ averageRating.toFixed(1) }}</span>
             </div>
           </div>
@@ -103,23 +103,25 @@
               <button @click="fetchReviews" class="retry-button">다시 시도</button>
             </div>
             <div v-else>
-              <div 
-                v-for="review in reviews" 
-                :key="review.id" 
-                class="review-item"
-                @click="openReviewModal(review.id)"
-              >
-                <div class="review-content">
-                  <div class="review-header">
-                    <div class="review-rating">
-                      <span class="star">⭐</span>
-                      <span class="rating">{{ review.rating }}</span>
+              <div class="reviews-list">
+                <div 
+                  v-for="review in reviews" 
+                  :key="review.id" 
+                  class="review-item"
+                  @click="openReviewModal(review.id)"
+                >
+                  <div class="review-content">
+                    <div class="review-header">
+                      <div class="review-rating">
+                        <span class="star">⭐</span>
+                        <span class="rating">{{ review.rating }}</span>
+                      </div>
+                      <div class="review-date">{{ formatDate(review.createdAt) }}</div>
                     </div>
-                    <div class="review-date">{{ formatDate(review.createdAt) }}</div>
-                  </div>
-                  <p class="review-text">{{ review.content }}</p>
-                  <div class="review-footer">
-                    <span class="order-code">주문번호: {{ review.orderCode }}</span>
+                    <p class="review-text">{{ review.content }}</p>
+                    <div class="review-footer">
+                      <span class="order-code">주문번호: {{ review.orderCode }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -364,18 +366,20 @@
   .likes-container {
     min-height: 100vh;
     min-width: 100%;
-    background-color: #0f1419;
+    
     color: white;
   }
   
   .content-area {
-    padding: 30px;
-    background-color: #0f1419;
+    padding-top: 20px;
     min-height: 100vh;
     display: flex;
     flex-direction: row;
     gap: 24px;
     width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   
   /* Likes Section */
@@ -389,6 +393,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   
   .section-header {
@@ -446,6 +452,7 @@
   
   .star {
     font-size: 24px;
+    color: #ffd700;
   }
   
   .rating-value {
@@ -459,7 +466,16 @@
     flex-direction: column;
     gap: 12px;
     flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+  
+  .reviews-list {
+    flex: 1;
     overflow-y: auto;
+    padding-right: 8px;
+    min-height: 0;
+    max-height: calc(100vh - 300px);
   }
   
   .review-item {
@@ -532,8 +548,12 @@
     justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-top: 20px;
-    padding: 16px 0;
+    margin-top: 16px;
+    padding: 12px 0;
+    flex-shrink: 0;
+    border-top: 1px solid #2a2f3e;
+    padding-top: 16px;
+    background-color: #1a1f2e;
   }
   
   .page-btn {
@@ -743,6 +763,8 @@
     flex: 1;
     min-width: 0;
     height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   
   /* 가로 막대 그래프 */
@@ -893,12 +915,16 @@
     .content-area {
       padding: 20px;
       flex-direction: column;
+      height: auto;
+      overflow: visible;
     }
     
     .likes-section,
     .photo-registration-section {
       flex: none;
       width: 100%;
+      height: auto;
+      overflow: visible;
     }
     
     .section-header {
@@ -930,6 +956,10 @@
     
     .bar-wrapper {
       width: 100%;
+    }
+    
+    .reviews-list {
+      max-height: 400px;
     }
   }
   

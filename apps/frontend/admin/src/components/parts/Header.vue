@@ -5,7 +5,7 @@
       </div>
       <div class="header-right">
         <div class="notification" @click="handleNotificationClick">
-          <i class="notification-icon">🔔</i>
+          <v-icon class="notification-icon">mdi-bell</v-icon>
           <span class="notification-badge">{{ notificationCount }}</span>
         </div>
         <div class="user-profile" @click="handleProfileClick">
@@ -21,6 +21,7 @@
   
   <script setup>
   import { defineProps, defineEmits } from 'vue'
+  import NotificationModal from './NotificationModal.vue'
   
   const props = defineProps({
     title: {
@@ -41,11 +42,11 @@
     },
     userAvatar: {
       type: String,
-      default: './avatar.png'
+      default: '/피카츄.png'
     }
   })
   
-  const emit = defineEmits(['notification-click', 'profile-click'])
+  const emit = defineEmits(['notification-click', 'profile-click', 'notification-count-changed'])
   
   const handleNotificationClick = () => {
     emit('notification-click')
@@ -54,6 +55,10 @@
   const handleProfileClick = () => {
     emit('profile-click')
   }
+  
+  const handleNotificationCountChanged = (count) => {
+    emit('notification-count-changed', count)
+  }
   </script>
   
   <style scoped>
@@ -61,7 +66,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    
     padding-bottom: 20px;
     border-bottom: 1px solid #2a2f3e;
   }
@@ -90,6 +95,7 @@
   
   .notification-icon {
     font-size: 20px;
+    color: inherit;
   }
   
   .notification-badge {

@@ -60,24 +60,62 @@
             <div class="card-header">
               <button class="card-title-btn likes-btn" @click="goToLikes">Likes</button>
               <div class="dropdown">
-                <span>This Week</span>
-                <i class="dropdown-icon">▼</i>
+                
               </div>
             </div>
             <div class="card-content">
-              <div class="chart-container">
-                <div class="donut-chart">
-                  <div class="chart-outer"></div>
-                  <div class="chart-inner"></div>
-                </div>
-                <div class="chart-legend">
-                  <div class="legend-item">
-                    <span class="legend-color blue"></span>
-                    <span>Fashion 251K</span>
+              <div class="likes-layout">
+                <!-- 왼쪽: 도넛 차트 -->
+                <div class="donut-section">
+                  <div class="donut-chart">
+                    <div class="chart-outer"></div>
+                    <div class="chart-inner"></div>
                   </div>
-                  <div class="legend-item">
-                    <span class="legend-color light-blue"></span>
-                    <span>Accessories 176K</span>
+                  <div class="chart-legend">
+                    <div class="legend-item">
+                      <div class="legend-color blue"></div>
+                      <span>만족</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color light-blue"></div>
+                      <span>불만족</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 오른쪽: 리뷰 정보 -->
+                <div class="reviews-section">
+                  <!-- 평균 별점 표시 -->
+                  <div class="rating-summary">
+                    <div class="star-rating">
+                      <v-icon class="star">mdi-star</v-icon>
+                      <span class="rating-value">4.1</span>
+                    </div>
+                    <div class="rating-text">평균 별점</div>
+                  </div>
+                  
+                  <!-- 최근 리뷰 미리보기 -->
+                  <div class="reviews-preview">
+                    <div class="preview-header">
+                      <h4>최근 리뷰</h4>
+                      <span class="review-count">총 15개</span>
+                    </div>
+                    <div class="preview-list">
+                      <div class="preview-item">
+                        <div class="preview-rating">
+                          <v-icon class="star small">mdi-star</v-icon>
+                          <span>5</span>
+                        </div>
+                        <div class="preview-content">정말 혁신적인 서비스네요! 배달도 빠르고...</div>
+                      </div>
+                      <div class="preview-item">
+                        <div class="preview-rating">
+                          <v-icon class="star small">mdi-star</v-icon>
+                          <span>3</span>
+                        </div>
+                        <div class="preview-content">배달은 됐지만 로봇이 약간 소음이...</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -85,23 +123,7 @@
           </div>
   
           <!-- Chat 카드 -->
-          <div class="card chat-card">
-            <div class="card-header">
-              <button class="card-title-btn chat-btn">Chat</button>
-            </div>
-            <div class="card-content">
-              <div class="chat-grid">
-                <div 
-                  class="chat-button" 
-                  v-for="i in 12" 
-                  :key="i"
-                  @click="openChatModal(`주문번호 ${i}번`)"
-                >
-                  주문번호 {{ i }}번
-                </div>
-              </div>
-            </div>
-          </div>
+          <ChatCard @open-chat="openChatModal" />
         </div>
   
         <!-- 하단 카드들 -->
@@ -111,8 +133,8 @@
             <div class="card-header">
               <button class="card-title-btn dashboard-btn" @click="goToDashboardDetail">Dashboard</button>
               <div class="dropdown">
-                <span>This Week</span>
-                <i class="dropdown-icon">▼</i>
+                
+               
               </div>
             </div>
             <div class="card-content">
@@ -123,7 +145,7 @@
                   :colors="chartColors"
                   :yAxisMax="160"
                   :yAxisStep="40"
-                  height="200"
+                  height="180"
                 />
               </div>
             </div>
@@ -164,10 +186,10 @@
   
   <script setup>
   import { ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import BarChart from '../chart/BarChart.vue'
-  import ChatModal from '../modal/ChatModal.vue'
-  
+import { useRouter } from 'vue-router'
+import BarChart from '../chart/BarChart.vue'
+import ChatModal from '../modal/ChatModal.vue'
+import ChatCard from '../parts/ChatCard.vue'
   const router = useRouter()
   
   // Reactive data
@@ -177,8 +199,17 @@
   const isModalVisible = ref(false)
   const selectedOrderNumber = ref('')
   
+
   // Methods
-  const openChatModal = (orderNumber) => {
+  const openChatModal = (chatRoom) => {
+    // chatRoom 객체에서 orderCode 또는 orderNumber 추출
+    let orderNumber
+    if (typeof chatRoom === 'string') {
+      orderNumber = chatRoom
+    } else {
+      // API 응답에서 orderCode가 있으면 사용, 없으면 orderNumber 사용
+      orderNumber = chatRoom.orderCode || chatRoom.orderNumber
+    }
     selectedOrderNumber.value = orderNumber
     isModalVisible.value = true
   }
@@ -212,6 +243,8 @@
     // Robot Position 페이지로 이동
     router.push('/admin/robot-position')
   }
+
+  
   </script>
   
   <style scoped>
@@ -239,6 +272,8 @@
     padding: 24px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     min-height: 280px;
+    display: flex;
+    flex-direction: column;
   }
   
   .card-header {
@@ -246,6 +281,14 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   
   .card-title-btn {
@@ -349,9 +392,7 @@
     cursor: pointer;
   }
   
-  .dropdown-icon {
-    font-size: 12px;
-  }
+
   
   .robot-item {
     padding: 12px;
@@ -422,57 +463,40 @@
     width: fit-content;
   }
   
-  .chat-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
-    padding-top: 20px;
-  }
-  
-  .chat-button {
-    background-color: #2a2f3e;
-    padding: 12px 8px;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .chat-button:hover {
-    background-color: #3a57e8;
-  }
+
   
   .chart-container {
     display: flex;
     align-items: center;
     gap: 30px;
     padding: 20px 0;
+    flex: 1;
+    min-height: 0;
   }
   
   .donut-chart {
     position: relative;
-    width: 180px;
-    height: 180px;
+    width: 120px;
+    height: 120px;
   }
   
   .chart-outer {
-    width: 180px;
-    height: 180px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    border: 12px solid #3a57e8;
+    border: 8px solid #3a57e8;
     border-top-color: transparent;
     transform: rotate(-45deg);
   }
   
   .chart-inner {
     position: absolute;
-    top: 30px;
-    left: 30px;
-    width: 120px;
-    height: 120px;
+    top: 20px;
+    left: 20px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    border: 10px solid #8a92a6;
+    border: 6px solid #8a92a6;
     border-top-color: transparent;
     transform: rotate(-45deg);
   }
@@ -480,21 +504,20 @@
   .chart-legend {
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    padding-left: 40px;
+    gap: 16px;
   }
   
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 16px;
+    gap: 8px;
+    font-size: 14px;
     font-weight: 500;
   }
   
   .legend-color {
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
   }
   
@@ -506,10 +529,135 @@
     background-color: #5c6ca5;
   }
   
+  /* Likes 카드 스타일 */
+  .likes-layout {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+  }
+  
+  .donut-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+  }
+  
+  .reviews-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 16px;
+  }
+  
+  .rating-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    background-color: #2a2f3e;
+    border-radius: 8px;
+  }
+  
+  .star-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .star {
+    font-size: 24px;
+    color: #ffd700;
+  }
+  
+  .star.small {
+    font-size: 16px;
+  }
+  
+  .rating-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffd700;
+  }
+  
+  .rating-text {
+    font-size: 12px;
+    color: #8a92a6;
+  }
+  
+  .reviews-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .preview-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+  
+  .review-count {
+    font-size: 12px;
+    color: #8a92a6;
+  }
+  
+  .preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  
+  .preview-item {
+    background-color: #2a2f3e;
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .preview-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  
+  .preview-rating span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffd700;
+  }
+  
+  .preview-content {
+    font-size: 12px;
+    color: #8a92a6;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  
   /* BarChart 컴포넌트 스타일링 */
   .chart-container {
-    height: 200px;
+    height: 100%;
     width: 100%;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
   }
   
   .map-container {
@@ -572,6 +720,15 @@
     .card-title-btn {
       font-size: 16px;
       padding: 6px 12px;
+    }
+    
+    .likes-layout {
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .donut-section {
+      justify-content: center;
     }
   }
   
