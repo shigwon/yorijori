@@ -3,12 +3,13 @@ pipeline {
 
     environment {
         GIT_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
-        GIT_BRANCH = "test/jenkins-rider"
         GIT_CREDENTIALS_ID = "Gitlab"
         DOCKER_IMAGE_RIDER = "baejunyeong/linky-frontend-rider"
         DOCKER_CONTAINER_RIDER = "frontend-rider"
         DOCKER_IMAGE_CUSTOMER = "baejunyeong/linky-frontend-customer"
         DOCKER_CONTAINER_CUSTOMER = "frontend-customer"
+        DOCKER_IMAGE_ADMIN = "baejunyeong/linky-frontend-admin"
+        DOCKER_CONTAINER_ADMIN = "frontend-admin"
         IMAGE_TAG = "1.0.0"
     }
 
@@ -56,6 +57,16 @@ pipeline {
                                 sh 'npm run build'
                             }
                             stash includes: 'apps/frontend/customer/dist/**/*', name: 'frontend-customer-build'
+                        },
+                        adminBuild: {
+                            dir('apps/frontend/admin') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Installing dependencies and building the application..."
+                                sh "npm install"
+                                sh "echo Building the application..."
+                                sh 'npm run build'
+                            }
+                            stash includes: 'apps/frontend/admin/dist/**/*', name: 'frontend-admin-build'
                         }
                     )
                 }
@@ -92,6 +103,16 @@ pipeline {
                                 sh "docker tag ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG} ${DOCKER_IMAGE_CUSTOMER}:latest"
                                 sh "echo Docker image for customer built successfully."
                             }
+                        },
+                        adminBuild: {
+                            unstash 'frontend-admin-build'
+                            dir('apps/frontend/admin') {
+                                sh "echo Current directory: ${pwd()}"
+                                sh "echo Building Docker image for customer..."
+                                sh "docker build -t ${DOCKER_IMAGE_ADMIN}:${IMAGE_TAG} ."
+                                sh "docker tag ${DOCKER_IMAGE_ADMIN}:${IMAGE_TAG} ${DOCKER_IMAGE_ADMIN}:latest"
+                                sh "echo Docker image for customer built successfully."
+                            }
                         }
                     )
                 }
@@ -118,6 +139,13 @@ pipeline {
                 sh "docker rm ${DOCKER_CONTAINER_CUSTOMER} || true"
                 sh "docker run -d --name ${DOCKER_CONTAINER_CUSTOMER} --restart=unless-stopped -p 7081:7081 ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG}"
                 sh "echo Customer application deployed successfully."
+
+                sh "echo Deploying customer application..."
+                sh "docker stop ${DOCKER_CONTAINER_ADMIN} || true"
+                sh "docker rm ${DOCKER_CONTAINER_ADMIN} || true"
+                sh "docker run -d --name ${DOCKER_CONTAINER_ADMIN} --restart=unless-stopped -p 7082:7082 ${DOCKER_IMAGE_ADMIN}:${IMAGE_TAG}"
+                sh "echo Customer application deployed successfully."
+                
             }
         }
     }
