@@ -31,13 +31,13 @@
                 type="text" 
                 class="info-input"
                 placeholder="010-1234-5678"
-                maxlength="13"
+                maxlength="14"
               />
               <span class="edit-icon">✏️</span>
             </div>
           </div>
           <div v-if="phoneError" class="error-message">
-            전화번호를 11자리로 입력해주세요
+            전화번호를 11자리 또는 12자리로 입력해주세요
           </div>
         </div>
         <button class="next-button" @click="handleNext" :disabled="!isFormValid">다음</button>
@@ -89,7 +89,7 @@ onMounted(() => {
 const isFormValid = computed(() => {
   const orderValidChars = editedReceiptData.value.id.replace(/[^0-9a-zA-Z]/g, '')
   const phoneNumbersOnly = editedReceiptData.value.tel.replace(/[^0-9]/g, '')
-  return orderValidChars.length === 6 && phoneNumbersOnly.length === 11
+  return orderValidChars.length === 6 && (phoneNumbersOnly.length === 11 || phoneNumbersOnly.length === 12)
 })
 
 // 주문번호 유효성 검사 함수
@@ -113,9 +113,9 @@ const formatPhoneNumber = () => {
   // 숫자만 추출
   let numbers = editedReceiptData.value.tel.replace(/[^0-9]/g, '')
   
-  // 11자리 이하로 제한
-  if (numbers.length > 11) {
-    numbers = numbers.slice(0, 11)
+  // 12자리 이하로 제한
+  if (numbers.length > 12) {
+    numbers = numbers.slice(0, 12)
   }
   
   // 형식에 맞게 하이픈 추가
@@ -124,14 +124,17 @@ const formatPhoneNumber = () => {
     formatted = numbers
   } else if (numbers.length <= 7) {
     formatted = numbers.slice(0, 3) + '-' + numbers.slice(3)
+  } else if (numbers.length <= 11) {
+    formatted = numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7)
   } else {
+    // 12자리인 경우 (예: 010-1234-5678)
     formatted = numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7)
   }
   
   editedReceiptData.value.tel = formatted
   
   // 오류 메시지 업데이트
-  phoneError.value = numbers.length > 0 && numbers.length !== 11
+  phoneError.value = numbers.length > 0 && numbers.length !== 11 && numbers.length !== 12
 }
 
 const handleNext = () => {

@@ -47,10 +47,11 @@
             <button class="option-button" @click="selectOption('로봇 정보')">로봇 정보</button>
             <button class="option-button" @click="selectOption('음식함 위치')">음식함 위치</button>
             <button class="option-button" @click="selectOption('주문 확인')">주문 확인</button>
-            <button class="option-button" @click="selectOption('배달 상황')">배달 상황</button>
+            
           </div>
           <div class="options-row">
-            <button class="option-button" @click="selectOption('도움말')">도움말</button>
+            <button class="option-button" @click="selectOption('배달 상황')">배달 상황</button>
+            <button class="option-button" @click="selectOption('관리자 호출')">관리자 호출</button>
             <button class="option-button" @click="selectOption('기타 문의')">기타 문의</button>
           </div>
         </div>

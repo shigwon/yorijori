@@ -25,7 +25,7 @@
       </div>
 
       <!-- 단계 2: 위치 -->
-      <div class="step-item">
+      <div class="step-item step-item-2">
         <div class="step-icon">
           <div class="icon-circle">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -162,6 +162,10 @@ const handleNext = () => {
   z-index: 2;
 }
 
+.step-item-2 {
+  margin-top: -20px;
+}
+
 .step-icon {
   flex-shrink: 0;
   position: relative;
@@ -227,7 +231,7 @@ const handleNext = () => {
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(124, 60, 237, 0.2);
   position: relative;
-  bottom: 40px;
+  bottom: 15px;
 }
 
 .next-button:hover {

@@ -39,8 +39,14 @@ const { closeFoodCompartment, goToSurvey, robotId, sectionNum, orderCode } = use
 
 const handleConfirm = () => {
   closeFoodCompartment()
-  // 페이지 나가기
-  window.close()
+  
+  // 강제로 Google로 이동 (replace 사용)
+  window.location.replace('https://www.google.com')
+  
+  // 백업 방법: setTimeout으로 지연 실행
+  setTimeout(() => {
+    window.location.href = 'https://www.google.com'
+  }, 50)
 }
 
 const handleSurvey = () => {
