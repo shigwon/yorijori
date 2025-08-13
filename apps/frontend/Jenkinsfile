@@ -3,14 +3,13 @@ pipeline {
 
     environment {
         GIT_URL = "https://lab.ssafy.com/s13-webmobile3-sub1/S13P11C102.git"
-        GIT_BRANCH = "test/jenkins-rider"
         GIT_CREDENTIALS_ID = "Gitlab"
         DOCKER_IMAGE_RIDER = "baejunyeong/linky-frontend-rider"
         DOCKER_CONTAINER_RIDER = "frontend-rider"
         DOCKER_IMAGE_CUSTOMER = "baejunyeong/linky-frontend-customer"
         DOCKER_CONTAINER_CUSTOMER = "frontend-customer"
-        DOCKER_IMAGE_ADMIN = "frontend-admin"
-        DOCKER_CONTAINER_ADMIN = "baejunyeong/linky-frontend-admin"
+        DOCKER_IMAGE_ADMIN = "baejunyeong/linky-frontend-admin"
+        DOCKER_CONTAINER_ADMIN = "frontend-admin"
         IMAGE_TAG = "1.0.0"
     }
 
