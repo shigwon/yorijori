@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: linky
+  name: linky-backend-1
+  labels:
+    part-of: k8s-linky
+    component: backend-server
+    name: linky-backend
+    version: 1.0.0
+    managed-by: kubectl
+spec:
+  selector:
+    matchLabels:
+      part-of: k8s-linky
+      component: backend-server
+      name: linky-backend
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        part-of: k8s-linky
+        component: backend-server
+        name: linky-backend
+        version: 1.0.0
+        blue-green-no: "1"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: desktop-dlopf19
+      containers:
+        - name: linky-backend-1
+          image: parkheejun/linky-backend:1.0.0-20250813_064654
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB_URL
+              value: jdbc:mysql://mysql-service:3306/linky
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+
+            - name: POSTGRES_URL
+              value: jdbc:postgresql://postgresql-service:5432/postgres
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: postgresql-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: postgresql-password
+
+            - name: REDIS_HOST
+              value: redis-stack-service
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-stack-secret
+                  key: redis-password
+          envFrom:
+            - configMapRef:
+                name: linky-backend-properties
+            - secretRef:
+                name: linky-backend-secret
+          startupProbe:
+            httpGet:
+              path: "/startup"
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: "/readiness"
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: "/liveness"
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "3Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "1000m"
+      volumes:
+        - name: secret-datasource
+          secret:
+            secretName: linky-backend-secret

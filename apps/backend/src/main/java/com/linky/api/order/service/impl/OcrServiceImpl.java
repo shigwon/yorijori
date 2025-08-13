@@ -2,22 +2,24 @@ package com.linky.api.order.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
 import com.linky.api.order.service.OcrService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
-import org.springframework.core.io.ByteArrayResource;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Slf4j
 @Service
 public class OcrServiceImpl implements OcrService {
+
+    @Value("${ocr.server.address}")
+    private String ocrServerAddress;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 파싱용
@@ -31,7 +33,7 @@ public class OcrServiceImpl implements OcrService {
             Map<String, String> jsonBody = Map.of("image", image);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(jsonBody, headers);
 
-            String ocrUrl = "http://localhost:8000/ocr";
+            String ocrUrl = "http://" + ocrServerAddress + ":8000/ocr";
             ResponseEntity<String> response = restTemplate.postForEntity(ocrUrl, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
