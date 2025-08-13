@@ -1,3 +1,0 @@
-ros2 topic pub /vehicle_control std_msgs/Float32MultiArray "{data: [0, 0]}"
-
-Angle : -60' ~ 60'
