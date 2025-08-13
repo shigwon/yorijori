@@ -11,13 +11,6 @@
           <span class="streaming-text-floating">{{ showStreaming ? '지도로 돌아가기' : '실시간 스트리밍' }}</span>
         </button>
       </div>
-      
-      <!-- 테스트용 위치 추적 버튼 (개발 완료 후 제거) -->
-      <div class="floating-test-button">
-        <button @click="testLocationTracking" class="test-button-floating">
-          🧪 위치 테스트
-        </button>
-      </div>
     </div>
 
     <!-- 스트리밍 섹션 -->
@@ -78,7 +71,7 @@
         </div>
         <div class="time-remaining">
           <div class="time-label">남은 시간</div>
-          <div class="time-value">5분</div>
+          <div class="time-value">{{ remainingSeconds }}초</div>
         </div>
       </div>
       
@@ -86,7 +79,12 @@
     
       <!-- 로봇 마스코트 -->
       <div class="robot-mascot">
-        <img src="../assets/homerobot.png" alt="homerobot" class="robot-image" />
+        <img 
+          :src="homerobotImage" 
+          alt="homerobot" 
+          class="robot-image" 
+          :style="{ transform: `translateX(${robotMoveDistance}px)` }"
+        />
       </div>
       
       <!-- 타임라인 컨테이너 -->
@@ -103,7 +101,10 @@
             <div class="marker-label">픽업완료</div>
           </div>
           
-          <div class="timeline-marker current">
+          <div 
+            class="timeline-marker current moving-marker"
+            :style="{ transform: `translateX(${robotMoveDistance}px)` }"
+          >
             <div class="marker-dot"></div>
             <div class="marker-label">배달 중</div>
           </div>
@@ -126,7 +127,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, onUnmounted } from 'vue'
+import { onMounted, ref, onUnmounted, computed } from 'vue'
 import { useAppState } from '../composables/useAppState'
 import DeliveryCompleteModal from './09_DeliveryCompleteModal.vue'
 
@@ -140,7 +141,8 @@ const error = ref(null)
 const isConnected = ref(false)
 const currentImage = ref(null)
 const lastUpdateTime = ref('연결 대기 중...')
-const eventSource = ref(null)
+const eventSource = ref(null) // 스트리밍용 SSE
+const locationEventSource = ref(null) // 위치 정보용 SSE
 const robotMarker = ref(null) // 로봇 마커
 const robotPosition = ref({ latitude: 0, longitude: 0 }) // 로봇 현재 위치
 const pickupOverlay = ref(null) // 픽업존 오버레이
@@ -151,6 +153,50 @@ import homerobotImage from '../assets/homerobot.png'
 
 // API 기본 URL (프록시 설정 활용)
 const API_BASE_URL = '' // 상대 경로 사용하여 프록시 활용
+
+// 남은 시간/진행바 설정 (30초 카운트다운, 진행바는 51% -> 100%)
+const totalCountdownSeconds = 30
+const remainingSeconds = ref(totalCountdownSeconds)
+const initialProgressPercent = 51
+const progressPercent = computed(() => {
+  const elapsed = totalCountdownSeconds - remainingSeconds.value
+  const ratio = Math.max(0, Math.min(1, elapsed / totalCountdownSeconds))
+  // 0.7%씩 더 천천히 올라가도록 계산
+  const slowRatio = ratio * 0.7
+  return initialProgressPercent + (96 - initialProgressPercent) * slowRatio
+})
+const progressWidth = computed(() => `${progressPercent.value}%`)
+// 로봇 마스코트 이동 거리 계산 (타임라인 너비에 맞춰 이동)
+const robotMoveDistance = computed(() => {
+  const timelineWidth = 100 // 타임라인 컨테이너의 대략적인 너비 (px)
+  const elapsed = totalCountdownSeconds - remainingSeconds.value
+  const ratio = Math.max(0, Math.min(1, elapsed / totalCountdownSeconds))
+  // 정상 속도로 51% → 96% 이동 (보라색 바와 별개)
+  const normalProgress = initialProgressPercent + (96 - initialProgressPercent) * ratio
+  const moveRatio = (normalProgress - initialProgressPercent) / (96 - initialProgressPercent)
+  return moveRatio * timelineWidth
+})
+let countdownIntervalId = null
+
+const startDeliveryCountdown = () => {
+  // 초기화
+  remainingSeconds.value = totalCountdownSeconds
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId)
+    countdownIntervalId = null
+  }
+  countdownIntervalId = setInterval(() => {
+    if (remainingSeconds.value > 0) {
+      remainingSeconds.value -= 1
+    }
+    if (remainingSeconds.value <= 0) {
+      clearInterval(countdownIntervalId)
+      countdownIntervalId = null
+      // 배달 완료 모달 표시
+      showDeliveryCompleteModal.value = true
+    }
+  }, 1000)
+}
 
 // 스트리밍 토글
 const toggleStreaming = () => {
@@ -312,8 +358,14 @@ const createPickupZone = (lat, lng) => {
   }
 }
 
-// 위치 추적 중지 (로봇 마커와 픽업존 제거)
+// 위치 추적 중지 (로봇 마커, 픽업존 제거 및 SSE 연결 해제)
 const stopLocationTracking = () => {
+  // 위치 SSE 연결 해제
+  if (locationEventSource.value) {
+    locationEventSource.value.close()
+    locationEventSource.value = null
+  }
+  
   // 로봇 마커 제거
   if (robotMarker.value) {
     robotMarker.value.setMap(null)
@@ -330,44 +382,81 @@ const stopLocationTracking = () => {
   isPickupZoneSet.value = false
 }
 
-// 테스트용 위치 추적 (개발 완료 후 제거)
-const testLocationTracking = () => {
-  if (!window.deliveryMap) {
-    console.warn('지도가 초기화되지 않았습니다.')
+// (테스트용 위치 추적 코드 제거됨)
+
+// 위치 정보용 SSE 연결 시작 (임시로 기존 스트리밍 SSE 사용)
+const startLocationTracking = () => {
+  if (!robotId.value || robotId.value === '') {
+    console.warn('robotId가 없어서 위치 추적을 시작할 수 없습니다.')
     return
   }
   
-  console.log('🧪 위치 추적 테스트 시작...')
-  
-  // 현재 사용자 위치를 기준으로 테스트 (deliveryLocation 사용)
-  const baseLat = deliveryLocation.value?.latitude || 37.5665
-  const baseLng = deliveryLocation.value?.longitude || 126.9780
-  
-  console.log('🧪 테스트 기준 위치:', { latitude: baseLat, longitude: baseLng })
-  
-  // 1초마다 랜덤 위치로 이동하는 테스트
-  const testInterval = setInterval(() => {
-    // 랜덤 오프셋 생성 (-0.003 ~ +0.003 범위, 더 현실적인 이동 거리)
-    const randomLat = baseLat + (Math.random() - 0.5) * 0.006
-    const randomLng = baseLng + (Math.random() - 0.5) * 0.006
+  try {
+    console.log('📍 위치 정보 SSE 연결 시작...')
     
-    // 로봇 위치 업데이트
-    robotPosition.value = {
-      latitude: randomLat,
-      longitude: randomLng
+    // 위치 정보용 SSE 연결 생성 (별도 엔드포인트)
+    const locationSseUrl = `${API_BASE_URL}/api/v1/streaming/location/subscribe/${robotId.value}`
+    locationEventSource.value = new EventSource(locationSseUrl)
+    
+    // 위치 데이터 이벤트 수신
+    locationEventSource.value.addEventListener('robotLocation', (event) => {
+      console.log('📍 robotLocation 이벤트 수신됨!')
+      console.log('📍 이벤트 데이터:', event.data)
+      console.log('📍 이벤트 타입:', event.type)
+      
+      try {
+        const locationData = JSON.parse(event.data)
+        console.log('📍 파싱된 위치 데이터:', locationData)
+        
+        if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+          console.log('📍 위도/경도 확인됨, 위치 업데이트 시작')
+          
+          // 로봇 위치 업데이트
+          robotPosition.value = {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+          }
+          
+          console.log('📍 robotPosition 업데이트됨:', robotPosition.value)
+          
+          // 지도에 로봇 마커 업데이트
+          updateRobotMarker()
+        } else {
+          console.warn('📍 위도/경도가 undefined:', locationData)
+        }
+      } catch (parseError) {
+        console.error('📍 위치 데이터 파싱 실패:', parseError)
+        console.error('📍 원본 데이터:', event.data)
+      }
+    })
+    
+    // 모든 이벤트 수신 (디버깅용)
+    locationEventSource.value.addEventListener('message', (event) => {
+      console.log('📍 일반 메시지 이벤트 수신:', event.data)
+    })
+    
+    // 모든 이벤트 수신 (디버깅용)
+    locationEventSource.value.onmessage = (event) => {
+      console.log('📍 onmessage 이벤트 수신:', event.data)
     }
     
-    // 지도에 마커 업데이트
-    updateRobotMarker()
+    // 위치 SSE 연결 성공
+    locationEventSource.value.onopen = () => {
+      console.log('📍 위치 SSE 연결 성공! readyState:', locationEventSource.value.readyState)
+    }
     
-    console.log('🧪 테스트 위치 업데이트:', robotPosition.value)
-  }, 1000)
-  
-  // 10초 후 테스트 중지
-  setTimeout(() => {
-    clearInterval(testInterval)
-    console.log('🧪 위치 추적 테스트 완료')
-  }, 10000)
+    // 위치 SSE 연결 에러
+    locationEventSource.value.onerror = (error) => {
+      console.error('📍 위치 SSE 연결 에러:', error)
+      console.error('📍 EventSource 상태:', locationEventSource.value.readyState)
+      console.error('📍 EventSource URL:', locationEventSource.value.url)
+    }
+    
+    console.log('📍 위치 정보 SSE 연결 완료')
+    
+  } catch (err) {
+    console.error('📍 위치 추적 시작 실패:', err.message)
+  }
 }
 
 // 스트리밍 시작
@@ -376,16 +465,16 @@ const startStreaming = async () => {
     isLoading.value = true
     error.value = null
     
-    // SSE 연결 생성
+    // 스트리밍용 SSE 연결 생성
     const sseUrl = `${API_BASE_URL}/api/v1/streaming/subscribe/${robotId.value}`
     eventSource.value = new EventSource(sseUrl)
     
     // 연결 타임아웃 설정 (10초 후 연결 실패로 처리)
     const connectionTimeout = setTimeout(() => {
       if (eventSource.value && eventSource.value.readyState === EventSource.CONNECTING) {
-        console.error('SSE 연결 타임아웃')
+        console.error('스트리밍 SSE 연결 타임아웃')
         eventSource.value.close()
-        error.value = 'SSE 연결 타임아웃. 백엔드 서버를 확인해주세요.'
+        error.value = '스트리밍 SSE 연결 타임아웃. 백엔드 서버를 확인해주세요.'
         isLoading.value = false
         isConnected.value = false
       }
@@ -394,7 +483,7 @@ const startStreaming = async () => {
     // 연결 성공 시 타임아웃 해제
     eventSource.value.onopen = () => {
       clearTimeout(connectionTimeout)
-      console.log('SSE 연결 성공')
+      console.log('스트리밍 SSE 연결 성공')
       isConnected.value = true
       isLoading.value = false
       error.value = null
@@ -463,7 +552,7 @@ const startStreaming = async () => {
           // Base64 이미지 데이터를 Blob으로 변환
           const byteCharacters = atob(data.image)
           const byteNumbers = new Array(byteCharacters.length)
-          for (let i = 0; i < byteCharacters.length; i++) {
+          for (let i = 0; i < byteNumbers.length; i++) {
             byteNumbers[i] = byteCharacters.charCodeAt(i)
           }
           const byteArray = new Uint8Array(byteNumbers)
@@ -487,35 +576,14 @@ const startStreaming = async () => {
         isLoading.value = false
       }
     })
-
-    // 위치 데이터 이벤트 수신 (같은 SSE 연결에서)
-    eventSource.value.addEventListener('robotLocation', (event) => {
-      try {
-        const locationData = JSON.parse(event.data)
-        console.log('위치 데이터 수신:', locationData)
-        
-        if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
-          // 로봇 위치 업데이트
-          robotPosition.value = {
-            latitude: locationData.latitude,
-            longitude: locationData.longitude
-          }
-          
-          // 지도에 로봇 마커 업데이트
-          updateRobotMarker()
-        }
-      } catch (parseError) {
-        console.error('위치 데이터 파싱 실패:', parseError)
-      }
-    })
     
     // SSE 연결 에러
     eventSource.value.onerror = (error) => {
       clearTimeout(connectionTimeout)
-      console.error('SSE 연결 에러')
+      console.error('스트리밍 SSE 연결 에러')
       isConnected.value = false
       isLoading.value = false
-      error.value = 'SSE 연결에 실패했습니다.'
+      error.value = '스트리밍 SSE 연결에 실패했습니다.'
     }
     
   } catch (err) {
@@ -533,6 +601,8 @@ const stopStreaming = () => {
   }
   isConnected.value = false
 }
+
+
 
 // 연결 재시도
 const retryConnection = () => {
@@ -687,6 +757,13 @@ onMounted(() => {
   // 카카오맵 API 로드 확인 후 초기화
   checkAndInitMap()
   
+  // 위치 추적 시작 (robotId가 있을 때만)
+  if (robotId.value && robotId.value !== '') {
+    startLocationTracking()
+  }
+
+  // 30초 카운트다운 시작
+  startDeliveryCountdown()
 
   // 5초 후 자동으로 배달완료 모달 표시
   // setTimeout(() => {
@@ -699,6 +776,10 @@ onMounted(() => {
 onUnmounted(() => {
   stopStreaming()
   stopLocationTracking()
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId)
+    countdownIntervalId = null
+  }
   if (currentImage.value) {
     URL.revokeObjectURL(currentImage.value)
   }
@@ -742,14 +823,6 @@ onUnmounted(() => {
 }
 
 /* 테스트용 위치 추적 버튼 */
-.floating-test-button {
-  position: absolute;
-  top: 80px;
-  left: 20px;
-  z-index: 1000;
-  pointer-events: auto;
-}
-
 .streaming-button-floating {
   background: rgba(124, 58, 237, 0.95);
   color: white;
@@ -760,17 +833,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.test-button-floating {
-  background: rgba(239, 68, 68, 0.95);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .streaming-button-floating {
@@ -797,12 +859,6 @@ onUnmounted(() => {
   background: rgba(109, 40, 217, 0.95);
   transform: translateY(-2px);
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
-}
-
-.test-button-floating:hover {
-  background: rgba(220, 38, 38, 0.95);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .streaming-icon-floating {
@@ -1217,6 +1273,7 @@ onUnmounted(() => {
   width: 60px;
   height: 60px;
   object-fit: contain;
+  transition: transform 0.3s ease;
 }
 
 /* 타임라인 컨테이너 */
@@ -1239,8 +1296,8 @@ onUnmounted(() => {
   left: 0;
   height: 100%;
   background: #7C3AED;
-  width: 51%;
-  transition: width 0.3s ease;
+  width: v-bind(progressWidth);
+  transition: width 0.1s ease;
 }
 
 .timeline-markers {
@@ -1275,6 +1332,10 @@ onUnmounted(() => {
   background: #7C3AED;
   border-color: #7C3AED;
   animation: pulse 2s infinite;
+}
+
+.moving-marker {
+  transition: transform 0.05s ease;
 }
 
 @keyframes pulse {
