@@ -12,10 +12,17 @@ spring:
     name: linky
 
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    mysql:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: ${DB_URL}
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+
+    postgres:
+      driver-class-name: org.postgresql.Driver
+      url: ${POSTGRES_DB_URL}
+      username: ${POSTGRES_DB_USERNAME}
+    password: ${POSTGRES_DB_PASSWORD}
 
   hikari:
     minimum-idle: 5
