@@ -192,7 +192,7 @@ import { setSession, setSessionExpiry } from '../../api/sessionUtils.js'
          
          // 즉시 페이지 이동 (UX 개선)
          setTimeout(() => {
-           router.push('/main')
+           router.push('/admin/main')
          }, 500)
        } else {
          // 백엔드에서 성공 응답이지만 로그인 실패인 경우
@@ -236,7 +236,7 @@ import { setSession, setSessionExpiry } from '../../api/sessionUtils.js'
   }
   
   const goToMain = () => {
-    router.push('/main')
+    router.push('/admin/main')
   }
   
   // 컴포넌트 마운트 시 저장된 이메일 불러오기
