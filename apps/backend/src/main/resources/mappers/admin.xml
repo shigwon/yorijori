@@ -52,10 +52,10 @@
                 AND state = #{state}
             </if>
             <if test="startTime != null">
-                AND start_time >= #{startTime}
+                AND start_time &gt;= #{startTime}
             </if>
             <if test="endTime != null">
-                AND end_time <= #{endTime}
+                AND end_time &lt;= #{endTime}
             </if>
             <if test="robotId != null">
                 AND robot_id = #{robotId}
