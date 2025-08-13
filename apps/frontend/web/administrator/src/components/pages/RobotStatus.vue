@@ -2,7 +2,7 @@
     <div class="robot-status-page">
       <!-- 헤더 -->
       <div class="page-header">
-        <h1 class="page-title">3D status view</h1>
+        
       </div>
   
       <!-- 메인 컨텐츠 -->
@@ -177,7 +177,7 @@
   
   <style scoped>
   .robot-status-page {
-    padding: 20px;
+    
     height: 100%;
     background-color: #081028;
     color: #ffffff;
