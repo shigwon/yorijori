@@ -10,7 +10,7 @@ import DashboardDetail from '../components/pages/DashboardDetial.vue'
 
 const routes = [
   {
-    path: '/admin',
+    path: '/admin/',
     name: 'Login',
     component: Login
   },

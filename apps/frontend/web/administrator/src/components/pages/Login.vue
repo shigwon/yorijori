@@ -188,7 +188,7 @@
       
       // 즉시 페이지 이동 (UX 개선)
       setTimeout(() => {
-        router.push('/main')
+        router.push('admin/main')
       }, 500)
       
     } catch (error) {
@@ -216,7 +216,7 @@
   }
   
   const goToMain = () => {
-    router.push('/main')
+    router.push('admin/main')
   }
   
   // 컴포넌트 마운트 시 저장된 이메일 불러오기

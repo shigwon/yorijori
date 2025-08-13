@@ -190,27 +190,27 @@
   
   const goToDashboardDetail = () => {
     // Dashboard 상세페이지로 이동
-    router.push('/dashboard-detail')
+    router.push('/admin/dashboard-detail')
   }
   
   const goToLikes = () => {
     // Likes 페이지로 이동
-    router.push('/likes')
+    router.push('/admin/likes')
   }
   
   const goToLog = () => {
     // Log 페이지로 이동
-    router.push('/log')
+    router.push('/admin/log')
   }
   
   const goToRobotStatus = () => {
     // Robot Status 페이지로 이동
-    router.push('/robot-status')
+    router.push('/admin/robot-status')
   }
   
   const goToRobotPosition = () => {
     // Robot Position 페이지로 이동
-    router.push('/robot-position')
+    router.push('/admin/robot-position')
   }
   </script>
   
