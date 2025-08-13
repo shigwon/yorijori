@@ -141,10 +141,10 @@ pipeline {
                 sh "docker run -d --name ${DOCKER_CONTAINER_CUSTOMER} --restart=unless-stopped -p 7081:7081 ${DOCKER_IMAGE_CUSTOMER}:${IMAGE_TAG}"
                 sh "echo Customer application deployed successfully."
 
-                                sh "echo Deploying customer application..."
+                sh "echo Deploying customer application..."
                 sh "docker stop ${DOCKER_CONTAINER_ADMIN} || true"
                 sh "docker rm ${DOCKER_CONTAINER_ADMIN} || true"
-                sh "docker run -d --name ${DOCKER_CONTAINER_ADMIN} --restart=unless-stopped -p 7081:7081 ${DOCKER_IMAGE_ADMIN}:${IMAGE_TAG}"
+                sh "docker run -d --name ${DOCKER_CONTAINER_ADMIN} --restart=unless-stopped -p 7082:7082 ${DOCKER_IMAGE_ADMIN}:${IMAGE_TAG}"
                 sh "echo Customer application deployed successfully."
                 
             }
