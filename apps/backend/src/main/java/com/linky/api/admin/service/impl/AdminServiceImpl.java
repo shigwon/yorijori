@@ -207,20 +207,13 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<OrderLogDto> getOrderLogs(String state, LocalDateTime startTime, LocalDateTime endTime, Integer robotId) {
-        try {
-            // Repository에서 데이터 조회
-            List<Map<String, Object>> rawData = adminRepository.getOrderLogs(state, startTime, endTime, robotId);
+        // Repository에서 데이터 조회
+        List<Map<String, Object>> rawData = adminRepository.getOrderLogs(state, startTime, endTime, robotId);
 
-            // Map을 OrderLogDto로 변환
-            return rawData.stream()
-                    .map(this::convertToOrderLogDto)
-                    .toList();
-
-        } catch (Exception e) {
-            log.error("주문 로그 조회 중 오류 발생: state={}, startTime={}, endTime={}, robotId={}",
-                    state, startTime, endTime, robotId, e);
-            throw new RuntimeException("주문 로그 조회에 실패했습니다.", e);
-        }
+        // Map을 OrderLogDto로 변환
+        return rawData.stream()
+                .map(this::convertToOrderLogDto)
+                .toList();
     }
 
     private OrderLogDto convertToOrderLogDto(Map<String, Object> row) {
