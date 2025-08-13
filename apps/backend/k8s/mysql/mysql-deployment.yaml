@@ -18,7 +18,7 @@ spec:
         app: mysql
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k8s-master
+        kubernetes.io/hostname: desktop-dlopf19
       containers:
       - name: mysql
         image: mysql:8.0

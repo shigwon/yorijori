@@ -28,7 +28,7 @@ spec:
         blue-green-no: "1"
     spec:
       nodeSelector:
-        kubernetes.io/hostname: k8s-master
+        kubernetes.io/hostname: desktop-dlopf19
       containers:
         - name: linky-backend-1
           image: parkheejun/linky-backend:1.0.0-20250808_152324
