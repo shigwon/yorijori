@@ -73,10 +73,10 @@ class Controller(Node):
             self.hardware_ready = True
             self.get_logger().info(f"HW OK servo=0x{self.servo_addr:02X} throttle=0x{self.throttle_addr:02X} freq={self.pwm_freq}")
         except Exception as e:
-            self.get_logger().warn(f"HW init failed (mock): {e}")
+            self.get_logger().warning(f"HW init failed (mock): {e}")
 
         self.create_subscription(Float32MultiArray, 'vehicle_control', self.control_callback, 10)
-        self.create_subscription(Bool, '/robot/drive_enable', self.enable_callback, 10)
+        self.create_subscription(Bool, '/drive_enable', self.enable_callback, 10)
         self.get_logger().info("drive_controller_node ready")
 
     def logical_to_servo_angle(self, input_angle_deg: float) -> float:
