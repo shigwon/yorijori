@@ -24,8 +24,8 @@
           </div>
         </div>
         <div class="step-content">
-          <h3 class="step-title">1. 영수증 스캔</h3>
-          <p class="step-description">자동스캔시 5여초 정도가 소요될 수 있습니다</p>
+          <h3 class="step-title">1. 영수증을 스캔해주세요</h3>
+          <p class="step-description">자동 스캔 시 5여 초 정도가 소요될 수 있습니다</p>
         </div>
       </div>
 
@@ -53,7 +53,7 @@
           </div>
         </div>
         <div class="step-content">
-          <h3 class="step-title">3. 사진</h3>
+          <h3 class="step-title">3. 사진을 찍어주세요</h3>
           <p class="step-description">음식을 놓은 로봇 사진을 찍어주세요</p>
         </div>
       </div>
@@ -174,7 +174,7 @@ const handleScanClick = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 60px;
+  gap: 80px; /* 60px에서 80px로 증가 */
   width: 100%;
   margin-top: 60px;
   position: relative;
@@ -243,6 +243,7 @@ const handleScanClick = () => {
   line-height: 1.5;
   margin: 0;
   text-align: left;
+  padding-left: 10px; /* 설명 텍스트만 오른쪽으로 조금 이동 */
 }
 
 /* 하단 섹션 */
@@ -314,7 +315,7 @@ const handleScanClick = () => {
   }
   
   .steps-section {
-    gap: 48px;
+    gap: 53px; /* 48px에서 65px로 증가 */
     margin-top: 35px;
   }
   

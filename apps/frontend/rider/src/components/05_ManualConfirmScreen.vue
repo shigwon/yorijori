@@ -27,6 +27,13 @@ import { onMounted } from 'vue'
 
 const { goToLocationRequest, goToScanOption, setProgressPercent } = useAppState()
 
+// URL에서 robotId 파라미터 가져오기 (자동스캔과 동일)
+const getRobotId = () => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const robotId = urlParams.get('robotId')
+  return robotId ? parseInt(robotId) : 1 
+}
+
 // Props 정의
 const props = defineProps({
   orderNumber: {
@@ -47,7 +54,38 @@ onMounted(() => {
 })
 
 const handleNext = () => {
+  console.log('다음 버튼 클릭됨 - handleNext 시작')
+  
+  // API 호출은 하되 기다리지 않음 (백그라운드에서 실행, 자동스캔과 동일)
+  fetch('/api/v1/orders/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      robotId: getRobotId(),
+      code: props.orderNumber,
+      tel: props.safeNumber
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return response.json()
+  })
+  .then(result => {
+    console.log('주문정보 API 응답:', result)
+  })
+  .catch(error => {
+    console.error('주문정보 API 호출 실패:', error)
+  })
+  
+  console.log('다음 화면으로 이동 시작')
+  // API 호출 결과와 관계없이 바로 다음 화면으로 이동
   goToLocationRequest()
+  
+  console.log('handleNext 완료')
 }
 
 const handleHelp = () => {

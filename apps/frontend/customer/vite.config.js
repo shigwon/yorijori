@@ -25,7 +25,7 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.app'],  // ✅ ngrok 주소 허용
     proxy: {
       '/api': {
-        target: 'http://192.168.100.83:8080', // 백엔드 서버 IP
+        target: 'https://221.195.135.168:8080', // 백엔드 서버 IP
         changeOrigin: true,
         rewrite: (path) => path,
       },
