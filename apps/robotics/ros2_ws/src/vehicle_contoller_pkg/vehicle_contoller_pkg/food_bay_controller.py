@@ -11,7 +11,7 @@ SERVO_MIN_US  = 500
 SERVO_MAX_US  = 2500
 ANGLE_OPEN    = 0.0           # 열림 각도
 ANGLE_CLOSED  = 90.0          # 닫힘 각도
-STARTUP_OPEN  = False         # 시작 시 열림 상태로 둘지
+STARTUP_OPEN  = True         # 시작 시 열림 상태로 둘지
 
 class FoodBayControllerNode(Node):
     def __init__(self):
@@ -41,20 +41,21 @@ class FoodBayControllerNode(Node):
     def on_cmd_text(self, msg: String):
         text = (msg.data or "").strip().upper()
         parts = text.split()
-
+        if len(parts) < 2:
+            self.get_logger().warning(f'Bad command: "{text}" (format: "<bay> OPEN|CLOSE")')
+            return
         try:
             bay = int(parts[0])
-        except ValueError:
-            self.get_logger().warn(f'Invalid bay number: {parts[0]}')
+        except Exception:
+            self.get_logger().warning(f'Invalid bay number: {parts[0]}')
             return
-
         cmd = parts[1]
         if cmd == "OPEN":
             self._apply_cmd(bay, True)
         elif cmd == "CLOSE":
             self._apply_cmd(bay, False)
         else:
-            self.get_logger().warn(f'Unknown command: "{cmd}" (use OPEN or CLOSE)')
+            self.get_logger().warning(f'Unknown command: "{cmd}" (use OPEN or CLOSE)')
 
     def _apply_cmd(self, bay: int, is_open: bool):
         target_angle = self.ang_open if is_open else self.ang_closed

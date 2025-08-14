@@ -11,7 +11,7 @@ class InputTeleop(Node):
     def run(self):
         while rclpy.ok():
             try:
-                cmd = input("\nangle speed%(−100~100) 입력 (종료:q): ").strip()
+                cmd = input("\nangle speed%(-100~100) 입력 (종료:q): ").strip()
                 if not cmd:
                     continue
                 if cmd.lower() in ['q', 'quit', 'exit']:

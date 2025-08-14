@@ -25,8 +25,8 @@ setup(
         'console_scripts': [
             'drive_controller_node = vehicle_contoller_pkg.drive_controller:main',
             'food_bay_controller_node = vehicle_contoller_pkg.food_bay_controller:main',
-            'input_drive_teleop = vehicle_contoller_pkg.keyboard_controller:main',
             'pure_pursuit_controller_node = vehicle_contoller_pkg.pure_pursuit_controller:main',
+            'path_planner_node = vehicle_contoller_pkg.path_planner:main',
         ]
     },
 )
