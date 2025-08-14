@@ -7,7 +7,9 @@ import com.linky.api.common.response.entity.ApiResponseEntity;
 import com.linky.api.robot.dto.RobotListResponseDto;
 import com.linky.api.robot.dto.RobotWithLocationDto;
 import com.linky.api.robot.service.RobotService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,78 +43,96 @@ public class AdminController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponseEntity<LoginResponseDto>> login(
             @Valid @RequestBody LoginRequestDto request,
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
 
         try {
-            HttpSession session = httpRequest.getSession(true); // 세션 생성
+            HttpSession existingSession = httpRequest.getSession(false);
+            if (existingSession != null) {
+                existingSession.invalidate();
+            }
+            HttpSession session = httpRequest.getSession(true);
+
             String adminName = adminService.loginWithSession(
                     request.getEmail(),
                     request.getPassword(),
                     session
             );
 
-            LoginResponseDto response;
             if (adminName != null) {
-                response = LoginResponseDto.builder()
+                // 응답 헤더 보안 설정
+                httpResponse.setHeader("X-Content-Type-Options", "nosniff");
+                httpResponse.setHeader("X-Frame-Options", "DENY");
+                httpResponse.setHeader("X-XSS-Protection", "1; mode=block");
+
+                LoginResponseDto response = LoginResponseDto.builder()
                         .success(true)
                         .name(adminName)
                         .message("로그인에 성공했습니다.")
-                        .sessionId(session.getId()) // 세션 ID 반환
                         .build();
 
-                log.info("관리자 세션 로그인 성공: {} (Session: {})",
+                log.info("관리자 로그인 성공: {} (Session ID: {})",
                         request.getEmail(), session.getId());
+
                 return ApiResponseEntity.successResponseEntity(response);
 
             } else {
-                // 로그인 실패 시 세션 무효화
                 session.invalidate();
 
-                response = LoginResponseDto.builder()
+                LoginResponseDto response = LoginResponseDto.builder()
                         .success(false)
                         .message("이메일 또는 비밀번호가 올바르지 않습니다.")
                         .build();
 
-                log.warn("관리자 세션 로그인 실패: {}", request.getEmail());
+                log.warn("관리자 로그인 실패: {}", request.getEmail());
                 return ApiResponseEntity.failResponseEntity(response, "로그인 실패");
             }
 
         } catch (Exception e) {
-            log.error("세션 로그인 처리 중 오류 발생", e);
+            log.error("로그인 처리 중 오류 발생", e);
             return ApiResponseEntity.failResponseEntity("로그인 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponseEntity<LogoutResponseDto>> logout(
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
 
         try {
             HttpSession session = httpRequest.getSession(false);
-            boolean logoutSuccess = adminService.logoutWithSession(session);
+            boolean logoutSuccess = false;
+            String adminEmail = null;
 
-            LogoutResponseDto response;
-            if (logoutSuccess) {
-                response = LogoutResponseDto.builder()
-                        .success(true)
-                        .message("로그아웃에 성공했습니다.")
-                        .build();
+            if (session != null) {
+                adminEmail = (String) session.getAttribute("ADMIN_EMAIL");
 
-                log.info("관리자 세션 로그아웃 성공");
-                return ApiResponseEntity.successResponseEntity(response);
+                // 세션 무효화
+                session.invalidate();
+                logoutSuccess = true;
 
-            } else {
-                response = LogoutResponseDto.builder()
-                        .success(false)
-                        .message("유효하지 않은 세션입니다.")
-                        .build();
-
-                log.warn("관리자 세션 로그아웃 실패: 유효하지 않은 세션");
-                return ApiResponseEntity.failResponseEntity(response, "로그아웃 실패");
+                log.info("관리자 로그아웃 성공: {}", adminEmail);
             }
 
+            // 추가 보안: 쿠키 명시적 삭제
+            Cookie sessionCookie = new Cookie("LINKY_SESSION", "");
+            sessionCookie.setHttpOnly(true);
+            sessionCookie.setSecure(false); // 개발환경
+            sessionCookie.setPath("/");
+            sessionCookie.setMaxAge(0); // 즉시 삭제
+            httpResponse.addCookie(sessionCookie);
+
+            LogoutResponseDto response = LogoutResponseDto.builder()
+                    .success(logoutSuccess)
+                    .message(logoutSuccess ? "로그아웃에 성공했습니다." : "유효하지 않은 세션입니다.")
+                    .build();
+
+            return logoutSuccess ?
+                    ApiResponseEntity.successResponseEntity(response) :
+                    ApiResponseEntity.failResponseEntity(response, "로그아웃 실패");
+
         } catch (Exception e) {
-            log.error("세션 로그아웃 처리 중 오류 발생", e);
+            log.error("로그아웃 처리 중 오류 발생", e);
             return ApiResponseEntity.failResponseEntity("로그아웃 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
     }

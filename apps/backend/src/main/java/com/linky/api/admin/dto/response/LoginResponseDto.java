@@ -14,5 +14,4 @@ public class LoginResponseDto {
     private boolean success;
     private String name;
     private String message;
-    private String sessionId;
 }
