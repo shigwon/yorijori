@@ -26,7 +26,7 @@ public class StreamingController {
 
     @GetMapping(value="/subscribe/{robotId}", produces= MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable("robotId") int  robotId) {
-        SseEmitter emitter = new SseEmitter(0L);
+        SseEmitter emitter = new SseEmitter(5_000L);
         robotSubscribers
                 .computeIfAbsent(robotId, k -> new CopyOnWriteArrayList<>()).add(emitter);
 
