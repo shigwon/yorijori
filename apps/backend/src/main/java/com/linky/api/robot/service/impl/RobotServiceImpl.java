@@ -1,7 +1,5 @@
 package com.linky.api.robot.service.impl;
 
-import com.linky.api.robot.dto.RobotLocationDto;
-import com.linky.api.robot.dto.UpdateRobotStatusDto;
 import com.linky.api.robot.dto.*;
 import com.linky.api.robot.dto.request.LocationHistoryRequestDto;
 import com.linky.api.robot.dto.response.LocationHistoryResponseDto;
@@ -12,9 +10,10 @@ import com.linky.api.robot.entity.RobotStatus;
 import com.linky.api.robot.exception.RobotLocationException;
 import com.linky.api.robot.mapper.RobotMapper;
 import com.linky.api.robot.repository.RobotRedisRepository;
-import com.linky.api.robot.repository.mybatis.RobotRepository;
 import com.linky.api.robot.repository.jpa.RobotLocationHistoryRepository;
+import com.linky.api.robot.repository.mybatis.RobotRepository;
 import com.linky.api.robot.service.RobotService;
+import com.linky.api.streaming.controller.StreamingController;
 import com.linky.config.exception.enums.ApiExceptionEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -292,35 +291,38 @@ public class RobotServiceImpl implements RobotService {
         return convertToHistoryDto(latestLocation.get(), robotOpt.get().getCode());
     }
 
-    @Scheduled(fixedRate = 1000) // 1초마다 실행
+    @Scheduled(fixedRate = 3000)
     @Transactional("postgresTransactionManager")
     @Override
     public void saveLocationsToPostgreSQL() {
-//        try {
-//            log.debug("Redis → PostgreSQL 위치 데이터 배치 저장 시작");
-//
-//            // 1. Redis에서 모든 로봇 위치 조회
-//            Iterable<RobotLocation> redisLocations = robotRedisRepository.findAll();
-//            System.out.println(redisLocations.toString());
-//
-//            // 2. PostgreSQL에 저장
-//            List<RobotLocationHistory> historyList = StreamSupport.stream(redisLocations.spliterator(), false)
-//                    .map(redisLocation -> RobotLocationHistory.builder()
-//                            .robotId(redisLocation.getRobotId())
-//                            .latitude(redisLocation.getLatitude())
-//                            .longitude(redisLocation.getLongitude())
-//                            .recordedAt(LocalDateTime.now())
-//                            .build())
-//                    .toList();
-//
-//            if (!historyList.isEmpty()) {
-//                locationHistoryRepository.saveAll(historyList);
-//                log.debug("위치 데이터 {}건 PostgreSQL에 저장 완료", historyList.size());
-//            }
-//
-//        } catch (Exception e) {
-//            log.error("Redis → PostgreSQL 위치 데이터 배치 저장 실패", e);
-//        }
+        try {
+            log.debug("Redis → PostgreSQL 위치 데이터 배치 저장 시작");
+
+            // 1. Redis에서 모든 로봇 위치 조회
+            Iterable<RobotLocation> redisLocations = robotRedisRepository.findAll();
+
+            // 2. PostgreSQL에 저장
+            List<RobotLocationHistory> historyList = StreamSupport.stream(redisLocations.spliterator(), false)
+                    .map(redisLocation -> RobotLocationHistory.builder()
+                            .robotId(redisLocation.getRobotId())
+                            .latitude(redisLocation.getLatitude())
+                            .longitude(redisLocation.getLongitude())
+                            .recordedAt(LocalDateTime.now())
+                            .build())
+                    .toList();
+
+            if (!historyList.isEmpty()) {
+                locationHistoryRepository.saveAll(historyList);
+                log.info("위치 데이터 {}건 PostgreSQL에 저장 완료", historyList.size());
+
+                historyList.forEach(history -> {
+                    StreamingController.broadcastLocation(history.getRobotId(), history.getLatitude(), history.getLongitude());
+                });
+            }
+
+        } catch (Exception e) {
+            log.error("Redis → PostgreSQL 위치 데이터 배치 저장 실패", e);
+        }
     }
 
     @Scheduled(cron = "0 0 2 * * ?") // 매일 새벽 2시 실행
