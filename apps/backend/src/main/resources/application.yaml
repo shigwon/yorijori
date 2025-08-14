@@ -14,9 +14,9 @@ server:
         http-only: true
         secure: false
         same-site: lax
-        max-age: 1800
+        max-age: 7200
         path: /
-      timeout:
+      timeout: 120m
 
 spring:
   application:
