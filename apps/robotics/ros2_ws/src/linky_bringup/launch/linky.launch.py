@@ -10,16 +10,6 @@ import os
 
 def generate_launch_description():    
     return LaunchDescription([
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(
-        #         PathJoinSubstitution([
-        #             FindPackageShare('realsense2_linky'),
-        #             'launch',
-        #             'realsense2_linky.launch.py'
-        #         ])
-        #     )
-        # ),
-
         Node(
             package='face_recognition_pkg',
             executable='face_db_matcher_node',
@@ -54,6 +44,18 @@ def generate_launch_description():
             package='vehicle_contoller_pkg',
             executable='pure_pursuit_controller_node',
             name='pure_pursuit_controller',
+            output='screen'
+        ),
+        Node(
+            package='vehicle_contoller_pkg',
+            executable='path_planner_node',
+            name='path_planner',
+            output='screen'
+        ),
+        Node(
+            package='vehicle_contoller_pkg',
+            executable='food_bay_controller_node',
+            name='food_bay_controller',
             output='screen'
         ),
     ])
