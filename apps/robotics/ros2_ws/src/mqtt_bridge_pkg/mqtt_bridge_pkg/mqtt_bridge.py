@@ -16,53 +16,49 @@ from cv_bridge import CvBridge
 import paho.mqtt.client as mqtt
 import cv2
 
-# ===== 고정 설정 =====
 MQTT_HOST = '192.168.100.83'
+# MQTT_HOST = '211.195.135.168'
 MQTT_PORT = 1883
 
-ROBOT_ID = "1"
 SERVER_ID = "0"
+ROBOT_ID  = "1"
 
-# 서버가 구독하는 네임스페이스(서버 ID 기준)
 TOPIC_ROBOT_TO_SERVER = f"linky/robot/{SERVER_ID}"
-# 서버가 로봇 개별 제어용으로 발행하는 네임스페이스(로봇 ID 기준)
 TOPIC_SERVER_TO_ROBOT = f"linky/robot/{ROBOT_ID}"
-
 
 class MQTTBridgeNode(Node):
     def __init__(self):
         super().__init__('mqtt_bridge_node')
 
-        # 고정 설정(ROS 파라미터 사용 안 함)
-        self.camera_topic      = "/left/image_rect"
-        self.gps_topic         = "/gps_ll_out"   # PoseConverterMiniStatic 출력: Point(x=lat, y=lon)
-        self.publish_fps       = 15.0
-        self.jpeg_quality      = 80
-        self.max_width         = 320
-        self.desired_encoding  = "mono8"
-        self.warmup_frames     = 5
+        self.streaming_fps      = 1.0
+        self.jpeg_quality       = 80
+        self.max_width          = 320
+        self.desired_encoding   = "mono8"
+        self.warmup_frames      = 5
 
-        # 내부 상태
-        self.bridge            = CvBridge()
-        self.last_pub_ts       = 0.0
-        self.min_period        = 1.0 / max(0.1, self.publish_fps)
+        self.bridge             = CvBridge()
+        self.last_pub_ts        = 0.0
+        self.min_period         = 1.0 / max(0.1, self.streaming_fps)
 
-        self._connected        = False
-        self._loop_started     = False
-        self._stop_event       = threading.Event()
-        self.recv_count        = 0
-        self.ready_to_stream   = False
-        self.last_loc_pub_ts   = 0.0   # 위치 MQTT 발행 스로틀용
+        # 상태 정보
+        self._connected         = False
+        self._loop_started      = False
+        self._stop_event        = threading.Event()
+        self.recv_count         = 0
+        self.ready_to_stream    = False
 
-        # ROS pub/sub
-        self.gps_sub = self.create_subscription(Point, self.gps_topic, self.gps_callback, 10)
+        # ROS sub
+        self.gps_sub            = self.create_subscription(Point, '/gps_ll_out',            self.gps_callback,                   10)
         self.delivery_state_sub = self.create_subscription(String, '/robot/delivery_state', self.update_delivery_state_callback, 10)
-        self.robot_status_sub   = self.create_subscription(String, '/robot/status',         self.update_robot_status_callback, 10)
-        self.image_sub = self.create_subscription(Image, self.camera_topic, self.image_callback, qos_profile_sensor_data)
+        self.robot_status_sub   = self.create_subscription(String, '/robot/status',         self.update_robot_status_callback,   10)
 
-        self.result_pub        = self.create_publisher(String, '/server/request_result', 10)
-        self.orders_pub        = self.create_publisher(String, '/server/order_list', 10)
-        self.food_bay_pub      = self.create_publisher(Int32MultiArray, '/food_bay_cmd', 10)
+        self.camera_topic = '/left/image_rect'
+        self.image_sub    = self.create_subscription(Image, self.camera_topic, self.image_callback, qos_profile_sensor_data)
+
+        # ROS pub
+        self.result_pub   = self.create_publisher(String, '/server/request_result', 10)
+        self.orders_pub   = self.create_publisher(String, '/server/order_list',     10)
+        self.food_bay_pub = self.create_publisher(String, '/food_bay_cmd',          10)
 
         # 카메라 퍼블리셔 존재 확인 타이머
         self.pub_check_timer = self.create_timer(0.5, self.check_cam_publisher)
@@ -85,12 +81,10 @@ class MQTTBridgeNode(Node):
         self.connection_thread = threading.Thread(target=self.connect_loop, daemon=True)
         self.connection_thread.start()
 
-    # ---------- MQTT ----------
     def connect_loop(self):
         while not self._stop_event.is_set():
             if not self._connected:
                 try:
-                    self.get_logger().info(f"Attempting MQTT connect to {self.mqtt_host}:{self.mqtt_port}")
                     self.mqtt_client.connect(self.mqtt_host, self.mqtt_port)
                     if not self._loop_started:
                         self.mqtt_client.loop_start()
@@ -101,9 +95,9 @@ class MQTTBridgeNode(Node):
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            self.get_logger().info("Connected to MQTT broker.")
+            self.get_logger().info("Connected to MQTT broker")
             self._connected = True
-            # 서버→로봇 제어 명령 구독
+
             client.subscribe(TOPIC_SERVER_TO_ROBOT + "/closeSection")
             client.subscribe(TOPIC_SERVER_TO_ROBOT + "/result")
             client.subscribe(TOPIC_SERVER_TO_ROBOT + "/orderList")
@@ -126,13 +120,13 @@ class MQTTBridgeNode(Node):
             elif topic.endswith("/orderList"):
                 self.handle_orderList(payload)
         except json.JSONDecodeError:
-            self.get_logger().error("Failed to decode JSON payload.")
+            self.get_logger().error("Failed to decode JSON payload")
         except Exception as e:
             self.get_logger().error(f"Error processing MQTT message: {e}")
 
-    # ---------- ROS 콜백 ----------
     def check_cam_publisher(self):
-        if self.count_publishers(self.camera_topic) > 0:
+        cnt = self.count_publishers(self.camera_topic)
+        if cnt > 0 and not self.ready_to_stream:
             self.ready_to_stream = True
             try:
                 self.pub_check_timer.cancel()
@@ -144,14 +138,8 @@ class MQTTBridgeNode(Node):
             )
 
     def gps_callback(self, msg: Point):
-        """PoseConverterMiniStatic가 퍼블리시한 위경도(Point: x=lat, y=lon)를 MQTT로 보냄."""
         if not self._connected:
             return
-
-        now = time.time()
-        if (now - self.last_loc_pub_ts) < 1.0:  # 1Hz 스로틀
-            return
-        self.last_loc_pub_ts = now
 
         lat = float(msg.x)
         lon = float(msg.y)
@@ -174,20 +162,12 @@ class MQTTBridgeNode(Node):
     def update_delivery_state_callback(self, msg: String):
         if not self._connected:
             return
-        payload = {
-            "orderId": "1",  # 필요 시 실제 orderId 반영
-            "robotId": int(ROBOT_ID),
-            "state": msg.data
-        }
-        try:
-            self.mqtt_client.publish(
-                TOPIC_ROBOT_TO_SERVER + "/updateDeliveryState",
-                json.dumps(payload),
-                qos=0,
-                retain=False
-            )
-        except Exception as e:
-            self.get_logger().error(f"MQTT publish error (updateDeliveryState): {e}")
+        self.mqtt_client.publish(
+            TOPIC_ROBOT_TO_SERVER + "/updateDeliveryState",
+            msg.data,
+            qos=0,
+            retain=False
+        )
 
     def update_robot_status_callback(self, msg: String):
         if not self._connected:
@@ -205,7 +185,7 @@ class MQTTBridgeNode(Node):
             )
         except Exception as e:
             self.get_logger().error(f"MQTT publish error (updateRobotStatus): {e}")
-
+    
     def image_callback(self, msg: Image):
         if not self._connected or not self.ready_to_stream:
             return
@@ -231,13 +211,12 @@ class MQTTBridgeNode(Node):
                 self.get_logger().warning("cv2.imencode failed; skip frame")
                 return
 
-            b64_data = base64.b64encode(buf.tobytes()).decode('ascii')
+            b64_raw = base64.b64encode(buf.tobytes()).decode('ascii')
             payload = {
                 "robotId": int(ROBOT_ID),
-                "image": b64_data
+                "image": f"data:image/jpeg;base64,{b64_raw}"
             }
 
-            # 단순화: 항상 서버 토픽으로 전송
             self.mqtt_client.publish(
                 TOPIC_ROBOT_TO_SERVER + "/sendStreamingImage",
                 json.dumps(payload),
@@ -252,10 +231,12 @@ class MQTTBridgeNode(Node):
 
     def handle_food_bay(self, payload):
         bay = payload.get("sectionNum")
-        status = payload.get("sectionStatus")
-
+        status = str(payload.get("sectionStatus", "")).upper()  # "OPEN"/"CLOSE"
+        if bay is None or status not in ("OPEN", "CLOSE"):
+            self.get_logger().warning(f"Invalid food bay payload: {payload}")
+            return
         m = String()
-        m.data = f"{bay} {cmd}"
+        m.data = f"{bay} {status}"
         self.food_bay_pub.publish(m)
 
     def handle_result(self, payload):
@@ -270,7 +251,6 @@ class MQTTBridgeNode(Node):
         msg.data = json.dumps(payload, ensure_ascii=False)
         self.orders_pub.publish(msg)
 
-    # ---------- 종료 ----------
     def destroy_node(self):
         self._stop_event.set()
         if self.connection_thread.is_alive():
