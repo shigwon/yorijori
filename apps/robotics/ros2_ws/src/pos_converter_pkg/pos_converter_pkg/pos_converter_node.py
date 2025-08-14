@@ -3,66 +3,53 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
+from nav_msgs.msg import Odometry
 
-# SLAM(x,y) ↔ GPS(lat,lon) 짝을 코드 안에 고정
-# 예시 값이니 네 값으로 교체하세요.
+# --------- 캘리브레이션 대응점 (SLAM <-> GPS 평면) ----------
+# [ [SLAM_X, SLAM_Y], [GPS_LAT, GPS_LON] ]
 PAIRS = [
-    # x,   y,    lat,      lon
-    0.0,  0.0,   10.0,     10.0,
-    10.0, 0.0,   10.0,     100.0,
-    0.0,  10.0,  20.0,     10.1,
-    # 필요한 만큼 계속 추가 가능: x,y,lat,lon, ...
+    [[0.0,   0.0],   [0.0,   0.0]],
+    [[10.0, 10.10],  [10.0, 10.10]],
+    [[20.0, 10.0],   [20.0, 10.0]],
+    [[34.0, 15.0],   [34.0, 15.0]],
 ]
 
-class PoseConverterMiniStatic(Node):
+class PoseConverterMini(Node):
     def __init__(self):
-        super().__init__('pos_converter_node')
+        super().__init__('pose_converter_mini')
+
+        # 유사변환 파라미터
         self.calibrated = False
         self.s = 1.0
         self.R = np.eye(2)
         self.t = np.zeros(2)
+        self.Rt = np.eye(2)
 
-        # pub/sub
-        self.pub_ll = self.create_publisher(Point, '/gps_ll_out', 10)   # x=lat, y=lon
-        self.pub_xy = self.create_publisher(Point, '/pose_xy_out', 10)  # x,y (slam)
-        self.create_subscription(Point, '/pose_xy_in', self.on_xy, 10)
-        self.create_subscription(Point, '/gps_ll_in', self.on_ll, 10)
+        # 캘리브레이션
+        self._calibrate_from_pairs()
 
-        # 시작 시 고정 점들로 보정
-        self._calibrate_from_static_pairs()
+        # Pub/Sub
+        self.pub_gps = self.create_publisher(Point, '/gps_ll_out', 10)   # x=lat, y=lon (평면)
+        self.pub_xy  = self.create_publisher(Point, '/pose_xy_out', 10)  # x,y in SLAM
 
-    def _calibrate_from_static_pairs(self):
-        d = list(PAIRS)
-        if len(d) < 8 or (len(d) % 4) != 0:
-            self.get_logger().error('PAIRS must be [x,y,lat,lon]*N (N>=2)')
+        self.create_subscription(Odometry, '/visual_slam/tracking/odometry', self.on_odom, 10)
+        self.create_subscription(Point, '/gps_ll_in', self.on_gps, 10)
+
+        self.get_logger().info('pose_converter_mini ready (SLAM <-> GPS planar)')
+
+    # ---------- Calibration ----------
+    def _calibrate_from_pairs(self):
+        if len(PAIRS) < 2:
+            self.get_logger().error('Need at least 2 point pairs for similarity fit.')
             return
-        X, Y = [], []
-        for i in range(0, len(d), 4):
-            X.append([float(d[i]), float(d[i+1])])       # SLAM
-            Y.append([float(d[i+2]), float(d[i+3])])     # GPS
-        X = np.asarray(X); Y = np.asarray(Y)
+        X = np.array([slam for slam, _ in PAIRS], dtype=float)  # SLAM
+        Y = np.array([gps  for _, gps in PAIRS], dtype=float)   # GPS-like
         self.s, self.R, self.t = self._fit_similarity(X, Y)
+        self.Rt = self.R.T
         self.calibrated = True
         self.get_logger().info(
-            f'Calibrated.\n s={self.s:.12f}\n R=\n{self.R}\n t=[{self.t[0]:.12f}, {self.t[1]:.12f}]'
+            f'Calibrated: s={self.s:.6f}, R=\n{self.R}\n t={self.t}'
         )
-
-    def on_xy(self, msg: Point):
-        if not self.calibrated:
-            return
-        p = np.array([float(msg.x), float(msg.y)])
-        g = self.s * (self.R @ p) + self.t
-        out = Point(); out.x, out.y, out.z = float(g[0]), float(g[1]), msg.z
-        self.pub_ll.publish(out)
-
-    def on_ll(self, msg: Point):
-        if not self.calibrated:
-            return
-        g = np.array([float(msg.x), float(msg.y)])
-        p = (1.0 / self.s) * (g - self.t)
-        p = self.R.T @ p
-        out = Point(); out.x, out.y, out.z = float(p[0]), float(p[1]), msg.z
-        self.pub_xy.publish(out)
 
     @staticmethod
     def _fit_similarity(X: np.ndarray, Y: np.ndarray):
@@ -79,9 +66,45 @@ class PoseConverterMiniStatic(Node):
         t = mu_y - s * (R @ mu_x)
         return float(s), R, t
 
+    # ---------- Callbacks ----------
+    def on_odom(self, msg: Odometry):
+        """SLAM (x,y) -> GPS 평면 (lat,lon)"""
+        if not self.calibrated:
+            return
+        px = float(msg.pose.pose.position.x)
+        py = float(msg.pose.pose.position.y)
+        p = np.array([px, py], dtype=float)
+
+        g = self.s * (self.R @ p) + self.t  # -> GPS 평면
+
+        out = Point()
+        out.x = float(g[0])  # lat-like
+        out.y = float(g[1])  # lon-like
+        out.z = msg.pose.pose.position.z
+        self.pub_gps.publish(out)
+
+        # 레이트 제한이 필요하면 아래를 대신 사용:
+        # now = self.get_clock().now()
+        # if (now - self._last_pub).nanoseconds >= int(1e9 / PUBLISH_HZ):
+        #     self.pub_gps.publish(out); self._last_pub = now
+
+    def on_gps(self, msg: Point):
+        """GPS 평면 (lat,lon) -> SLAM (x,y)"""
+        if not self.calibrated:
+            return
+        g = np.array([float(msg.x), float(msg.y)], dtype=float)
+
+        p = self.Rt @ ((g - self.t) / max(self.s, 1e-12))  # -> SLAM
+
+        out = Point()
+        out.x = float(p[0])
+        out.y = float(p[1])
+        out.z = msg.z
+        self.pub_xy.publish(out)
+
 def main(args=None):
     rclpy.init(args=args)
-    node = PoseConverterMiniStatic()
+    node = PoseConverterMini()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
