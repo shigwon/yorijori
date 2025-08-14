@@ -71,19 +71,17 @@ public class StreamingController {
 
     public static void broadcastImage(int robotId, String image) {
         List<SseEmitter> list = robotSubscribers.get(robotId);
-        if (list == null) {
-            return;
-        }
+        if (list == null) return;
 
-        for (SseEmitter emitter : list) {
+        list.removeIf(emitter -> {
             try {
                 emitter.send(SseEmitter.event().name("robotStreamingImage").data(image));
-            } catch(IOException e) {
-                list.remove(emitter);
-                // 에러 로그
+                return false;
+            } catch (IOException e) {
                 log.warn("Emitter send failed for robotId {}: {}", robotId, e.getMessage());
+                return true; // 실패한 emitter 제거
             }
-        }
+        });
     }
 
     public static void broadcastLocation(int robotId, double latitude, double longitude) {
