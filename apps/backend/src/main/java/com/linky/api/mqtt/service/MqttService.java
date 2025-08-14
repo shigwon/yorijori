@@ -3,7 +3,7 @@ package com.linky.api.mqtt.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linky.api.order.dto.request.UpdateDeliveryStateDto;
-import com.linky.api.order.entity.OrderSummary;
+import com.linky.api.order.dto.response.OrderListResponseDto;
 import com.linky.api.order.service.OrderService;
 import com.linky.api.robot.dto.RobotLocationDto;
 import com.linky.api.robot.dto.RobotRequestResultDto;
@@ -56,7 +56,7 @@ public class MqttService {
         sendPayload(robotId, "result", result);
     }
 
-    public void sendOrderList(int robotId, List<OrderSummary> orderList) {
+    public void sendOrderList(int robotId, List<OrderListResponseDto> orderList) {
         sendPayload(robotId, "orderList", orderList);
     }
 

@@ -1,7 +1,9 @@
 package com.linky.api.robot.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linky.api.file.service.FileService;
 import com.linky.api.mqtt.service.MqttService;
+import com.linky.api.order.dto.response.OrderListResponseDto;
 import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.repository.OrderRepository;
 import com.linky.api.robot.service.DeliveryService;
@@ -16,6 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -81,12 +84,27 @@ public class DeliveryServiceImpl implements DeliveryService {
         List<OrderSummary> orderList = orderRepository.searchOrderList(robotId);
         orderRepository.updateOrderStatusByorderId(orderList);
 
+        // Todo: 배포시 주석 해제 하고 배포 하세요!
 //        for (OrderSummary order : orderList) {
 //            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
 //            log.info(order.toString());
 //        }
 
-        mqttPublishService.sendOrderList(robotId, orderList);
+        List<OrderListResponseDto> orderListResponse = new ArrayList<>();
+
+        for(OrderSummary orderSummary : orderList){
+            orderListResponse.add(new OrderListResponseDto(
+                    orderSummary.getOrderId(),
+                    orderSummary.getCode(),
+                    orderSummary.getTel(),
+                    orderSummary.getCustomerLatitude(),
+                    orderSummary.getCustomerLongitude(),
+                    orderSummary.getFaceImage(),
+                    orderSummary.getSpaceNum()
+            ));
+        }
+
+        mqttPublishService.sendOrderList(robotId, orderListResponse);
     }
 
 }

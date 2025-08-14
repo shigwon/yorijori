@@ -22,7 +22,7 @@ public class Order {
     double customerLongitude;
     LocalDateTime startTime;
     LocalDateTime endTime;
-    OrderState state;
+    String state;
     String faceImageUrl;
     String foodImageUrl;
     int spaceNum;
