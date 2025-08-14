@@ -1,79 +1,59 @@
 #!/usr/bin/env python3
-import os
-import json
-import time
-import math
-import base64
+import os, json, time, math, base64
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Tuple
 
 import rclpy
 from rclpy.node import Node
 from rclpy.timer import Timer
-from std_msgs.msg import String, Bool
-from geometry_msgs.msg import Point
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy
 
-# ===== 고정 설정(필요시 여기서만 수정) =====
+from std_msgs.msg import String, Bool, Float32MultiArray
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Point  # 좌표 변환 I/O
+
 MAX_ORDERS        = 3
-ALLOW_OVERWRITE   = False
-ARRIVE_RADIUS_M   = 5.0
-DOOR_OPEN_SEC     = 5.0
+ALLOW_OVERWRITE   = True
+ARRIVE_RADIUS_M   = 1.0
+DOOR_OPEN_SEC     = 1.0
 FACE_CACHE_DIR    = "/tmp/face_cache"
 FACE_MAX_BYTES    = 3 * 1024 * 1024
+ROBOT_ID          = 1
 
-# ===== 공용 유틸 =====
-def haversine_m(lat1, lon1, lat2, lon2) -> float:
-    R = 6371000.0
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2.0) ** 2
-         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
-         * math.sin(dlon / 2.0) ** 2)
-    return 2 * R * math.asin(math.sqrt(a))
+FINAL_GOAL_X = 12.34
+FINAL_GOAL_Y = -5.67
+
+STATE_HEARTBEAT_SEC = 0.0  # 0: heartbeat off
 
 def _to_float(x, default=None) -> Optional[float]:
     try:
-        if x is None:
-            return default
+        if x is None: return default
         return float(x)
     except Exception:
         return default
 
 def _to_int(x, default=None) -> Optional[int]:
     try:
-        if x is None:
-            return default
+        if x is None: return default
         return int(x)
     except Exception:
         return default
 
 def _extract_pure_b64(s: str) -> str:
-    """'data:image/...;base64,....' 또는 순수 base64 → 순수 base64만 반환"""
-    if not isinstance(s, str):
-        return ""
+    if not isinstance(s, str): return ""
     s = s.strip()
-    if not s:
-        return ""
+    if not s: return ""
     if ';base64,' in s:
         s = s.split(';base64,', 1)[1]
     return s
 
-def _validate_b64_and_optionally_save(order_id: str,
-                                      b64: str,
-                                      max_bytes: int,
-                                      cache_dir: str) -> Tuple[str, str]:
-    """
-    base64 디코드/용량 검증 후 (선택) 캐시에 저장.
-    return: (normalized_b64, face_path or "")
-    """
+def _validate_b64_and_optionally_save(order_id: str, b64: str, max_bytes: int, cache_dir: str) -> Tuple[str, str]:
     try:
         raw = base64.b64decode(b64, validate=False)
     except Exception:
         raise ValueError("invalid base64 data")
-
     if len(raw) > max_bytes:
         raise ValueError(f"image too large ({len(raw)} > {max_bytes})")
-
     face_path = ""
     try:
         os.makedirs(cache_dir, exist_ok=True)
@@ -81,12 +61,10 @@ def _validate_b64_and_optionally_save(order_id: str,
         with open(face_path, "wb") as f:
             f.write(raw)
     except Exception:
-        face_path = ""  # 저장 실패는 치명적 아님
-
+        face_path = ""
     normalized_b64 = base64.b64encode(raw).decode("ascii")
     return normalized_b64, face_path
 
-# ===== 데이터 모델 =====
 @dataclass
 class Order:
     orderId: str
@@ -96,17 +74,20 @@ class Order:
     customerLongitude: float
     spaceNum: int
     createdTs: float = field(default_factory=lambda: time.time())
-    status: str = "픽업존대기중"      # 픽업존대기중 → 배달중 → 배달완료
-    arrival_notified: bool = False   # 도착 이벤트 1회 보장
-    face_path: str = ""              # 캐시 파일 경로(옵션)
-    face_b64: str = ""               # 서버에서 받은 base64(정규화 형태)
+    status: str = "READY_FOR_PICKUP"
+    arrival_notified: bool = False
+    face_path: str = ""
+    face_b64: str = ""
+    slam_x: Optional[float] = None
+    slam_y: Optional[float] = None
+    last_state_pub_ts: float = 0.0
+    initial_state_sent: bool = False  # ★ 초기 상태 1회 송신 체크
 
-# ===== 노드 =====
 class OrdersStoreNode(Node):
     def __init__(self):
         super().__init__('linky')
 
-        # ---- 설정(상수 바인딩) ----
+        # ------- 런타임 설정 -------
         self.max_orders       = int(MAX_ORDERS)
         self.allow_overwrite  = bool(ALLOW_OVERWRITE)
         self.arrive_radius_m  = float(ARRIVE_RADIUS_M)
@@ -115,252 +96,404 @@ class OrdersStoreNode(Node):
         self.face_max_bytes   = int(FACE_MAX_BYTES)
         os.makedirs(self.face_cache_dir, exist_ok=True)
 
-        # ---- 상태 ----
+        # ------- 상태 -------
         self.orders: List[Order] = []
         self._stored_once = False
-        self.current_target_index: Optional[int] = None
-        self.robot_lat: Optional[float] = None
-        self.robot_lon: Optional[float] = None
+        self.robot_x: Optional[float] = None
+        self.robot_y: Optional[float] = None
 
-        # ---- 구독 ----
+        # 좌표 변환 seq 매핑
+        self._seq_counter: int = 1
+        self._seq_to_oid: Dict[int, str] = {}
+        self._pending_xy: Dict[str, bool] = {}
+
+        # 방문 순서/인덱스
+        self.plan_order_ids: List[str] = []
+        self.plan_idx: int = 0
+
+        # 복귀
+        self.return_goal: Optional[Tuple[float, float]] = (FINAL_GOAL_X, FINAL_GOAL_Y)
+        self.returning: bool = False
+
+        # 로봇 상태 캐시(중복 전송 방지)
+        self._last_robot_status: Optional[str] = None
+
+        self._targets_published: bool = False
+
+        # ------- 통신 -------
+
+        # 구독
         self.create_subscription(String, '/server/order_list', self.on_order_list, 10)
         self.create_subscription(String, '/face_match_by_order', self.on_face_match, 10)
+        self.create_subscription(Point,  '/pose_xy_out', self.on_xy, 10)          # 변환 응답(seq 포함)
+        self.create_subscription(String, '/visit_order', self.on_visit_order, 10)  # 플래너 방문 순서
+        self.create_subscription(Odometry, '/visual_slam/tracking/odometry', self.odom_cb, 20)
 
-        # ---- 퍼블리시 ----
-        self.pub_robot_status       = self.create_publisher(String, '/robot/status', 10)                 # 대기중/주행중
-        self.pub_delivery_state     = self.create_publisher(String, '/robot/delivery_state', 10)         # 픽업존대기중/배달중/배달완료
-        self.pub_delivery_state_json= self.create_publisher(String, '/robot/delivery_state_json', 10)    # {"orderId","state"}
-        self.pub_drive_enable       = self.create_publisher(Bool,   '/robot/drive_enable', 10)           # True=주행, False=정지
-        self.pub_face_register      = self.create_publisher(String, '/face_db/register', 10)             # {"orderId","image_base64"}
-        self.pub_food_bay           = self.create_publisher(Int32MultiArray, '/food_bay_cmd', 10)        # [bay, OPEN/CLOSE]
+        latched_qos = QoSProfile(depth=1,
+                                 durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+                                 reliability=QoSReliabilityPolicy.RELIABLE)
 
-        # 베이별 자동 닫기 타이머
+        # 퍼블리시
+        self.pub_robot_status   = self.create_publisher(String, '/robot/status', 10)
+        self.pub_delivery_state = self.create_publisher(String, '/robot/delivery_state', 10)
+        self.pub_drive_enable   = self.create_publisher(Bool,   '/drive_enable', 10)
+        self.pub_face_register  = self.create_publisher(String, '/face_db/register', 10)
+        self.pub_food_bay       = self.create_publisher(String, '/food_bay_cmd', 10)
+
+        self.pub_gps_req        = self.create_publisher(Point,  '/gps_ll_in', 10)             # 변환 요청(seq 포함)
+        self.pub_targets_xy     = self.create_publisher(Float32MultiArray, '/targets_xy', latched_qos)
+        self.pub_targets_order  = self.create_publisher(String, '/targets_order',  latched_qos)
+
         self._bay_close_timers: Dict[int, Timer] = {}
 
-        self.set_robot_status("대기중")
-        self.get_logger().info('OrdersStoreNode ready (drive_enable + base64 face cache + food bay).')
+        # 초기 상태: WAITING
+        self.set_robot_status("WAITING")
+        self.get_logger().info('OrdersStoreNode 준비 완료 (플래너 순서 기반 SLAM 배달)')
 
-    # ========== 주문 수신 ==========
+        # 초기 모든 베이 OPEN
+        for bay_num in range(1, self.max_orders + 1):
+            self.publish_food_bay(bay_num, 'OPEN')
+            self.get_logger().info(f"[초기화] BAY={bay_num} OPEN")
+
+    # ------------- 주문 수신 -------------
     def on_order_list(self, msg: String):
         if self._stored_once and not self.allow_overwrite:
-            self.get_logger().info('Order list already stored; ignoring further messages.')
+            self.get_logger().info('[주문 수신] 이미 저장된 주문이 있어 무시')
             return
-
         try:
             payload = json.loads(msg.data)
-            arr = payload["orders"] if isinstance(payload, dict) and "orders" in payload else payload
-            if not isinstance(arr, list):
-                self.get_logger().warning('order_list must be list or {"orders":[...]}. Ignored.')
-                return
-
-            new_list: List[Order] = []
-            for o in arr[: self.max_orders]:
-                try:
-                    lat = _to_float(o.get("customerLatitude"))
-                    lon = _to_float(o.get("customerLongitude"))
-                    bay = _to_int(o.get("spaceNum"))
-                    if lat is None or lon is None or bay is None:
-                        raise ValueError("customerLatitude/Longitude/spaceNum required")
-
-                    ord_obj = Order(
-                        orderId=str(o.get("orderId", "")),
-                        code=str(o.get("code", "")),     # 주문 번호/코드
-                        tel=str(o.get("tel", "")),
-                        customerLatitude=lat,
-                        customerLongitude=lon,
-                        spaceNum=bay,
-                    )
-
-                    # === 서버 base64 파싱 ===
-                    # 우선순위: faceImageBase64, face_base64
-                    img_b64_raw = (o.get("faceImageBase64")
-                                   or o.get("face_base64")
-                                   or o.get("faceImageUrl")
-                                   or "")
-                    img_b64_raw = _extract_pure_b64(str(img_b64_raw))
-
-                    if img_b64_raw:
-                        try:
-                            normalized_b64, face_path = _validate_b64_and_optionally_save(
-                                ord_obj.orderId, img_b64_raw, self.face_max_bytes, self.face_cache_dir
-                            )
-                            ord_obj.face_b64 = normalized_b64
-                            ord_obj.face_path = face_path or ""
-                            if face_path:
-                                self.get_logger().info(f"[FaceCache] {ord_obj.orderId} -> {face_path}")
-                        except Exception as e:
-                            self.get_logger().warning(f"[FaceCache] base64 invalid for {ord_obj.orderId}: {e}")
-                    else:
-                        self.get_logger().warning(f"[FaceCache] no base64 provided for {ord_obj.orderId}")
-
-                    new_list.append(ord_obj)
-
-                except Exception as e:
-                    self.get_logger().warning(f"Skip invalid item: {e}")
-
-            self.orders = new_list
-            self._stored_once = True
-
-            if self.orders:
-                self.current_target_index = 0
-                self.set_order_state(self.current_target_index, "배달중")
-                self.set_robot_status("주행중")
-                self.publish_drive_enable(True)   # 주문 수신 즉시 출발
-            else:
-                self.current_target_index = None
-                self.set_robot_status("대기중")
-                self.publish_drive_enable(False)
-
-            self.get_logger().info(f"Stored {len(self.orders)} orders. IDs={[o.orderId for o in self.orders]}")
-
+            self.get_logger().info(f"[주문 수신 원본]\n{json.dumps(payload, ensure_ascii=False, indent=2)}")
         except Exception as e:
-            self.get_logger().error(f'on_order_list error: {e}')
+            self.get_logger().error(f'[주문 수신] JSON 파싱 실패: {e}')
+            return
 
-    # ========== 위치 갱신 ==========
-    def location_callback(self, msg: Point):
-        self.robot_lat = _to_float(msg.x)
-        self.robot_lon = _to_float(msg.y)
+        if isinstance(payload, dict) and "orders" in payload:
+            arr = payload["orders"]
+        elif isinstance(payload, list):
+            arr = payload
+        elif isinstance(payload, dict):
+            arr = [payload]
+        else:
+            self.get_logger().warning('[주문 수신] 형식 오류')
+            return
+
+        # 초기화
+        self.orders.clear()
+        self._pending_xy.clear()
+        self._seq_to_oid.clear()
+        self.plan_order_ids.clear()
+        self.plan_idx = 0
+        self.returning = False
+
+        # 주문 적재 + 좌표 변환 요청 발행
+        for o in arr[: self.max_orders]:
+            lat = _to_float(o.get("customerLatitude"))
+            lon = _to_float(o.get("customerLongitude"))
+            bay = _to_int(o.get("spaceNum"))
+            if lat is None or lon is None or bay is None:
+                self.get_logger().warning("[주문 수신] 위도/경도/베이번호 누락 → 스킵")
+                continue
+
+            ord_obj = Order(
+                orderId=str(o.get("orderId", "")),
+                code=str(o.get("code", "")),
+                tel=str(o.get("tel", "")),
+                customerLatitude=lat,
+                customerLongitude=lon,
+                spaceNum=bay,
+            )
+
+            img_b64_raw = _extract_pure_b64(str(o.get("faceImage", "")))
+            if img_b64_raw:
+                try:
+                    normalized_b64, face_path = _validate_b64_and_optionally_save(
+                        ord_obj.orderId, img_b64_raw, self.face_max_bytes, self.face_cache_dir
+                    )
+                    ord_obj.face_b64 = normalized_b64
+                    ord_obj.face_path = face_path or ""
+                except Exception as e:
+                    self.get_logger().warning(f"[주문 수신] 얼굴이미지 오류: {e}")
+
+            # 초기 상태 1회: READY_FOR_PICKUP
+            self._publish_order_state_once(ord_obj, "READY_FOR_PICKUP")
+
+            self.orders.append(ord_obj)
+
+            # 좌표 변환 요청: x=lat, y=lon, z=seq
+            seq = int(self._seq_counter)
+            self._seq_counter = 1 if self._seq_counter >= 1_000_000_000 else self._seq_counter + 1
+            self._seq_to_oid[seq] = ord_obj.orderId
+            self._pending_xy[ord_obj.orderId] = True
+
+            req = Point()
+            req.x = float(lat); req.y = float(lon); req.z = float(seq)
+            self.pub_gps_req.publish(req)
+
+            self.get_logger().info(f"[주문 등록] ID={ord_obj.orderId}, BAY={ord_obj.spaceNum}, GPS=({lat},{lon}), SEQ={seq}")
+
+        self._stored_once = True
+
+        # 로봇 상태 준비
+        if self.orders:
+            self.set_robot_status("WORKING")
+        else:
+            self.set_robot_status("WAITING")
+            self.publish_drive_enable(False)
+
+        self._targets_published = False
+
+    # 좌표 변환 응답
+    def on_xy(self, msg: Point):
+        try:
+            seq = int(round(float(msg.z)))
+            x = float(msg.x); y = float(msg.y)
+        except Exception as e:
+            self.get_logger().warning(f"[좌표 변환 응답] 파싱 오류: {e}")
+            return
+
+        oid = self._seq_to_oid.pop(seq, None)
+        if not oid:
+            self.get_logger().warning(f"[좌표 변환 응답] Unknown SEQ={seq}")
+            return
+
+        for o in self.orders:
+            if o.orderId == oid:
+                o.slam_x = x; o.slam_y = y
+                self.get_logger().info(f"[좌표 변환 완료] ID={oid}, SLAM=({x:.2f},{y:.2f}) (SEQ={seq})")
+                break
+        self._pending_xy.pop(oid, None)
+
+        if not self._pending_xy and not self._targets_published and self.orders:
+            self._start_mission_once()
+
+    # ★ 출발 시 한 번만 실행
+    def _start_mission_once(self):
+        if any(o.slam_x is None or o.slam_y is None for o in self.orders):
+            self.get_logger().warning("[플래너 전송] 누락된 SLAM 좌표가 있어 발행 생략")
+            return
+
+        # 플래너 입력 1회 발행
+        xy = Float32MultiArray()
+        flat = []
+        for o in self.orders:
+            flat.extend([o.slam_x, o.slam_y])
+        xy.data = flat
+        self.pub_targets_xy.publish(xy)
+
+        ids_msg = String()
+        ids_msg.data = json.dumps([o.orderId for o in self.orders], ensure_ascii=False)
+        self.pub_targets_order.publish(ids_msg)
+
+        # 방문 순서 초기화(필요시 플래너 override)
+        if not self.plan_order_ids:
+            self.plan_order_ids = [o.orderId for o in self.orders]
+            self.plan_idx = 0
+
+        # ★ 출발과 동시에 "모든 주문"을 DELIVERING 상태로 전환
+        for o in self.orders:
+            self._mark_state(o.orderId, "DELIVERING")
+
+        # 베이 CLOSE 후 주행 시작
+        for bay_num in range(1, self.max_orders + 1):
+            self.publish_food_bay(bay_num, 'CLOSE')
+        self.publish_drive_enable(True)
+        self.set_robot_status("WORKING")
+
+        self._targets_published = True
+        self.get_logger().info(f"[플래너 전송] {len(self.orders)}개 좌표 1회 발행 및 출발 (모두 DELIVERING)")
+
+    # 방문 순서 수신
+    def on_visit_order(self, msg: String):
+        try:
+            ids = json.loads(msg.data)
+            ids = [str(x) for x in ids if str(x) in {o.orderId for o in self.orders}]
+        except Exception as e:
+            self.get_logger().warning(f"[방문 순서] 파싱 오류: {e}")
+            return
+        if not ids:
+            self.get_logger().warning("[방문 순서] 유효한 ID 없음")
+            return
+
+        self.plan_order_ids = ids
+        self.plan_idx = 0
+
+        # ★ 출발 보장이 이 경로에서 이루어질 수도 있으니, 여기서도 모두 DELIVERING 보장
+        for o in self.orders:
+            self._mark_state(o.orderId, "DELIVERING")
+
+        for bay_num in range(1, self.max_orders + 1):
+            self.publish_food_bay(bay_num, 'CLOSE')
+        self.publish_drive_enable(True)
+        self.set_robot_status("WORKING")
+
+        self.get_logger().info(f"[방문 순서 채택] {self.plan_order_ids}")
+
+    # ODOM & 도착 판정
+    def odom_cb(self, msg: Odometry):
+        self.robot_x = msg.pose.pose.position.x
+        self.robot_y = msg.pose.pose.position.y
         self.check_arrival()
 
+    def _current_target(self) -> Optional[Order]:
+        if 0 <= self.plan_idx < len(self.plan_order_ids):
+            oid = self.plan_order_ids[self.plan_idx]
+            for o in self.orders:
+                if o.orderId == oid:
+                    return o
+        return None
+
     def check_arrival(self):
-        if self.current_target_index is None or not self.orders:
-            return
-        if self.current_target_index >= len(self.orders):
-            return
-        if self.robot_lat is None or self.robot_lon is None:
-            return
-
-        target = self.orders[self.current_target_index]
-        if target.status in ("픽업존대기중", "배달완료"):
-            return
-
-        try:
-            dist = haversine_m(self.robot_lat, self.robot_lon,
-                               target.customerLatitude, target.customerLongitude)
-        except Exception as e:
-            self.get_logger().warning(f"distance calc failed: {e}")
-            return
-
-        if dist <= self.arrive_radius_m:
-            if target.status != "픽업존대기중":
-                self.set_order_state(self.current_target_index, "픽업존대기중")
-                self.get_logger().info(
-                    f"[Arrived] orderId={target.orderId}, bay={target.spaceNum}, dist={dist:.2f} m"
-                )
-
-            if not target.arrival_notified:
-                # 도착 → 차량 정지
+        # 복귀
+        if self.returning and self.return_goal and self.robot_x is not None and self.robot_y is not None:
+            dist_home = math.hypot(self.robot_x - self.return_goal[0], self.robot_y - self.return_goal[1])
+            if dist_home <= self.arrive_radius_m:
+                self.returning = False
                 self.publish_drive_enable(False)
+                self.set_robot_status("WAITING")
+                self.get_logger().info("[복귀 완료] 최종 목적지 도착, 대기")
+            return
 
-                # 얼굴 DB 등록 (캐시된 base64만 사용)
-                img_b64 = target.face_b64
-                if img_b64:
-                    reg = String()
-                    reg.data = json.dumps({"orderId": target.orderId,
-                                           "image_base64": img_b64}, ensure_ascii=False)
-                    self.pub_face_register.publish(reg)
-                else:
-                    self.get_logger().warning(f"[FaceDB] No face image base64 for orderId={target.orderId}")
+        tgt = self._current_target()
+        if not tgt or self.robot_x is None or self.robot_y is None:
+            return
+        if tgt.slam_x is None or tgt.slam_y is None:
+            return
 
-                target.arrival_notified = True
+        dist = math.hypot(self.robot_x - tgt.slam_x, self.robot_y - tgt.slam_y)
+        if dist <= self.arrive_radius_m:
+            if tgt.arrival_notified:
+                return
+            # 도착 → 주행만 정지, 상태는 계속 DELIVERING 유지 (요청사항)
+            self.publish_drive_enable(False)
+            self.get_logger().info(f"[도착] 주문={tgt.orderId}, BAY={tgt.spaceNum}")
+
+            # 얼굴 DB 등록(있을 때)
+            if tgt.face_b64:
+                reg = String()
+                reg.data = json.dumps({"orderId": tgt.orderId, "image_base64": tgt.face_b64}, ensure_ascii=False)
+                self.pub_face_register.publish(reg)
+            tgt.arrival_notified = True
         else:
-            if target.status != "배달중":
-                self.set_order_state(self.current_target_index, "배달중")
+            # 주행 중 상태 유지(이미 DELIVERING)
+            if tgt.status != "DELIVERING":
+                self._mark_state(tgt.orderId, "DELIVERING")
 
-    # ========== 얼굴 매칭 결과 ==========
+    # 얼굴 인증 결과
     def on_face_match(self, msg: String):
         try:
             data = json.loads(msg.data)
             order_id = str(data.get("orderId", ""))
             matched = bool(data.get("matched", False))
-        except Exception as e:
-            self.get_logger().warning(f"face_match parse error: {e}")
+        except Exception:
+            return
+        tgt = self._current_target()
+        if not tgt or order_id != tgt.orderId:
             return
 
-        if self.current_target_index is None or not self.orders:
-            return
-        if self.current_target_index >= len(self.orders):
-            return
+        # 매칭 성공 → 베이 열고 닫고 → DELIVERED
+        if tgt.status in ("READY_FOR_PICKUP", "DELIVERING") and matched:
+            self.open_food_bay_then_close(tgt.spaceNum, self.door_open_sec)
+            self._mark_state(tgt.orderId, "DELIVERED")
 
-        target = self.orders[self.current_target_index]
-        if order_id != target.orderId:
-            return
-
-        if target.status == "픽업존대기중" and matched:
-            # 음식칸 열기 → 일정 시간 뒤 1회 닫기
-            self.open_food_bay_then_close(target.spaceNum, self.door_open_sec)
-
-            # 주문 완료 → 다음 주문으로
-            self.set_order_state(self.current_target_index, "배달완료")
-            self.get_logger().info(f"[Completed] orderId={target.orderId}")
-
-            self.current_target_index += 1
-            if self.current_target_index is not None and self.current_target_index < len(self.orders):
-                nxt = self.orders[self.current_target_index]
-                self.set_order_state(self.current_target_index, "배달중")
-                self.set_robot_status("주행중")
+            # 다음 주문
+            self.plan_idx += 1
+            nxt = self._current_target()
+            if nxt:
+                self.set_robot_status("WORKING")
                 self.publish_drive_enable(True)
-                self.get_logger().info(
-                    f"Next target -> orderId={nxt.orderId}, bay={nxt.spaceNum}"
-                )
             else:
-                self.current_target_index = None
-                self.set_robot_status("대기중")
-                self.publish_drive_enable(False)
-                self.get_logger().info("All deliveries completed. Robot is now 대기중.")
+                # 모든 주문 완료 → 복귀 경로 1회 발행
+                goal = self.return_goal
+                if not goal or not all(map(math.isfinite, goal)):
+                    self.publish_drive_enable(False)
+                    self.set_robot_status("WAITING")
+                    return
+                self.returning = True
 
+                xy = Float32MultiArray()
+                xy.data = [float(goal[0]), float(goal[1])]
+                self.pub_targets_xy.publish(xy)
+
+                ids_msg = String()
+                ids_msg.data = json.dumps([], ensure_ascii=False)  # 복귀에는 주문 없음
+                self.pub_targets_order.publish(ids_msg)
+
+                for bay_num in range(1, self.max_orders + 1):
+                    self.publish_food_bay(bay_num, 'CLOSE')
+
+                self.set_robot_status("WORKING")
+                self.publish_drive_enable(True)
+
+    # 베이 제어
     def publish_food_bay(self, bay: int, state: str):
-        msg = String()
-        msg.data = f"{bay} {state}"
-        self.pub_food_bay.publish(msg)
+        self.pub_food_bay.publish(String(data=f"{bay} {state}"))
 
     def open_food_bay_then_close(self, bay: int, duration_sec: float):
-        # 기존 타이머 있으면 취소
-        old = self._bay_close_timers.get(bay)
-        if old is not None:
-            try:
-                old.cancel()
-            except Exception:
-                pass
-            self._bay_close_timers.pop(bay, None)
-
-        # 즉시 열기
+        old = self._bay_close_timers.pop(bay, None)
+        if old:
+            try: old.cancel()
+            except Exception: pass
         self.publish_food_bay(bay, 'OPEN')
 
-        # duration 후 1회 닫기 (콜백 내부에서 자기 자신 cancel)
         def cb():
             try:
                 self.publish_food_bay(bay, 'CLOSE')
             finally:
                 t = self._bay_close_timers.pop(bay, None)
-                if t is not None:
-                    try:
-                        t.cancel()
-                    except Exception:
-                        pass
+                if t:
+                    try: t.cancel()
+                    except Exception: pass
 
-        timer = self.create_timer(float(duration_sec), cb)
+        timer = self.create_timer(duration_sec, cb)
         self._bay_close_timers[bay] = timer
-        self.get_logger().info(f"Scheduled auto-close for bay {bay} in {duration_sec:.1f}s")
 
+    # 상태 퍼블리시(중복 방지)
     def set_robot_status(self, s: str):
-        out = String()
-        out.data = s
-        self.pub_robot_status.publish(out)
+        if s == self._last_robot_status:
+            return
+        self._last_robot_status = s
+        self.pub_robot_status.publish(String(data=s))
 
-    def set_order_state(self, idx: int, state: str):
-        self.orders[idx].status = state
-        out = String()
-        out.data = state
-        self.pub_delivery_state.publish(out)
-        j = String()
-        j.data = json.dumps({"orderId": self.orders[idx].orderId, "state": state}, ensure_ascii=False)
-        self.pub_delivery_state_json.publish(j)
+    def _publish_order_state_once(self, ord_obj: Order, state: str):
+        if ord_obj.initial_state_sent:
+            return
+        ord_obj.status = state
+        try:
+            oid_num = int(ord_obj.orderId)
+        except Exception:
+            oid_num = ord_obj.orderId
+        self.pub_delivery_state.publish(String(data=json.dumps({
+            "orderId": oid_num, "robotId": ROBOT_ID, "state": state
+        }, ensure_ascii=False)))
+        ord_obj.last_state_pub_ts = time.time()
+        ord_obj.initial_state_sent = True
+
+    def _mark_state(self, order_id: str, state: str):
+        now = time.time()
+        for o in self.orders:
+            if o.orderId == order_id:
+                old_state = o.status
+                if old_state == state:
+                    if STATE_HEARTBEAT_SEC > 0.0 and (now - o.last_state_pub_ts) >= STATE_HEARTBEAT_SEC:
+                        self.pub_delivery_state.publish(String(data=json.dumps({
+                            "orderId": order_id, "robotId": ROBOT_ID, "state": state
+                        }, ensure_ascii=False)))
+                        o.last_state_pub_ts = now
+                    return
+                o.status = state
+                try:
+                    oid_num = int(order_id)
+                except Exception:
+                    oid_num = order_id
+                self.pub_delivery_state.publish(String(data=json.dumps({
+                    "orderId": oid_num, "robotId": ROBOT_ID, "state": state
+                }, ensure_ascii=False)))
+                o.last_state_pub_ts = now
+                self.get_logger().info(f"[상태 변경] {order_id}: {old_state} → {state}")
+                return
 
     def publish_drive_enable(self, enable: bool):
-        m = Bool()
-        m.data = bool(enable)
-        self.pub_drive_enable.publish(m)
+        self.pub_drive_enable.publish(Bool(data=bool(enable)))
 
 def main(args=None):
     rclpy.init(args=args)
