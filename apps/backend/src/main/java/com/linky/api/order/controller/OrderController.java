@@ -8,7 +8,6 @@ import com.linky.api.order.dto.request.RunImageToOcrRequestDto;
 import com.linky.api.order.dto.request.UpdateLocationRequestDto;
 import com.linky.api.order.dto.response.RunImageToOcrResponseDto;
 import com.linky.api.order.entity.Order;
-import com.linky.api.order.entity.OrderSummary;
 import com.linky.api.order.mapper.OrderMapper;
 import com.linky.api.order.service.OcrService;
 import com.linky.api.order.service.OrderService;
@@ -52,6 +51,7 @@ public class OrderController {
             int orderId = orderService.searchOrderId(createOrderRequest);
             Order order = orderMapper.toEntity(createOrderRequest);
             int sectionNum = orderService.searchOrderCreateActivate(order.getRobotId());
+            // Todo: 배포시 주석 해제하고 배포!
             messageService.messageSend(order.getTel(), "https://i13c102.p.ssafy.io/customer/welcome?orderId=" + orderId +"&robotId=" + order.getRobotId() + "&code=" + order.getCode() + "&sectionNum=" + sectionNum);
             mqttService.sendCloseSection(order.getRobotId(), Section.builder().sectionNum(sectionNum).sectionStatus("CLOSE").build());
 
