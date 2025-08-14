@@ -147,7 +147,7 @@ const closeChatbot = () => {
 }
 
 .brand-name {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 700;
   background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
   -webkit-background-clip: text;
@@ -158,16 +158,16 @@ const closeChatbot = () => {
 }
 
 .brand-subtitle {
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 19px;
+  font-weight: 600;
   color: #666;
   line-height: 1.4;
   text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
 }
 
 .brand-description {
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 19px;
+  font-weight: 600;
   color: #666;
   line-height: 1.4;
   text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
@@ -331,15 +331,15 @@ const closeChatbot = () => {
   }
   
   .brand-name {
-    font-size: 28px;
+    font-size: 30px;
   }
   
   .brand-subtitle {
-    font-size: 16px;
+    font-size: 19px;
   }
   
   .brand-description {
-    font-size: 14px;
+    font-size: 19px;
   }
 }
 
@@ -354,15 +354,15 @@ const closeChatbot = () => {
   }
   
   .brand-name {
-    font-size: 24px;
+    font-size: 26px;
   }
   
   .brand-subtitle {
-    font-size: 14px;
+    font-size: 15px;
   }
   
   .brand-description {
-    font-size: 12px;
+    font-size: 15px;
   }
   
   .chatbot-system {

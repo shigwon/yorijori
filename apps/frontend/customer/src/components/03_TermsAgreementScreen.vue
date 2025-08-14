@@ -50,7 +50,7 @@
           />
           <label for="location-agreement" class="checkbox-label"></label>
         </div>
-        <span class="term-text">위치정보동의(필수)</span>
+        <span class="term-text">위치정보 동의(필수)</span>
       </div>
 
       <!-- 선택 약관 -->
@@ -136,7 +136,7 @@
 ⑺ 본 서비스와 경쟁관계가 있는 이용자가 신청하는 경우
 ⑻ 기타 규정한 제반사항을 위반하며 신청하는 경우
 4. 회사는 이용신청고객이 관계법령에서 규정하는 미성년자일 경우에 서비스 별 안내에서 정하는 바에 따라 승낙을 보류할 수 있습니다.
-[부칙] 본 약관은 2018년 12월 10일부터 적용됩니다.</p>
+[부칙] 본 약관은 2025년 08월 18일부터 적용됩니다.</p>
         </div>
         <div class="modal-footer">
           <button class="modal-button" @click="closeModal">확인</button>

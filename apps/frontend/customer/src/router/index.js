@@ -78,4 +78,17 @@ const router = createRouter({
   routes
 })
 
+// 전역 라우터 가드 - 새로고침 시 Welcome 페이지로 리다이렉트
+router.beforeEach((to, from, next) => {
+  // 새로고침 감지 (from.name이 없고 to.name이 있는 경우)
+  if (!from.name && to.name && to.name !== 'Welcome') {
+    console.log('새로고침 감지됨, Welcome 페이지로 리다이렉트')
+    next({ name: 'Welcome' })
+    return
+  }
+  
+  // 정상적인 네비게이션
+  next()
+})
+
 export default router

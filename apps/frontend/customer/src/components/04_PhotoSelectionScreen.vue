@@ -180,6 +180,8 @@ const handleFileSelect = async (event) => {
         // 전송 실패해도 로딩 완료
         console.log('백엔드 전송 실패 후 로딩 완료')
         isLoading.value = false
+        // 전송 실패해도 다음 페이지로 넘어갈 수 있도록 상태 설정
+        showFaceRecognitionModal.value = true
       })
       
       // useAppState에 선택한 사진 저장 (즉시)

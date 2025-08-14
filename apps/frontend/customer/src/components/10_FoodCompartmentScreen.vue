@@ -86,7 +86,7 @@ const handleSurvey = () => {
 
 /* Title Text */
 .title-text {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   color: #333333;
   margin-bottom: 30px;
@@ -94,7 +94,7 @@ const handleSurvey = () => {
 }
 
 .number-part {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 900;
   color: #7C3AED;
   margin: 0 4px;
@@ -126,13 +126,13 @@ const handleSurvey = () => {
 
 /* Bottom Section */
 .bottom-section {
-  padding: 30px 20px;
+  padding: 30px 20px 50px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   margin-top: auto;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   width: 100%;
   z-index: 1000;
 }
@@ -185,12 +185,12 @@ const handleSurvey = () => {
   }
   
   .title-text {
-    font-size: 20px;
+    font-size: 24px;
     margin-bottom: 25px;
   }
   
   .number-part {
-    font-size: 28px;
+    font-size: 38px;
   }
   
   .babo-image {
@@ -199,7 +199,8 @@ const handleSurvey = () => {
   }
   
   .bottom-section {
-    padding: 25px 20px;
+    padding: 25px 20px 10px 20px;
+    margin-bottom: 30px;
   }
   
   .confirm-button {
