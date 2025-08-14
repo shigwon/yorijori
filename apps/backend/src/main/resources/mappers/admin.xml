@@ -40,4 +40,29 @@
         ORDER BY dayOfWeek
     </select>
 
+    <select id="getOrderLogs" resultType="map">
+        SELECT
+        code as orderCode,
+        state,
+        start_time as startTime,
+        end_time as endTime
+        FROM orders
+        <where>
+            <if test="state != null and state != ''">
+                AND state = #{state}
+            </if>
+            <if test="startTime != null">
+                AND start_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND end_time &lt;= #{endTime}
+            </if>
+            <if test="robotId != null">
+                AND robot_id = #{robotId}
+            </if>
+        </where>
+        ORDER BY
+        COALESCE(end_time, start_time, created_at) DESC
+    </select>
+
 </mapper>

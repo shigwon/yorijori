@@ -1,10 +1,12 @@
 package com.linky.api.admin.service;
 
+import com.linky.api.admin.dto.response.OrderLogDto;
 import com.linky.api.admin.model.DailyCountModel;
 import com.linky.api.admin.model.HourlyCountModel;
 import jakarta.servlet.http.HttpSession;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AdminService {
@@ -18,4 +20,6 @@ public interface AdminService {
 
     List<HourlyCountModel> getHourlyOrderCountInDay(LocalDate date);
     List<DailyCountModel> getDailyOrderCountInWeek(LocalDate startDate);
+    List<OrderLogDto> getOrderLogs(String state, LocalDateTime startTime, LocalDateTime endTime, Integer robotId);
+
 }
