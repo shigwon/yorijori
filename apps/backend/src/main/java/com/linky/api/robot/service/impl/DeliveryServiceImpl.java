@@ -46,7 +46,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         String msg = "robot:" + robotId;
         delayedQueue.remove(msg);
         log.info("robot {}의 타이머 3분 설정", robotId);
-        delayedQueue.offer(msg, 3, TimeUnit.MINUTES);
+        delayedQueue.offer(msg, 15, TimeUnit.SECONDS);
     }
 
     public void removeTimer(int robotId) {
@@ -85,26 +85,12 @@ public class DeliveryServiceImpl implements DeliveryService {
         orderRepository.updateOrderStatusByorderId(orderList);
 
         // Todo: 배포시 주석 해제 하고 배포 하세요!
-//        for (OrderSummary order : orderList) {
-//            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
-//            log.info(order.toString());
-//        }
-
-        List<OrderListResponseDto> orderListResponse = new ArrayList<>();
-
-        for(OrderSummary orderSummary : orderList){
-            orderListResponse.add(new OrderListResponseDto(
-                    orderSummary.getOrderId(),
-                    orderSummary.getCode(),
-                    orderSummary.getTel(),
-                    orderSummary.getCustomerLatitude(),
-                    orderSummary.getCustomerLongitude(),
-                    orderSummary.getFaceImage(),
-                    orderSummary.getSpaceNum()
-            ));
+        for (OrderSummary order : orderList) {
+            order.setFaceImage(fileService.downloadFileToS3ByUrl(order.getFaceImageUrl()));
+            log.info(order.toString());
         }
 
-        mqttPublishService.sendOrderList(robotId, orderListResponse);
+        mqttPublishService.sendOrderList(robotId, orderList);
     }
 
 }
