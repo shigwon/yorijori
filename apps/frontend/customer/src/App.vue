@@ -100,6 +100,8 @@ onMounted(() => {
   console.log('전역 함수 및 상태 재등록 완료')
   console.log('window.openFaceRecognitionModal 재확인:', typeof window.openFaceRecognitionModal)
   console.log('window.showFaceRecognitionModal 재확인:', typeof window.showFaceRecognitionModal)
+  
+
 })
 </script>
 
@@ -166,6 +168,7 @@ div[style*="position:fixed"]:not(.progress-bar-wrapper):not(.app-modal) {
   margin: 0 !important;
   padding: 0 !important;
   font-weight: normal;
+  font-family: 'Pretendard', sans-serif;
   width: 100vw !important;
   height: 100vh !important;
   height: 100dvh !important; /* Dynamic viewport height for mobile */

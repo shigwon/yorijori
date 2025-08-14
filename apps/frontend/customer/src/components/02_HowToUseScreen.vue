@@ -20,7 +20,7 @@
         </div>
         <div class="step-content">
           <h3 class="step-title">1. 사진을 선택하거나 촬영해주세요</h3>
-          <p class="step-description">※로봇 도착 시 본인확인에 사용됩니다. 사진은 배달이 도착즉시 삭제됩니다.</p>
+          <p class="step-description">로봇 도착 시 본인확인에 사용되고, <br>사진은 배달이 도착즉시 삭제됩니다</br></p>
         </div>
       </div>
 
@@ -35,7 +35,7 @@
           </div>
         </div>
         <div class="step-content">
-          <h3 class="step-title">2. 내 위치를 공유해주세요</h3>
+          <h3 class="step-title">2. 픽업 받으실 위치를 공유해 주세요</h3>
           <p class="step-description">정확한 배달을 위해 필요합니다</p>
         </div>
       </div>
@@ -52,7 +52,7 @@
         </div>
         <div class="step-content">
           <h3 class="step-title">3. 도착하면 로봇에게 얼굴을 보여주세요</h3>
-          <p class="step-description">음신칸이 열리며 음식 수렴이 가능합니다.</p>
+          <p class="step-description">음신칸이 열리며 음식 수령이 가능합니다</p>
         </div>
       </div>
     </div>
@@ -309,6 +309,7 @@ const handleNext = () => {
   
   .step-description {
     font-size: 13px;
+    margin-left: 10px
   }
   
   .footer-section {

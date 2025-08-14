@@ -66,13 +66,33 @@ const selectedRating = ref(5)
 const selectedOptions = ref([])
 const additionalFeedback = ref('')
 
-// 만족스러운 점 옵션들 (5점 기준)
+// 별점에 따른 옵션들
 const row1Options = computed(() => {
-  return ['위치가 매우 정확함', '얼굴 인식이 완벽함']
+  if (selectedRating.value <= 1) {
+    return ['위치가 부정확함', '얼굴 인식이 안됨']
+  } else if (selectedRating.value === 2) {
+    return ['위치가 부정확함', '얼굴 인식이 느림']
+  } else if (selectedRating.value === 3) {
+    return ['위치가 보통임', '얼굴 인식이 보통임']
+  } else if (selectedRating.value === 4) {
+    return ['위치가 정확함', '얼굴 인식이 좋음']
+  } else {
+    return ['위치가 매우 정확함', '얼굴 인식이 완벽함']
+  }
 })
 
 const row2Options = computed(() => {
-  return ['내 위치가 완벽하게 보임', '속도가 매우 빠름']
+  if (selectedRating.value <= 1) {
+    return ['내 위치가 안보임', '속도가 매우 느림']
+  } else if (selectedRating.value === 2) {
+    return ['내 위치가 흐릿함', '속도가 느림']
+  } else if (selectedRating.value === 3) {
+    return ['내 위치가 보통임', '속도가 보통임']
+  } else if (selectedRating.value === 4) {
+    return ['내 위치가 잘보임', '속도가 빠름']
+  } else {
+    return ['내 위치가 완벽하게 보임', '속도가 매우 빠름']
+  }
 })
 
 // 별점에 따른 질문 텍스트 변경
@@ -82,7 +102,7 @@ const questionText = computed(() => {
   } else if (selectedRating.value === 2) {
     return '어떤 점을 개선하면 좋을까요?'
   } else if (selectedRating.value === 4) {
-    return '어떤 점이 좋으셨나요?'
+    return '어떤 점이 만족스러웠나요?'
   } else if (selectedRating.value === 5) {
     return '어떤 점이 만족스러웠나요?'
   } else {
@@ -243,7 +263,7 @@ const submitSurvey = async () => {
   font-size: 14px;
   color: #6B7280;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -251,14 +271,15 @@ const submitSurvey = async () => {
 }
 
 .option-button.selected {
-  background: #7C3AED;
-  color: white;
-  border-color: #7C3AED;
+  background: #7C3AED !important;
+  color: white !important;
+  border-color: #7C3AED !important;
 }
 
-.option-button:hover {
+.option-button:hover:not(.selected) {
   background: #F3F4F6;
   border-color: #7C3AED;
+  transition: background-color 0.1s ease;
 }
 
 
@@ -304,7 +325,7 @@ const submitSurvey = async () => {
   font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: none;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
@@ -312,6 +333,7 @@ const submitSurvey = async () => {
   background: #6D28D9;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+  transition: background-color 0.1s ease;
 }
 
 .submit-button:active {

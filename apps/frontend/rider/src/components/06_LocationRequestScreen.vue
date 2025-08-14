@@ -2,32 +2,33 @@
   <div class="location-request-container">
     <!-- 메인 콘텐츠 -->
     <div class="main-content">
-      <h1 class="title">위치 정보 수집 이용 동의</h1>
+      <h1 class="title">안심번호·위치 확인 동의</h1>
       
       <div class="consent-intro">
-        <p><span class="brand-name">LiNKY</span>는 고객의 위치 정보를 확인하고자 합니다 아래 내용을 확인하시고 동의 여부를 결정해주세요.</p>
+        <p><span class="brand-name">LiNKY</span>는 안전하고 정확한 배송을 위해 고객님의 안심번호와 배송지 위치를 확인합니다.
+          아래 내용을 읽고 동의 여부를 선택해주세요.</p>
       </div>
       
       <div class="consent-section">
-        <h2 class="section-title">[필수] 배송지 정보 수집·이용 내역</h2>
+        <h2 class="section-title">[필수] 안심번호·위치 동의 확인내역</h2>
         
         <div class="consent-table">
           <div class="table-row header">
-            <div class="table-cell">수집·이용 목적</div>
+            <div class="table-cell">수집·이용<br>목적</br></div>
             <div class="table-cell">수집 항목</div>
-            <div class="table-cell">보유·이용 기간</div>
+            <div class="table-cell">보유·이용기간</div>
           </div>
           <div class="table-row">
-            <div class="table-cell">고객 위치 정보 확인</div>
+            <div class="table-cell">배송지 및<br>위치 확인</div>
             <div class="table-cell">위치정보<br>안심번호</div>
             <div class="table-cell">
-              배송이 완료되는 시점까지
+              배송 완료 시까지
             </div>
           </div>
         </div>
         
         <div class="consent-disclaimer">
-          <p>위의 배송지 정보 수집ㆍ이용에 대한 동의를 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 간편 서비스를 이용할 수 없습니다.</p>
+          <p>위의 안심번호·위치 동의에 대해 거부할 권리가 있습니다. 그러나 동의를 거부할 경우 저희 LiNKY 서비스를 이용할 수 없습니다.</p>
         </div>
       </div>
     </div>
@@ -163,6 +164,8 @@ const handleCircleClick = () => {
   border-right: 1px solid #D1D5DB;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .table-cell:last-child {

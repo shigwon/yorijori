@@ -154,28 +154,35 @@ import homerobotImage from '../assets/homerobot.png'
 // API 기본 URL (프록시 설정 활용)
 const API_BASE_URL = '' // 상대 경로 사용하여 프록시 활용
 
-// 남은 시간/진행바 설정 (30초 카운트다운, 진행바는 51% -> 100%)
+// 남은 시간/진행바 설정 (백엔드 SSE 위치 데이터로부터 시작)
 const totalCountdownSeconds = 30
-const remainingSeconds = ref(totalCountdownSeconds)
+const remainingSeconds = ref(0)  // 0으로 시작 (백엔드 데이터 대기)
+const isCountdownStarted = ref(false)  // 카운트다운 시작 여부
 const initialProgressPercent = 51
 const progressPercent = computed(() => {
+  if (!isCountdownStarted.value) return initialProgressPercent  // 시작 전에는 초기값
+  
   const elapsed = totalCountdownSeconds - remainingSeconds.value
   const ratio = Math.max(0, Math.min(1, elapsed / totalCountdownSeconds))
-  // 0.7%씩 더 천천히 올라가도록 계산
-  const slowRatio = ratio * 0.7
-  return initialProgressPercent + (96 - initialProgressPercent) * slowRatio
+  // 0.8%씩 더 천천히 올라가도록 계산
+  const slowRatio = ratio * 0.8
+  return initialProgressPercent + (97 - initialProgressPercent) * slowRatio
 })
 const progressWidth = computed(() => `${progressPercent.value}%`)
+
 // 로봇 마스코트 이동 거리 계산 (타임라인 너비에 맞춰 이동)
 const robotMoveDistance = computed(() => {
+  if (!isCountdownStarted.value) return 0  // 시작 전에는 0
+  
   const timelineWidth = 100 // 타임라인 컨테이너의 대략적인 너비 (px)
   const elapsed = totalCountdownSeconds - remainingSeconds.value
   const ratio = Math.max(0, Math.min(1, elapsed / totalCountdownSeconds))
-  // 정상 속도로 51% → 96% 이동 (보라색 바와 별개)
-  const normalProgress = initialProgressPercent + (96 - initialProgressPercent) * ratio
-  const moveRatio = (normalProgress - initialProgressPercent) / (96 - initialProgressPercent)
+  // 정상 속도로 51% → 100% 이동 (보라색 바와 별개)
+  const normalProgress = initialProgressPercent + (100 - initialProgressPercent) * ratio
+  const moveRatio = (normalProgress - initialProgressPercent) / (100 - initialProgressPercent)
   return moveRatio * timelineWidth
 })
+
 let countdownIntervalId = null
 
 const startDeliveryCountdown = () => {
@@ -196,6 +203,16 @@ const startDeliveryCountdown = () => {
       showDeliveryCompleteModal.value = true
     }
   }, 1000)
+}
+
+// SSE에서 첫 번째 위치 데이터를 받았을 때 카운트다운 시작
+const startCountdownFromSSE = () => {
+  if (!isCountdownStarted.value) {
+    isCountdownStarted.value = true
+    remainingSeconds.value = totalCountdownSeconds
+    startDeliveryCountdown()
+    console.log('백엔드 위치 데이터로부터 카운트다운 시작!')
+  }
 }
 
 // 스트리밍 토글
@@ -531,6 +548,11 @@ const startStreaming = async () => {
             isLoading.value = false
             error.value = null
             
+            // 첫 번째 위치 데이터를 받았을 때만 카운트다운 시작 (한 번만)
+            if (!isCountdownStarted.value) {
+              startCountdownFromSSE()
+            }
+            
           } catch (decodeError) {
             console.error('이미지 디코딩 실패:', decodeError.message)
             error.value = '이미지 디코딩에 실패했습니다: ' + decodeError.message
@@ -656,7 +678,7 @@ const initDeliveryMap = () => {
   try {
     const options = {
       center: new window.kakao.maps.LatLng(deliveryLat, deliveryLng),
-      level: 4
+      level: 2
     }
     
     const map = new window.kakao.maps.Map(container, options)
@@ -762,8 +784,8 @@ onMounted(() => {
     startLocationTracking()
   }
 
-  // 30초 카운트다운 시작
-  startDeliveryCountdown()
+  // 백엔드 SSE 위치 데이터로부터 카운트다운 시작 (자동 시작 안함)
+  // startDeliveryCountdown()
 
   // 5초 후 자동으로 배달완료 모달 표시
   // setTimeout(() => {
@@ -1382,8 +1404,8 @@ onUnmounted(() => {
   }
   
   .time-remaining {
-    padding: 6px 10px;
-    min-width: 50px;
+    padding: 10px 10px;
+    min-width: 45px;
   }
   
   .time-label {

@@ -100,6 +100,12 @@ const confirmLocation = async () => {
   
   console.log('백그라운드에서 주문번호:', currentOrderId)
   console.log('백그라운드에서 로봇 ID:', currentRobotId)
+  console.log('전송할 위치 정보:', {
+    orderId: parseInt(currentOrderId),
+    robotId: parseInt(currentRobotId),
+    customerLatitude: currentLocation.value?.latitude,
+    customerLongitude: currentLocation.value?.longitude
+  })
   
   fetch(`/api/v1/orders/${currentOrderId}/location`, {
     method: 'PATCH',
@@ -118,6 +124,11 @@ const confirmLocation = async () => {
       return response.json()
     } else {
       console.error('위치 정보 전송 실패:', response.status)
+      // 400 에러의 상세 내용 확인
+      return response.text().then(text => {
+        console.error('에러 응답 내용:', text)
+        throw new Error(`HTTP ${response.status}: ${text}`)
+      })
     }
   })
   .then(result => {
@@ -294,22 +305,23 @@ onMounted(async () => {
   
   console.log('최종 capturedFaceImage:', capturedFaceImage.value ? '있음' : '없음')
   
-  // 현재 위치 가져오기
+  // 테스트용 고정 위치 사용
   try {
-    console.log('현재 위치 가져오기 시작...')
-    const location = await getCurrentLocation()
-    currentLocation.value = location
+    console.log('테스트용 고정 위치 사용...')
+    // 테스트용 고정 위치 사용
+    const testLocation = { latitude: 3.3674157, longitude: 0.1806214 }
+    currentLocation.value = testLocation
     
     // 주소 변환
-    const address = await getAddressFromCoords(location.latitude, location.longitude)
+    const address = await getAddressFromCoords(testLocation.latitude, testLocation.longitude)
     currentAddress.value = address
     
-    console.log('현재 위치 및 주소 설정 완료:', location, address)
+    console.log('테스트 위치 및 주소 설정 완료:', testLocation, address)
   } catch (error) {
-    console.error('현재 위치 가져오기 실패:', error)
-    // 기본값으로 서울 시청 설정
-    currentLocation.value = { latitude: 37.5665, longitude: 126.9780 }
-    currentAddress.value = '종로구 동슬1길 4'
+    console.error('테스트 위치 설정 실패:', error)
+    // 테스트용 고정 위치로 설정
+    currentLocation.value = { latitude: 3.3674157, longitude: 0.1806214 }
+    currentAddress.value = '테스트 위치 (3.3674157, 0.1806214)'
   }
 
   // 카카오맵 초기화 (모바일 대응)
@@ -318,9 +330,9 @@ onMounted(async () => {
       const container = document.getElementById('map')
       if (!container) return
       
-      // 현재 위치 또는 기본 위치 사용
-      const lat = currentLocation.value?.latitude || 37.5665
-      const lng = currentLocation.value?.longitude || 126.9780
+      // 테스트용 고정 위치 사용
+      const lat = currentLocation.value?.latitude || 3.3674157
+      const lng = currentLocation.value?.longitude || 0.1806214
       
       const options = {
         center: new window.kakao.maps.LatLng(lat, lng),
