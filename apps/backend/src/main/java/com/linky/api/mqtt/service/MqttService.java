@@ -113,7 +113,6 @@ public class MqttService {
                 case "updateLocation": // Redis 저장과 함께 SSE로도 실시간 브로드캐스트
                     RobotLocationDto robotLocationDto = objectMapper.readValue(payload, RobotLocationDto.class);
                     robotService.saveLocationToRedis(robotLocationDto);
-                    StreamingController.broadcastLocation(robotLocationDto.getRobotId(), robotLocationDto.getLatitude(), robotLocationDto.getLongitude());
                     break;
             }
         } catch (JsonProcessingException e) {

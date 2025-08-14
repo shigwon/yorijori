@@ -7,7 +7,7 @@ spring:
     level:
       org.springframework.ai: DEBUG
       org.springframework.web.client: DEBUG
-      com.linky.api.aichat: DEBUG
+      com.linky.api: DEBUG
 
     pattern:
       console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
