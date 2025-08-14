@@ -1,6 +1,5 @@
 package com.linky.api.order.entity;
 
-import com.linky.order.grpc.OrderState;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
