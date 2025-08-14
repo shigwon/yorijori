@@ -94,7 +94,7 @@ public class MqttService {
             return;
         }
 
-        //log.info("📥 Received Command = {}, Extra = {}, Payload = {}", command, extra, payload);
+        log.info("📥 Received Command = {}, Extra = {}, Payload = {}", command, extra, payload);
 
         try {
             switch (command) {
