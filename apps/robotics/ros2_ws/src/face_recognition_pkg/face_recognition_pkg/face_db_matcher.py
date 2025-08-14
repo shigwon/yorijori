@@ -18,11 +18,11 @@ class FaceDBMatcherNode(Node):
     def __init__(self):
         super().__init__('face_db_matcher_node')
 
-        # ===== 설정 (중요 변수명 유지) =====
+        # ===== 설정 =====
         self.camera_topic = '/left/image_rect'
-        self.threshold = 0.6
-        self.min_face = 120           # px
-        self.frame_skip = 10          # N프레임 당 1회 처리
+        self.threshold = 0.7     # L2 거리 임계값 (0.9~1.0 권장)
+        self.min_face = 50         # px
+        self.frame_skip = 10       # N프레임당 1회 처리
 
         # ===== 리소스 =====
         self.bridge = CvBridge()
@@ -36,6 +36,7 @@ class FaceDBMatcherNode(Node):
         self.active_order_id = None    # 현재 매칭 대상
         self._frame_count = 0
         self.cam_sub = None
+        self.match_done = False        # 매칭 완료 여부
 
         # ===== 토픽 =====
         self.create_subscription(String, '/face_db/register', self.register_callback, 10)
@@ -44,7 +45,6 @@ class FaceDBMatcherNode(Node):
 
         self.get_logger().info("FaceDBMatcherNode (stream matching) started.")
 
-    # ---- 카메라 온/오프 ----
     def start_camera(self):
         if self.cam_sub is None:
             self.cam_sub = self.create_subscription(Image, self.camera_topic, self.on_image, 10)
@@ -59,34 +59,24 @@ class FaceDBMatcherNode(Node):
             self.cam_sub = None
             self.get_logger().info("Camera unsubscribed")
 
-    # ---- 유틸 ----
     def _decode_base64_to_bgr(self, s: str):
-        """data:image/...;base64,... 또는 순수 base64 모두 지원"""
         if not isinstance(s, str) or not s:
             return None
         try:
-            # data URL 헤더 제거
             if ';base64,' in s:
                 s = s.split(';base64,', 1)[1]
-            # URL 인코딩되어 온 경우 대비(오탐 최소화)
-            if '%' in s:
-                from urllib.parse import unquote
-                s = unquote(s)
             img_bytes = base64.b64decode(s, validate=False)
             arr = np.frombuffer(img_bytes, dtype=np.uint8)
-            img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-            return img
+            return cv2.imdecode(arr, cv2.IMREAD_COLOR)
         except Exception as e:
             self.get_logger().warning(f"Base64 decode/imdecode failed: {e}")
             return None
 
     def _detect_biggest_face(self, bgr):
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        # scaleFactor/neighbor 튜닝 여지 남김
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4)
         if len(faces) == 0:
             return None
-        # 최소 크기 필터
         faces = [f for f in faces if f[2] >= self.min_face and f[3] >= self.min_face]
         if not faces:
             return None
@@ -94,10 +84,9 @@ class FaceDBMatcherNode(Node):
         return bgr[y:y + h, x:x + w]
 
     def _embed_face(self, face_bgr):
-        # DB/실시간 모두 흑백 변환
-        gray = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2GRAY)
-        # FaceNet이 3채널 기대하므로 1채널 → 3채널 변환
-        rgb = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
+        # FaceNet 입력 규격에 맞게 전처리 (160x160 RGB)
+        rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
+        rgb = cv2.resize(rgb, (160, 160))
         emb = self.embedder.embeddings([rgb.astype(np.float32)])[0]
         return emb
 
@@ -132,6 +121,7 @@ class FaceDBMatcherNode(Node):
             self.db[order_id] = emb
             self.active_order_id = order_id
             self._frame_count = 0
+            self.match_done = False
             self.start_camera()
 
             self.get_logger().info(
@@ -141,6 +131,9 @@ class FaceDBMatcherNode(Node):
             self.get_logger().error(f'register_callback error: {e}')
 
     def on_image(self, img_msg: Image):
+        if self.match_done:
+            return
+
         aoid = self.active_order_id
         if not aoid or aoid not in self.db:
             return
@@ -168,6 +161,8 @@ class FaceDBMatcherNode(Node):
             self.get_logger().warning(f"embedding error: {e}")
             return
 
+        self.get_logger().info(f"[CHECK] orderId={aoid} dist={dist:.4f} matched={matched}")
+
         out = {"orderId": aoid, "matched": bool(matched), "distance": float(dist)}
         s = String()
         s.data = json.dumps(out, ensure_ascii=False)
@@ -178,10 +173,10 @@ class FaceDBMatcherNode(Node):
         self.pub_bool.publish(b)
 
         if matched:
-            self.get_logger().info(f"[MATCH] orderId={aoid} dist={dist:.4f} < {self.threshold}")
-            self.stop_camera()
-            self.active_order_id = None
-
+            self.match_done = True           # 한 번만 동작
+            self.active_order_id = None      # 상태 초기화
+            self.stop_camera()               # 카메라 구독 해제
+            self.get_logger().info(f"[MATCH SUCCESS] orderId={aoid} dist={dist:.4f}")
 
 def main(args=None):
     rclpy.init(args=args)
@@ -193,7 +188,6 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
